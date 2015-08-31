@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+	<settings>
+		<url>http://192.168.178.32</url>
+		<api>c5a6423d29445edd8533ccf168b1c9af</api>
+		
+		<processList>
+			<process key="kWh to Power">
+				<processId>21</processId>
+				<datatype>1</datatype>
+				<engine>2</engine>
+			</process>
+		</processList>
+	</settings>
+	
+	<instruction>
+		<operation>create</operation>
+		<input id="test"></input>
+	</instruction>
+</configuration>

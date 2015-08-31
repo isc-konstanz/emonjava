@@ -1,0 +1,35 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'osgi'
+
+version = '0.1.2'
+group = 'de.isc.emon.framework'
+def projectName = 'EmoncmsLogger'
+def projectNameLowerCase = 'emoncmslogger'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+	flatDir {
+		dirs 'dependencies', rootDir.getPath() + "/dependencies"
+	}
+}
+
+dependencies {
+	compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.+'
+	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
+	testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
+tasks.eclipse.dependsOn(cleanEclipse)
+
+jar {
+	manifest {
+		version = project.version.replace('-','.');
+		name = projectName
+		instruction 'Export-Package', '!*.internal.*,*'
+	}
+}
