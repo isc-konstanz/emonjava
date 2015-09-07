@@ -5,9 +5,6 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.isc.emon.cms.EmonCMS;
-import de.isc.emon.cms.connection.EmoncmsConnection;
-
 
 public class EmoncmsTask extends Thread {
 	private final static Logger logger = LoggerFactory.getLogger(EmoncmsTask.class);

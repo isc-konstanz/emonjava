@@ -2,7 +2,7 @@ package de.isc.emon.cms;
 
 
 public class EmoncmsException extends Exception {
-	private static final long serialVersionUID = 3628437143951931739L;
+	private static final long serialVersionUID = -9155142035281509519L;
 
 	public EmoncmsException() {
 		super();

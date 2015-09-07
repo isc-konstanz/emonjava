@@ -2,19 +2,17 @@ package de.isc.emon.cms;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import de.isc.emon.cms.config.EmoncmsConfig;
-import de.isc.emon.cms.config.EmoncmsProcessConfig;
 
 
 public class AccessEmonCMS {
@@ -30,7 +28,7 @@ public class AccessEmonCMS {
 		File configFile = new File(configFileName);
 		
 		try {
-			config = configureEmoncms(configFile);
+			config = loadConfigFile(configFile);
 			
 		} catch (FileNotFoundException e) {
 			logger.info("No configuration file found." + 
@@ -39,15 +37,38 @@ public class AccessEmonCMS {
 			logger.error("Error parsing config file: " + e.getMessage());
 		}
 		
-		// TODO do stuff
+		//TODO do stuff with cms
 		EmonCMS cms = new EmonCMS(config);
-		try {
-			cms.createInputProcess(1, "Test1", "", "");
-		} catch (EmoncmsException e) {
-		}
+//		try {
+//			String inputName = "test";
+//			cms.postInputData(inputName, 1, (double) 0, null);
+//			List<EmoncmsResponse> inputs = cms.listInputs();
+//			int inputId = Integer.valueOf(inputs.get(0).get("id"));
+//			EmoncmsResponse feed = cms.createFeed(inputName + "_feed", "REALTIME", "PHPTIMESERIES", null);
+//			EmoncmsResponse feed = cms.createFeed(inputName + "_feed_kWh", "REALTIME", "PHPTIMESERIES", null);
+//			List<EmoncmsResponse> feeds = cms.listFeeds();
+//			int feedIdLog = Integer.valueOf(cms.getFeedId(inputName + "_feed").get("id"));
+//			int feedIdkWh = Integer.valueOf(cms.getFeedId(inputName + "_feed_kWh").get("id"));
+//			cms.addInputProcess(inputId, "log_to_feed", String.valueOf(feedIdLog));
+//			long time = System.currentTimeMillis();
+//			cms.postInputData(inputName, 1, (double) 100, time);
+//			EmoncmsResponse value = cms.getFeedValue(feedIdLog);
+//			List<EmoncmsResponse> values = cms.getFeedData(feedIdLog, time - 1000*60*15, time, 15);
+//			cms.getFeedField(feedIdLog, "engine");
+//			cms.setFeedField(feedIdLog, "engine", "2");
+//			cms.addInputProcess(inputId, "kwh_to_power", String.valueOf(feedIdkWh));
+//			cms.moveInputProcess(inputId, "log_to_feed", 1);
+//			cms.deleteInputProcess(inputId, "kwh_to_power");
+//			cms.resetInputProcess(inputId);
+//			cms.deleteFeed(feedIdLog);
+//			cms.deleteFeed(feedIdkWh);
+//			cms.deleteInput(inputId);
+//		} catch (EmoncmsException e) {
+//			logger.error("Error while posting emoncms request: " + e.getMessage());
+//		}
 	}
 
-	private static EmoncmsConfig configureEmoncms(File configFile) throws EmoncmsException, FileNotFoundException {
+	private static EmoncmsConfig loadConfigFile(File configFile) throws EmoncmsException, FileNotFoundException {
 		if (configFile == null) {
 			throw new NullPointerException("configFileName is null or the empty string.");
 		}
@@ -71,6 +92,13 @@ public class AccessEmonCMS {
 			throw new EmoncmsException("root node in configuration is not of type \"configuration\"");
 		}
 		
+		EmoncmsConfig config = configureSettings(rootNode);
+		configureEmoncms(rootNode, config);
+		
+		return config;
+	}
+
+    private static EmoncmsConfig configureSettings(Node rootNode) throws EmoncmsException {
 		NodeList configChildren =  rootNode.getChildNodes();
 		for (int i = 0; i < configChildren.getLength(); i++) {
 			Node childNode = configChildren.item(i);
@@ -81,8 +109,7 @@ public class AccessEmonCMS {
 			else if (childName.equals("settings")) {
 				Boolean shell = null;;
 				String api = null;
-				String location = null;
-				Map<String, EmoncmsProcessConfig> processes = null;
+				String address = null;
 				
 				NodeList settingsChildren = childNode.getChildNodes();
 				for (int j = 0; j < settingsChildren.getLength(); j++) {
@@ -96,71 +123,111 @@ public class AccessEmonCMS {
 					}
 					else if (settingsChildName.equals("location")) {
 						shell = true;
-						location = settingsChildNode.getTextContent();
+						address = settingsChildNode.getTextContent();
 					}
 					else if (settingsChildName.equals("url")) {
 						shell = false;
-						location = settingsChildNode.getTextContent();
+						address = settingsChildNode.getTextContent();
 					}
-					else if (settingsChildName.equals("processList")) {
-						processes = configureProcessList(settingsChildNode);
-					}
-					else {
-						throw new EmoncmsException("Found unknown tag in node settings:" + settingsChildName);
-					}
+					else throw new EmoncmsException("Found unknown tag in settings:" + settingsChildName);
 				}
-				if (shell == null || api == null || location == null) {
+				if (shell == null || api == null || address == null) {
 					throw new EmoncmsException("Emoncms configurations incomplete");
 				}
-				else if (processes == null) {
-					processes = new HashMap<String, EmoncmsProcessConfig>();
-				}
-				EmoncmsConfig config = new EmoncmsConfig(shell, api, location, processes);
 				
-				if (!config.containsProcess("Log to feed")) {
-					Map<String, String> logProcessArguments = new HashMap<String, String>();
-					logProcessArguments.put("datatype", "1");
-					logProcessArguments.put("engine", "2");
-					config.addProcess(new EmoncmsProcessConfig("Log to feed", 1, logProcessArguments));
-					
-					if (logger.isTraceEnabled()) {
-						logger.trace("Default \"Log to feed\" process has been configured");
-					}
-				}
-				
-				return config;
-			}
-			else {
-				throw new EmoncmsException("Found unknown tag:" + childName);
+				return new EmoncmsConfig(shell, api, address);
 			}
 		}
+		throw new EmoncmsException("Emoncms settings not configured");
+    }
 
-		throw new EmoncmsException("Emoncms settings not configured:");
-	}
-
-    private static Map<String, EmoncmsProcessConfig> configureProcessList(Node processListNode) throws EmoncmsException {
-    	Map<String, EmoncmsProcessConfig> processByKey = new HashMap<String, EmoncmsProcessConfig>();
-    	
-		NodeList processListChildren = processListNode.getChildNodes();
-		for (int i = 0; i < processListChildren.getLength(); i++) {
-			Node childNode = processListChildren.item(i);
+    private static void configureEmoncms(Node rootNode, EmoncmsConfig config) throws EmoncmsException {
+		NodeList configChildren =  rootNode.getChildNodes();
+		for (int i = 0; i < configChildren.getLength(); i++) {
+			Node childNode = configChildren.item(i);
 			String childName = childNode.getNodeName();
 			if (childName.equals("#text")) {
 				continue;
 			}
 			else if (childName.equals("process")) {
-				EmoncmsProcessConfig process = new EmoncmsProcessConfig(childNode);
-				processByKey.put(process.getKey(), process);
-				
-				if (logger.isTraceEnabled()) {
-					logger.trace("Process \"{}\" has been configured", process.getKey());
-				}
+				config.addProcess(getNodeKey(childNode), getValueId(childNode));
 			}
-			else {
-				throw new EmoncmsException("Found unknown tag in node processList:" + childName);
+			else if (childName.equals("datatype")) {
+				config.addDataType(getNodeKey(childNode), getValueId(childNode));
+			}
+			else if (childName.equals("engine")) {
+				config.addEngine(getNodeKey(childNode), getValueId(childNode));
 			}
 		}
+
+		if (!config.containsProcess("log_to_feed")) {
+			config.addProcess("log_to_feed", 1);
+			
+			if (logger.isTraceEnabled()) {
+				logger.trace("Default process \"log_to_feed\" has been configured");
+			}
+		}
+		if (!config.containsDataType("REALTIME")) {
+			config.addDataType("REALTIME", 1);
+			
+			if (logger.isTraceEnabled()) {
+				logger.trace("Default data type \"REALTIME\" has been configured");
+			}
+		}
+		if (!config.containsEngine("PHPFINA")) {
+			config.addEngine("PHPFINA", 1);
+
+			if (logger.isTraceEnabled()) {
+				logger.trace("Default engine \"PHPFINA\" has been configured");
+			}
+		}
+		if (!config.containsEngine("PHPTIMESERIES")) {
+			config.addEngine("PHPTIMESERIES", 2);
+
+			if (logger.isTraceEnabled()) {
+				logger.trace("Default engine \"PHPTIMESERIES\" has been configured");
+			}
+		}
+    }
+    
+    private static String getNodeKey(Node node) throws EmoncmsException {
+		NamedNodeMap attributes = node.getAttributes();
+		Node nameAttribute = attributes.getNamedItem("key");
+		if (nameAttribute == null) {
+			throw new EmoncmsException("The node has no key attribute");
+		}
+		String key = nameAttribute.getTextContent();
+		if (key.isEmpty()) {
+			throw new EmoncmsException("The key attribute may not be empty");
+		}
 		
-		return processByKey;
+		return key;
+    }
+    
+    private static int getValueId(Node node) throws EmoncmsException {
+    	Integer id = null;
+		NodeList nodeChildren = node.getChildNodes();
+		try {
+			for (int j = 0; j < nodeChildren.getLength(); j++) {
+				Node childNode = nodeChildren.item(j);
+				String childName = childNode.getNodeName();
+
+				if (childName.equals("#text")) {
+					continue;
+				}
+				else if(childName.equals("id")) {
+					id = Integer.valueOf(childNode.getTextContent());
+				}
+				else throw new EmoncmsException("Found unknown tag:" + childName);
+			}
+		} catch (IllegalArgumentException e) {
+			throw new EmoncmsException(e);
+		}
+		
+		if (id == null) {
+			throw new EmoncmsException("The node has no id defined");
+		}
+		
+		return id;
     }
 }

@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -20,217 +18,62 @@ import de.isc.emon.cms.connection.EmoncmsConnection;
 
 public class EmoncmsHTTPConnection implements EmoncmsConnection {
 	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTPConnection.class);
-	
-	private final String URL;
-	private final String API;
 
-//    private final Map<Integer, Sample> queuedSamplesByInputId = Collections.synchronizedMap(new LinkedHashMap<Integer, Sample>());
+	private final String URL;
+	private final String KEY;
+	
+//  private final Map<Integer, Sample> queuedSamplesByInputId = Collections.synchronizedMap(new LinkedHashMap<Integer, Sample>());
     
-    
-    public EmoncmsHTTPConnection(String url, String api) {
-    	this.URL = (url.endsWith("/")) ? url : url.concat("/").concat("emoncms/");
-    	this.API = api;
+	
+	public EmoncmsHTTPConnection(String address, String apiKey) {
+		String url = "";
+		if (!address.startsWith("http://")) {
+			url = "http://".concat(address);
+		}
+		if (!url.endsWith("/")) {
+			url = url.concat("/");
+		}
+    	this.URL = url.concat("emoncms/");
+    	this.KEY = apiKey;
     }
 
 	@Override
-	public String postInputData(String inputName, double value) 
-			throws IOException {
-		String request = URL + "input/post.json?";
-		request = request.concat("&apikey=" + API);
-		
-		request = request.concat("&json={\"" + inputName + "\":" + value + "}");
-		
-		return parseResponse(request);
+	public String getId() {
+		return "HTTP connection";
 	}
 
 	@Override
-	public String postInputData(String inputName, int node, double value) 
-			throws IOException {
-		String request = URL + "input/post.json?";
-		request = request.concat("&apikey=" + API);
-
-		request = request.concat("&node=" + node);
-		request = request.concat("&json={\"" + inputName + "\":" + value + "}");
-		
-		return parseResponse(request);
+	public void postRequest(String request) {
+		try {
+	        String response = getResponse(request);
+	        if (!response.equals("ok")) {
+	        	logger.debug("Failed to post request: {}", response);
+	        }
+	        
+		} catch (IOException e) {
+			logger.debug("Exception while posting http request: {}", request);
+		}
 	}
 
 	@Override
-	public String postInputData(String inputName, long time, double value) 
-			throws IOException {
-		String request = URL + "input/post.json?";
-		request = request.concat("&apikey=" + API);
-
-		request = request.concat("&json={\"" + inputName + "\":" + value + "}");
-		request = request.concat("&time=" + time);
-		
-		return parseResponse(request);
-	}
-
-	@Override
-	public String postInputData(String inputName, int node, long time, double value) 
-			throws IOException {
-		String request = URL + "input/post.json?";
-		request = request.concat("&apikey=" + API);
-
-		request = request.concat("&node=" + node);
-		request = request.concat("&json={\"" + inputName + "\":" + value + "}");
-		request = request.concat("&time=" + time);
-		
-		return parseResponse(request);
-	}
-
-	@Override
-	public JSONObject deleteInput(int inputId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONArray listInputs() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject addInputProcess(int inputId, int processId,
-			String arguments) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONArray listInputProcessList(int inputId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject deleteInputProcess(int inputId, int processId)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject moveInputProcess(int inputId, int processId, int moveBy)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject resetInputProcess(int inputId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject createFeed(String feedName, int engine, String options)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject deleteFeed(int feedId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONArray listFeeds() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONArray listFeedsByUser(int userId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject gedFeedId(String feedName) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject getFeedValue(int feedId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONArray getFeedData(int feedId, long start, long end,
-			int datapoints) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject renameFeed(int feedId, String newName) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject updateFeed(int feedId, long time, double value)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject instertFeedData(int feedId, long time, double value)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public JSONObject deleteFeedDatapoint(int feedId, long time)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-    
-	private Object parseJSONResponse(String strURL) throws IOException {
-		Object result = null;
-		
-        URL url = new URL(strURL);
+	public String getResponse(String request) throws IOException {
+        URL url = new URL(URL + request + "&apikey=" + KEY);
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-
-        try {
-            InputStream is = new BufferedInputStream(urlConnection.getInputStream());
-            InputStreamReader isr = new InputStreamReader(is);
-
-            JSONParser parser = new JSONParser();
-            result = parser.parse(isr);
-
-        } catch (ParseException e) {
-        	logger.debug("Error while parsing JSON response of: {}", strURL);
-        }
-        finally {
-            urlConnection.disconnect();
-        }
-        return result;
-	}
-    
-	private String parseResponse(String strURL) throws IOException {
-		String result = null;
-		
-        URL url = new URL(strURL);
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-
         InputStream is = new BufferedInputStream(urlConnection.getInputStream());
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
         
-        result = br.readLine();
+        return br.readLine();
+	}
 
-        urlConnection.disconnect();
-        return result;
+	@Override
+	public Object getJSONResponse(String request) throws IOException, ParseException {
+        URL url = new URL(URL + request + "&apikey=" + KEY);
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        InputStream is = new BufferedInputStream(urlConnection.getInputStream());
+        InputStreamReader isr = new InputStreamReader(is);
+        JSONParser parser = new JSONParser();
+        
+        return parser.parse(isr);
 	}
 }
