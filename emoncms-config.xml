@@ -4,8 +4,4 @@
 		<url>192.168.178.32</url>
 		<api>c5a6423d29445edd8533ccf168b1c9af</api>
 	</settings>
-	
-	<process key="kwh_to_power">
-		<id>21</id>
-	</process>
 </configuration>

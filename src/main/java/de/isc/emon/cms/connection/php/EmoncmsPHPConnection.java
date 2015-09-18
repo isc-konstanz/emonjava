@@ -1,24 +1,22 @@
 package de.isc.emon.cms.connection.php;
 
-import java.io.IOException;
-
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.isc.emon.cms.EmoncmsException;
 import de.isc.emon.cms.connection.EmoncmsConnection;
+import de.isc.emon.cms.connection.EmoncmsResponse;
 
 
 public class EmoncmsPHPConnection implements EmoncmsConnection {
 	private static final Logger logger = LoggerFactory.getLogger(EmoncmsPHPConnection.class);
 
-	private final String URL;
+	private final String DIR;
 	private final String KEY;
     
 	
 	public EmoncmsPHPConnection(String address, String apiKey) {
-    	this.URL = address;
+    	this.DIR = address;
     	this.KEY = apiKey;
     }
 
@@ -28,20 +26,18 @@ public class EmoncmsPHPConnection implements EmoncmsConnection {
 	}
 
 	@Override
+	public String getAddress() {
+		return DIR;
+	}
+
+	@Override
 	public void postRequest(String request) throws EmoncmsException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public String getResponse(String request) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object getJSONResponse(String request) throws IOException,
-			ParseException {
+	public EmoncmsResponse getResponse(String request) throws EmoncmsException {
 		// TODO Auto-generated method stub
 		return null;
 	}

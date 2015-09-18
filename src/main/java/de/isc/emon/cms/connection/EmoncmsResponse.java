@@ -1,38 +1,35 @@
 package de.isc.emon.cms.connection;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import de.isc.emon.cms.EmoncmsException;
 
 
 public class EmoncmsResponse {
-	
-	private final Map<String, String> response;
+    private final String response;
 
-	public EmoncmsResponse() {
-		response = new HashMap<String, String>();
-	}
-	
-	public EmoncmsResponse(String key, String value) {
-		this();
-		
-		response.put(key, value);
+	public EmoncmsResponse(String response) {
+		this.response = response;
 	}
 
-	public void put(String key, String value) {
-		response.put(key, value);
+	public Object parseJSON() throws EmoncmsException {
+        JSONParser parser = new JSONParser();
+        
+		try {
+			return parser.parse(response);
+			
+		} catch (ParseException e) {
+			throw new EmoncmsException("Error parsing JSON string \"" + response + "\": " + e.getMessage());
+		}
 	}
 	
-	public String get(String key) {
-		return response.get(key);
-	}
-	
-	public Collection<String> getKeys() {
-		return response.keySet();
+	public String getMessage() {
+		return response.replace("\"", "").replace("\n", "").replace("<br>", "");
 	}
 	
 	@Override
 	public String toString() {
-		return response.toString();
+		return response;
 	}
 }
