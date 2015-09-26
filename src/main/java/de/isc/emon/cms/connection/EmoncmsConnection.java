@@ -9,8 +9,10 @@ public interface EmoncmsConnection {
 	
 	public String getAddress();
 
-	public void postRequest(String request) throws EmoncmsException;
+	public void writeRequest(String request) throws EmoncmsException;
+
+	public EmoncmsResponse postRequest(String request, String parameters) throws EmoncmsException;
 	
-	public EmoncmsResponse getResponse(String request) throws EmoncmsException;
+	public EmoncmsResponse getRequest(String request) throws EmoncmsException;
 	
 }

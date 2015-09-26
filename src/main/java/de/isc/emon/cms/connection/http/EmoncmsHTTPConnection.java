@@ -1,21 +1,21 @@
 package de.isc.emon.cms.connection.http;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.charset.Charset;
 
 import de.isc.emon.cms.EmoncmsException;
 import de.isc.emon.cms.connection.EmoncmsConnection;
 import de.isc.emon.cms.connection.EmoncmsResponse;
+import de.isc.emon.cms.connection.http.EmoncmsTask.EmoncmsTaskCallbacks;
 
 
-public class EmoncmsHTTPConnection implements EmoncmsConnection {
-	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTPConnection.class);
+public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCallbacks {
+//	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTPConnection.class);
 
 	private final String URL;
 	private final String KEY;
@@ -46,56 +46,116 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection {
 	}
 
 	@Override
-	public void postRequest(String request) {
-		// TODO add task scheduling
-		try {
-	        getResponse(request);
-	        
-		} catch (EmoncmsException e) {
-			logger.debug("Exception while posting http request: {}", request);
-		}
+	public void onTaskFinished(EmoncmsTask task, EmoncmsResponse response) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
-	public EmoncmsResponse getResponse(String request) throws EmoncmsException {
+	public void onConnectionFailure(EmoncmsTask task) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void writeRequest(String request) throws EmoncmsException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public EmoncmsResponse postRequest(String request, String parameters) throws EmoncmsException {
 		String url = URL + request + "&apikey=" + KEY;
-		HttpURLConnection c = null;
+        byte[] postData = parameters.getBytes(Charset.forName("UTF-8"));
+        
+		HttpURLConnection connection = null;
         try {
             URL u = new URL(url);
-            c = (HttpURLConnection) u.openConnection();
-            c.setRequestMethod("GET");
-            c.setRequestProperty("Content-length", "0");
-            c.setUseCaches(false);
-            c.setAllowUserInteraction(false);
-            c.setConnectTimeout(5000);
-            c.setReadTimeout(10000);
-            c.connect();
-            int status = c.getResponseCode();
-
+            connection = (HttpURLConnection) u.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Charset", "UTF-8");
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestProperty("Content-Length", String.valueOf(postData.length)); 
+            connection.setDoOutput(true);
+            connection.setInstanceFollowRedirects(false);
+            connection.setUseCaches(false);
+            connection.setAllowUserInteraction(false);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(10000);
+            
+            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+            wr.write(postData);
+            
+            int status = connection.getResponseCode();
             switch (status) {
                 case 200:
                 case 201:
-                    BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        sb.append(line+"\n");
-                    }
-                    br.close();
-                    return new EmoncmsResponse(sb.toString());
+                	return new EmoncmsResponse(parseResponse(new InputStreamReader(connection.getInputStream(), "UTF-8")));
             }
+            return null;
 
         } catch (IOException e) {
-        	throw new EmoncmsException("Error while connecting to \"" + url + "\": " + e.getMessage());
+        	throw new EmoncmsException("Error while writing POST request to \"" + url + parameters + "\": " + e.getMessage());
         } finally {
-           if (c != null) {
+           if (connection != null) {
               try {
-                  c.disconnect();
+                  connection.disconnect();
               } catch (Exception e) {
               	throw new EmoncmsException("Unknown exception while closing connection: " + e.getMessage());
               }
            }
         }
-        return null;
+	}
+
+	@Override
+	public EmoncmsResponse getRequest(String request) throws EmoncmsException {
+		String url = URL + request + "&apikey=" + KEY;
+		HttpURLConnection connection = null;
+        try {
+            URL u = new URL(url);
+            connection = (HttpURLConnection) u.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Charset", "UTF-8");
+            connection.setRequestProperty("Content-length", "0");
+            connection.setDoOutput(true);
+            connection.setInstanceFollowRedirects(false);
+            connection.setUseCaches(false);
+            connection.setAllowUserInteraction(false);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(10000);
+            connection.connect();
+            
+            int status = connection.getResponseCode();
+            switch (status) {
+                case 200:
+                case 201:
+                	return new EmoncmsResponse(parseResponse(new InputStreamReader(connection.getInputStream(), "UTF-8")));
+            }
+            return null;
+
+        } catch (IOException e) {
+        	throw new EmoncmsException("Error while writing GET request to \"" + url + "\": " + e.getMessage());
+        } finally {
+           if (connection != null) {
+              try {
+                  connection.disconnect();
+              } catch (Exception e) {
+              	throw new EmoncmsException("Unknown exception while closing connection: " + e.getMessage());
+              }
+           }
+        }
+	}
+	
+	private String parseResponse(InputStreamReader input) throws IOException {
+		BufferedReader br = new BufferedReader(input);
+        StringBuilder sb = new StringBuilder();
+        
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line); //+"\n");
+        }
+        br.close();
+
+		return sb.toString();
 	}
 }

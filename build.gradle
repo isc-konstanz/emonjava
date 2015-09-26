@@ -2,10 +2,11 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'osgi'
 
-version = '0.2.0'
+version = '0.2.1'
 group = 'de.isc.emon.framework'
-def projectName = 'EmoncmsLogger'
-def projectNameLowerCase = 'emoncmslogger'
+def projectName = 'EmonCMS-IPC'
+def projectNameLowerCase = 'emoncms-ipc'
+archivesBaseName = 'emoncms-ipc'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -33,4 +34,58 @@ jar {
 		name = projectName
 		instruction 'Export-Package', '!*.internal.*,*'
 	}
+}
+
+
+task libraryJar(type: Jar) {
+	from {
+		configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+	}
+	with jar
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+task javadocs(type: Javadoc) {
+	source sourceSets.main.allJava
+  
+	exclude '**/internal/**'
+  
+	destinationDir = new File(buildDir, 'javadoc')
+  
+	classpath = sourceSets.main.compileClasspath
+	classpath += sourceSets.main.output
+}
+
+task (tar, type: Tar) {
+	dependsOn(build)
+	dependsOn(javadocs)
+
+	compression = Compression.GZIP
+
+	into(project.archivesBaseName) {
+		from('./') {
+			include 'doc/**/*'
+			include 'licenses/**/*'
+			include 'build/libs/**/*'
+			include 'build/javadoc/**/*'
+			include 'build.gradle'
+			include 'dependencies/**/*'
+			include 'src/**/*'
+		}
+	}
+}
+
+artifacts {
+	archives jar
+	archives sourcesJar
+	archives javadocJar
 }

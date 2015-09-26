@@ -31,13 +31,20 @@ public class EmoncmsPHPConnection implements EmoncmsConnection {
 	}
 
 	@Override
-	public void postRequest(String request) throws EmoncmsException {
+	public void writeRequest(String request) throws EmoncmsException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public EmoncmsResponse getResponse(String request) throws EmoncmsException {
+	public EmoncmsResponse postRequest(String request, String parameters)
+			throws EmoncmsException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public EmoncmsResponse getRequest(String request) throws EmoncmsException {
 		// TODO Auto-generated method stub
 		return null;
 	}

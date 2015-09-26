@@ -5,6 +5,8 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.isc.emon.cms.connection.EmoncmsResponse;
+
 
 public class EmoncmsTask extends Thread {
 	private final static Logger logger = LoggerFactory.getLogger(EmoncmsTask.class);
@@ -18,11 +20,11 @@ public class EmoncmsTask extends Thread {
 	protected EmoncmsTaskCallbacks callbacks;
 	
 	/**
-	 * Interface used by {@link EmoncmsTask} to notify the {@link EmonCMS} handler about task events
+	 * Interface used by {@link EmoncmsTask} to notify the {@link EmoncmsHTTPConnection} handler about task events
 	 */
 	public static interface EmoncmsTaskCallbacks {
 		
-		void onTaskFinished(EmoncmsTask task, Object response);
+		void onTaskFinished(EmoncmsTask task, EmoncmsResponse response);
 		
 		void onConnectionFailure(EmoncmsTask task);
 	}

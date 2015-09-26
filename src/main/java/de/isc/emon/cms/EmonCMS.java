@@ -33,7 +33,7 @@ public class EmonCMS {
     	logger.info("Registered EmonCMS {}", connection.getId());
     }
 
-	public void postInputData(String inputName, Integer node, Value value) 
+	public void writeInputData(String inputName, Integer node, Value value) 
 			throws EmoncmsException {
 		String request = "input/post.json?";
 		
@@ -45,10 +45,10 @@ public class EmonCMS {
 			request = request.concat("&time=" + value.getTime()/1000);
 		}
 		
-		connection.postRequest(request);
+		connection.getRequest(request);
 	}
 
-	public boolean setInputData(String inputName, Integer node, Value value) 
+	public boolean postInputData(String inputName, Integer node, Value value) 
 			throws EmoncmsException {
 		String request = "input/post.json?";
 		
@@ -60,7 +60,7 @@ public class EmonCMS {
 			request = request.concat("&time=" + value.getTime()/1000);
 		}
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (response.getMessage().equals("ok")) {
 			return true;
 		}
@@ -75,7 +75,7 @@ public class EmonCMS {
 		request = request.concat("&inputid=" + inputId);
 		request = request.concat("&fields=" + field);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (response.getMessage().equals("null")) {
 			return true;
 		}
@@ -88,7 +88,7 @@ public class EmonCMS {
 		
 		List<Input> inputs = new ArrayList<Input>();
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().equals("[]")) {
 			JSONArray jsonArr = (JSONArray) response.parseJSON();
 			Iterator<?> i = jsonArr.iterator();
@@ -108,7 +108,7 @@ public class EmonCMS {
 		
 		List<Input> inputs = new ArrayList<Input>();
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().equals("[]")) {
 			JSONObject json = (JSONObject) ((JSONObject) response.parseJSON()).get(String.valueOf(nodeId));
 			for (Object key : json.keySet()) {
@@ -128,7 +128,7 @@ public class EmonCMS {
 	public void cleanInputList() throws EmoncmsException {
 		String request = "input/clean.json?";
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().isEmpty()) {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Input list cleaned: {}", response.getMessage());
@@ -144,7 +144,7 @@ public class EmonCMS {
 		
 		request = request.concat("&inputid=" + inputId);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (response.getMessage().equals("null")) {
 			return true;
 		}
@@ -157,9 +157,9 @@ public class EmonCMS {
 		String request = "input/process/set.json?";
 		
 		request = request.concat("&inputid=" + inputId);
-		request = request.concat("&processlist=" + process);
+		String parameter = "&processlist=" + process;
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.postRequest(request, parameter);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
 			return true;
@@ -173,16 +173,16 @@ public class EmonCMS {
 		String request = "input/process/set.json?";
 		
 		request = request.concat("&inputid=" + inputId);
-		
-		request = request.concat("&processlist=");
+
+		String parameter = "&processlist=";
 		for(Process p : processes) {
-			request = request.concat(p.toString());
+			parameter = parameter.concat(p.toString());
 			if (p != processes.getLast()) {
-				request = request.concat(",");
+				parameter = parameter.concat(",");
 			}
 		}
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.postRequest(request, parameter);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
 			return true;
@@ -198,7 +198,7 @@ public class EmonCMS {
 		
 		LinkedList<Process> processes = new LinkedList<Process>();
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().isEmpty()) {
 			String[] processesArr = response.getMessage().split(",");
 			for (int i = 0; i < processesArr.length; i++) {
@@ -215,7 +215,7 @@ public class EmonCMS {
 		
 		request = request.concat("&inputid=" + inputId);
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
 			return true;
@@ -238,7 +238,7 @@ public class EmonCMS {
 			request = request.concat("&options=" + options);
 		}
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
     		
@@ -258,7 +258,7 @@ public class EmonCMS {
 		
 		request = request.concat("&id=" + feedId);
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (response.getMessage().equals("null")) {
 			return true;
 		}
@@ -271,7 +271,7 @@ public class EmonCMS {
 		
 		List<Feed> feeds = new ArrayList<Feed>();
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().equals("[]")) {
 			JSONArray jsonArr = (JSONArray) response.parseJSON();
 			Iterator<?> i = jsonArr.iterator();
@@ -293,7 +293,7 @@ public class EmonCMS {
 		
 		List<Feed> feeds = new ArrayList<Feed>();
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().equals("[]")) {
 			JSONArray jsonArr = (JSONArray) response.parseJSON();
 			Iterator<?> i = jsonArr.iterator();
@@ -313,7 +313,7 @@ public class EmonCMS {
 
 		request = request.concat("&id=" + feedId);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if (!json.containsKey("success") || (boolean) json.get("success")) {
     		
@@ -330,7 +330,7 @@ public class EmonCMS {
 		request = request.concat("&id=" + feedId);
 		request = request.concat("&field=" + field);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().contains("false")) {
 			return response.getMessage();
 		}
@@ -344,7 +344,7 @@ public class EmonCMS {
 		request = request.concat("&id=" + feedId);
 		request = request.concat("&fields=" + field);
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (response.getMessage().equals("null")) {
 			return true;
 		}
@@ -357,7 +357,7 @@ public class EmonCMS {
 
 		request = request.concat("&id=" + feedId);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().contains("false")) {
 			Value value = new Value(Double.valueOf(response.getMessage()));
 			return value;
@@ -371,7 +371,7 @@ public class EmonCMS {
 
 		request = request.concat("&id=" + feedId);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if (!json.containsKey("success") || (boolean) json.get("success")) {
 			
@@ -393,7 +393,7 @@ public class EmonCMS {
 
 		LinkedList<Value> values = new LinkedList<Value>();
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (response.getMessage().startsWith("[") && !response.getMessage().equals("[]")) {
 			String responseStr = response.getMessage().replace("[[", "").replace("]]", "");
 			if (responseStr.contains("],[")) {
@@ -424,7 +424,7 @@ public class EmonCMS {
 		request = request.concat("&value=" + value.getValue());
 		request = request.concat("&time=" + value.getTime());
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().contains("false")) {
 			return true;
 		}
@@ -440,7 +440,7 @@ public class EmonCMS {
 		request = request.concat("&value=" + value.getValue());
 		request = request.concat("&time=" + value.getTime());
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().contains("false")) {
 			return true;
 		}
@@ -455,7 +455,7 @@ public class EmonCMS {
 		request = request.concat("&id=" + feedId);
 		request = request.concat("&feedtime=" + time);
 
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().contains("false")) {
 			return true;
 		}
@@ -468,9 +468,9 @@ public class EmonCMS {
 		String request = "feed/process/set.json?";
 		
 		request = request.concat("&id=" + feedId);
-		request = request.concat("&processlist=" + process);
+		String parameter = "&processlist=" + process;
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.postRequest(request, parameter);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
 			return true;
@@ -484,16 +484,16 @@ public class EmonCMS {
 		String request = "feed/process/set.json?";
 		
 		request = request.concat("&id=" + feedId);
-		
-		request = request.concat("&processlist=");
+
+		String parameter = "&processlist=";
 		for(Process p : processes) {
-			request = request.concat(p.toString());
+			parameter = parameter.concat(p.toString());
 			if (p != processes.getLast()) {
-				request = request.concat(",");
+				parameter = parameter.concat(",");
 			}
 		}
-		
-		EmoncmsResponse response = connection.getResponse(request);
+
+		EmoncmsResponse response = connection.postRequest(request, parameter);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
 			return true;
@@ -509,7 +509,7 @@ public class EmonCMS {
 		
 		LinkedList<Process> processes = new LinkedList<Process>();
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		if (!response.getMessage().isEmpty()) {
 			String[] processesArr = response.getMessage().split(",");
 			for (int i = 0; i < processesArr.length; i++) {
@@ -526,7 +526,7 @@ public class EmonCMS {
 		
 		request = request.concat("&id=" + feedId);
 		
-		EmoncmsResponse response = connection.getResponse(request);
+		EmoncmsResponse response = connection.getRequest(request);
 		JSONObject json = (JSONObject) response.parseJSON();
 		if ((boolean) json.get("success")) {
 			return true;

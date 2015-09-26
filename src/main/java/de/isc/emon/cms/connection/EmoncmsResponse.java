@@ -25,7 +25,7 @@ public class EmoncmsResponse {
 	}
 	
 	public String getMessage() {
-		return response.replace("\"", "").replace("\n", "").replace("<br>", "");
+		return response.replace("\"", "").replace("<br>", ""); //.replace("\n", "")
 	}
 	
 	@Override

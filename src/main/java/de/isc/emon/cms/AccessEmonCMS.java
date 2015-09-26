@@ -16,8 +16,10 @@ import org.w3c.dom.NodeList;
 import de.isc.emon.cms.connection.EmoncmsConnection;
 import de.isc.emon.cms.connection.http.EmoncmsHTTPConnection;
 import de.isc.emon.cms.connection.php.EmoncmsPHPConnection;
+import de.isc.emon.cms.data.Feed;
 import de.isc.emon.cms.data.Input;
 import de.isc.emon.cms.data.Process;
+import de.isc.emon.cms.data.Value;
 
 
 public class AccessEmonCMS {
@@ -46,18 +48,47 @@ public class AccessEmonCMS {
 		//TODO do stuff with cms
 		EmonCMS cms = new EmonCMS(connection);
 		try {
-			List<Input> inputs = cms.getInputList(1);
-			int inputId = inputs.get(0).getId();
+			String inputName = "test";
+			cms.postInputData(inputName, 1, new Value(1));
+			List<Input> inputs = cms.getInputList();
+			int inputId = 0;
+			for (Input i : inputs) {
+				if (i.getName().equals(inputName)) inputId = i.getId();
+			}
+			
+			String feedName = inputName + "_log";
+//			DataType datatype = new DataType("realtime");
+//			Engine engine = new Engine("phpfina");
+//			Field options = new Field("interval", "60");
+//			int feedId = cms.createFeed(feedName, "device_name", datatype, engine, options);
+//			Field field = new Field("tag", "device_test");
+//			cms.setFeedField(feedId, field);
+			List<Feed> feeds = cms.getFeedList();
+			int feedId = 0;
+			for (Feed f : feeds) {
+				if (f.getName().equals(feedName)) feedId = f.getId();
+			}
 			
 			LinkedList<Process> newProcesses = new LinkedList<Process>();
 			Process processAdd = new Process("offset", String.valueOf(10));
 			newProcesses.add(processAdd);
+			Process processLog = new Process("log_to_feed", String.valueOf(feedId));
+			newProcesses.add(processLog);
 			cms.setInputProcessList(inputId, newProcesses);
 			
-			LinkedList<Process> processes = cms.getInputProcessList(inputId);
-			logger.info(processes.toString());
-			
+//			LinkedList<Process> processes = cms.getInputProcessList(inputId);
 //			cms.resetInputProcessList(inputId);
+			
+			int i = 0;
+			while(true) {
+				cms.writeInputData(inputName, 1, new Value(i));
+				i++;
+
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+				}
+			}
 			
 		} catch (EmoncmsException e) {
 			logger.error("Error while posting emoncms request: " + e.getMessage());
