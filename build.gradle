@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'osgi'
 
-version = '0.2.1'
+version = '0.3.0'
 group = 'de.isc.emon.framework'
 def projectName = 'EmonCMS-IPC'
 def projectNameLowerCase = 'emoncms-ipc'

@@ -1,26 +1,35 @@
 package de.isc.emon.cms.connection.http;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.Charset;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.isc.emon.cms.EmoncmsException;
 import de.isc.emon.cms.connection.EmoncmsConnection;
 import de.isc.emon.cms.connection.EmoncmsResponse;
+import de.isc.emon.cms.connection.RequestParameter;
 import de.isc.emon.cms.connection.http.EmoncmsTask.EmoncmsTaskCallbacks;
 
 
 public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCallbacks {
-//	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTPConnection.class);
-
+	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTPConnection.class);
+	
+	private static final int SEND_RETRY_INTERVAL = 30000;
+	
 	private final String URL;
 	private final String KEY;
+
+	private ExecutorService executor = null;
+	private volatile Timer timer = null;
 	
-//  private final Map<Integer, Value> queuedValuesByInputId = Collections.synchronizedMap(new LinkedHashMap<Integer, Value>());
+	private final List<EmoncmsTask> queuedTasks = new LinkedList<EmoncmsTask>();
     
 	
 	public EmoncmsHTTPConnection(String address, String apiKey) {
@@ -33,6 +42,8 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 		}
     	this.URL = url.concat("emoncms/");
     	this.KEY = apiKey;
+
+		executor = Executors.newCachedThreadPool();
     }
 
 	@Override
@@ -44,118 +55,94 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 	public String getAddress() {
 		return URL;
 	}
-
+	
 	@Override
-	public void onTaskFinished(EmoncmsTask task, EmoncmsResponse response) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onConnectionFailure(EmoncmsTask task) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void writeRequest(String request) throws EmoncmsException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public EmoncmsResponse postRequest(String request, String parameters) throws EmoncmsException {
-		String url = URL + request + "&apikey=" + KEY;
-        byte[] postData = parameters.getBytes(Charset.forName("UTF-8"));
-        
-		HttpURLConnection connection = null;
-        try {
-            URL u = new URL(url);
-            connection = (HttpURLConnection) u.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Charset", "UTF-8");
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            connection.setRequestProperty("Content-Length", String.valueOf(postData.length)); 
-            connection.setDoOutput(true);
-            connection.setInstanceFollowRedirects(false);
-            connection.setUseCaches(false);
-            connection.setAllowUserInteraction(false);
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(10000);
-            
-            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-            wr.write(postData);
-            
-            int status = connection.getResponseCode();
-            switch (status) {
-                case 200:
-                case 201:
-                	return new EmoncmsResponse(parseResponse(new InputStreamReader(connection.getInputStream(), "UTF-8")));
-            }
-            return null;
-
-        } catch (IOException e) {
-        	throw new EmoncmsException("Error while writing POST request to \"" + url + parameters + "\": " + e.getMessage());
-        } finally {
-           if (connection != null) {
-              try {
-                  connection.disconnect();
-              } catch (Exception e) {
-              	throw new EmoncmsException("Unknown exception while closing connection: " + e.getMessage());
-              }
-           }
-        }
-	}
-
-	@Override
-	public EmoncmsResponse getRequest(String request) throws EmoncmsException {
-		String url = URL + request + "&apikey=" + KEY;
-		HttpURLConnection connection = null;
-        try {
-            URL u = new URL(url);
-            connection = (HttpURLConnection) u.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Charset", "UTF-8");
-            connection.setRequestProperty("Content-length", "0");
-            connection.setDoOutput(true);
-            connection.setInstanceFollowRedirects(false);
-            connection.setUseCaches(false);
-            connection.setAllowUserInteraction(false);
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(10000);
-            connection.connect();
-            
-            int status = connection.getResponseCode();
-            switch (status) {
-                case 200:
-                case 201:
-                	return new EmoncmsResponse(parseResponse(new InputStreamReader(connection.getInputStream(), "UTF-8")));
-            }
-            return null;
-
-        } catch (IOException e) {
-        	throw new EmoncmsException("Error while writing GET request to \"" + url + "\": " + e.getMessage());
-        } finally {
-           if (connection != null) {
-              try {
-                  connection.disconnect();
-              } catch (Exception e) {
-              	throw new EmoncmsException("Unknown exception while closing connection: " + e.getMessage());
-              }
-           }
-        }
+	public void writeRequest(String request, List<RequestParameter> parameters) {
+		executeTask(URL + request + "&apikey=" + KEY, parameters);
 	}
 	
-	private String parseResponse(InputStreamReader input) throws IOException {
-		BufferedReader br = new BufferedReader(input);
-        StringBuilder sb = new StringBuilder();
-        
-        String line;
-        while ((line = br.readLine()) != null) {
-            sb.append(line); //+"\n");
-        }
-        br.close();
+	@Override
+	public EmoncmsResponse sendRequest(String request, List<RequestParameter> parameters) throws EmoncmsException {
+		CountDownLatch taskFinishedSignal = new CountDownLatch(1);
+		
+		EmoncmsTask task = new EmoncmsTask(this, taskFinishedSignal, URL + request + "&apikey=" + KEY, parameters);
+		executor.execute(task);
+		try {
+			taskFinishedSignal.await();
+		} catch (InterruptedException e) {
+		}
+		
+		EmoncmsResponse response = task.getResponse();
+		if (response != null) {
+			return response;
+		}
+		throw new EmoncmsException("Error while connecting to \"" + request + "\"");
+	}
+	
+	@Override
+	public void onConnectionFailure(EmoncmsTask task) {
+		StringBuilder request = new StringBuilder();
+		request.append(task.getRequest());
+		if (task.getParameters() != null) {
+			for (RequestParameter r : task.getParameters()) {
+				request.append("&");
+				request.append(r.toString());
+			}
+		}
+		logger.debug("Error sending request \"{}\"", request);
+		System.out.println("Error sending request \"" + request + "}\"");
+		
+		synchronized (queuedTasks) {
+			queuedTasks.add(task);
 
-		return sb.toString();
+	    	if (timer == null) {
+	    		LinkedList<EmoncmsTask> tasks = new LinkedList<EmoncmsTask>(queuedTasks);
+	    		ResendTask resendTask = new ResendTask(tasks);
+        		queuedTasks.clear();
+        		
+	    		timer = new Timer();
+	            timer.schedule(resendTask, SEND_RETRY_INTERVAL);
+			}
+		}
+	}
+	
+	private void executeTask(CountDownLatch taskFinishedSignal, String request, List<RequestParameter> parameters) {
+		EmoncmsTask task = new EmoncmsTask(this, taskFinishedSignal, request, parameters);
+		executor.execute(task);
+	}
+	
+	private void executeTask(String request, List<RequestParameter> parameters) {
+		executeTask(null, request, parameters);
+	}
+	
+	private class ResendTask extends TimerTask {
+		private final List<EmoncmsTask> tasks;
+		
+		public ResendTask(List<EmoncmsTask> tasks) {
+			this.tasks = tasks;
+		}
+		
+		@Override
+		public void run() {
+			System.out.println("Resending " + tasks.size() + " messages, failed to be sent");
+			logger.debug("Resending {} messages, failed to be sent", tasks.size());
+			for (EmoncmsTask t : tasks) {
+				if (logger.isTraceEnabled()) {
+					StringBuilder request = new StringBuilder();
+					request.append(t.getRequest());
+					for (RequestParameter r : t.getParameters()) {
+						request.append("&");
+						request.append(r.toString());
+					}
+					logger.trace("Resending request \"{}\"", request);
+				}
+				executeTask(t.getRequest(), t.getParameters());
+			}
+
+			synchronized (queuedTasks) {
+		    	timer.cancel();
+		    	timer = null;
+			}
+		}
 	}
 }

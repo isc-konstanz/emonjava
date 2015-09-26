@@ -49,7 +49,7 @@ public class AccessEmonCMS {
 		EmonCMS cms = new EmonCMS(connection);
 		try {
 			String inputName = "test";
-			cms.postInputData(inputName, 1, new Value(1));
+//			cms.postInputData(inputName, 1, new Value(1));
 			List<Input> inputs = cms.getInputList();
 			int inputId = 0;
 			for (Input i : inputs) {
@@ -70,7 +70,7 @@ public class AccessEmonCMS {
 			}
 			
 			LinkedList<Process> newProcesses = new LinkedList<Process>();
-			Process processAdd = new Process("offset", String.valueOf(10));
+			Process processAdd = new Process("offset", String.valueOf(100));
 			newProcesses.add(processAdd);
 			Process processLog = new Process("log_to_feed", String.valueOf(feedId));
 			newProcesses.add(processLog);
