@@ -1,4 +1,4 @@
-package de.isc.emon.cms.connection;
+package de.isc.emon.cms.communication;
 
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;

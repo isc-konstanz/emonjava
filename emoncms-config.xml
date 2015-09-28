@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <configuration>
 	<settings>
-		<url>192.168.178.32</url>
-		<api>b936a7e262b56f5a10f3892318fc46ba</api>
+		<address>localhost</address>
+		<api>YOUR_API_KEY_HERE</api>
 	</settings>
 </configuration>

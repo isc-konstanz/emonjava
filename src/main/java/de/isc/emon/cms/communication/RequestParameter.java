@@ -1,4 +1,4 @@
-package de.isc.emon.cms.connection;
+package de.isc.emon.cms.communication;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

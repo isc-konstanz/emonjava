@@ -1,4 +1,4 @@
-package de.isc.emon.cms.connection.http;
+package de.isc.emon.cms.communication.http;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -12,14 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.isc.emon.cms.EmoncmsException;
-import de.isc.emon.cms.connection.EmoncmsConnection;
-import de.isc.emon.cms.connection.EmoncmsResponse;
-import de.isc.emon.cms.connection.RequestParameter;
-import de.isc.emon.cms.connection.http.EmoncmsTask.EmoncmsTaskCallbacks;
+import de.isc.emon.cms.communication.EmoncmsCommunication;
+import de.isc.emon.cms.communication.EmoncmsResponse;
+import de.isc.emon.cms.communication.RequestParameter;
+import de.isc.emon.cms.communication.http.HTTPTask.EmoncmsTaskCallbacks;
 
 
-public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCallbacks {
-	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTPConnection.class);
+public class EmoncmsHTTP implements EmoncmsCommunication, EmoncmsTaskCallbacks {
+	private static final Logger logger = LoggerFactory.getLogger(EmoncmsHTTP.class);
 	
 	private static final int SEND_RETRY_INTERVAL = 30000;
 	
@@ -29,10 +29,10 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 	private ExecutorService executor = null;
 	private volatile Timer timer = null;
 	
-	private final List<EmoncmsTask> queuedTasks = new LinkedList<EmoncmsTask>();
+	private final List<HTTPTask> queuedTasks = new LinkedList<HTTPTask>();
     
 	
-	public EmoncmsHTTPConnection(String address, String apiKey) {
+	public EmoncmsHTTP(String address, String apiKey) {
 		String url;
 		if (!address.startsWith("http://")) {
 			url = "http://".concat(address);
@@ -65,7 +65,7 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 	public EmoncmsResponse sendRequest(String request, List<RequestParameter> parameters) throws EmoncmsException {
 		CountDownLatch taskFinishedSignal = new CountDownLatch(1);
 		
-		EmoncmsTask task = new EmoncmsTask(this, taskFinishedSignal, URL + request + "&apikey=" + KEY, parameters);
+		HTTPTask task = new HTTPTask(this, taskFinishedSignal, URL + request + "&apikey=" + KEY, parameters);
 		executor.execute(task);
 		try {
 			taskFinishedSignal.await();
@@ -80,7 +80,7 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 	}
 	
 	@Override
-	public void onConnectionFailure(EmoncmsTask task) {
+	public void onConnectionFailure(HTTPTask task) {
 		StringBuilder request = new StringBuilder();
 		request.append(task.getRequest());
 		if (task.getParameters() != null) {
@@ -90,13 +90,12 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 			}
 		}
 		logger.debug("Error sending request \"{}\"", request);
-		System.out.println("Error sending request \"" + request + "}\"");
 		
 		synchronized (queuedTasks) {
 			queuedTasks.add(task);
 
 	    	if (timer == null) {
-	    		LinkedList<EmoncmsTask> tasks = new LinkedList<EmoncmsTask>(queuedTasks);
+	    		LinkedList<HTTPTask> tasks = new LinkedList<HTTPTask>(queuedTasks);
 	    		ResendTask resendTask = new ResendTask(tasks);
         		queuedTasks.clear();
         		
@@ -107,7 +106,7 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 	}
 	
 	private void executeTask(CountDownLatch taskFinishedSignal, String request, List<RequestParameter> parameters) {
-		EmoncmsTask task = new EmoncmsTask(this, taskFinishedSignal, request, parameters);
+		HTTPTask task = new HTTPTask(this, taskFinishedSignal, request, parameters);
 		executor.execute(task);
 	}
 	
@@ -116,17 +115,16 @@ public class EmoncmsHTTPConnection implements EmoncmsConnection, EmoncmsTaskCall
 	}
 	
 	private class ResendTask extends TimerTask {
-		private final List<EmoncmsTask> tasks;
+		private final List<HTTPTask> tasks;
 		
-		public ResendTask(List<EmoncmsTask> tasks) {
+		public ResendTask(List<HTTPTask> tasks) {
 			this.tasks = tasks;
 		}
 		
 		@Override
 		public void run() {
-			System.out.println("Resending " + tasks.size() + " messages, failed to be sent");
 			logger.debug("Resending {} messages, failed to be sent", tasks.size());
-			for (EmoncmsTask t : tasks) {
+			for (HTTPTask t : tasks) {
 				if (logger.isTraceEnabled()) {
 					StringBuilder request = new StringBuilder();
 					request.append(t.getRequest());

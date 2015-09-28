@@ -1,11 +1,11 @@
-package de.isc.emon.cms.connection;
+package de.isc.emon.cms.communication;
 
 import java.util.List;
 
 import de.isc.emon.cms.EmoncmsException;
 
 
-public interface EmoncmsConnection {
+public interface EmoncmsCommunication {
 	
 	public String getId();
 	

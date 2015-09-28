@@ -10,10 +10,10 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.isc.emon.cms.connection.EmoncmsConnection;
-import de.isc.emon.cms.connection.EmoncmsResponse;
-import de.isc.emon.cms.connection.RequestMethod;
-import de.isc.emon.cms.connection.RequestParameter;
+import de.isc.emon.cms.communication.EmoncmsCommunication;
+import de.isc.emon.cms.communication.EmoncmsResponse;
+import de.isc.emon.cms.communication.RequestMethod;
+import de.isc.emon.cms.communication.RequestParameter;
 import de.isc.emon.cms.data.DataType;
 import de.isc.emon.cms.data.Engine;
 import de.isc.emon.cms.data.Field;
@@ -26,10 +26,10 @@ import de.isc.emon.cms.data.Value;
 public class EmonCMS {
 	private static final Logger logger = LoggerFactory.getLogger(EmonCMS.class);
 
-	private final EmoncmsConnection connection;
+	private final EmoncmsCommunication connection;
 	
     
-    public EmonCMS(EmoncmsConnection connection) {
+    public EmonCMS(EmoncmsCommunication connection) {
     	this.connection = connection;
     	
     	logger.info("Registered EmonCMS {}", connection.getId());

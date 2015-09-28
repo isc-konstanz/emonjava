@@ -13,9 +13,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import de.isc.emon.cms.connection.EmoncmsConnection;
-import de.isc.emon.cms.connection.http.EmoncmsHTTPConnection;
-import de.isc.emon.cms.connection.php.EmoncmsPHPConnection;
+import de.isc.emon.cms.communication.EmoncmsCommunication;
+import de.isc.emon.cms.communication.http.EmoncmsHTTP;
 import de.isc.emon.cms.data.Feed;
 import de.isc.emon.cms.data.Input;
 import de.isc.emon.cms.data.Process;
@@ -27,7 +26,7 @@ public class AccessEmonCMS {
 
 	
 	public static void main(String[] args) {
-		EmoncmsConnection connection = null;
+		EmoncmsCommunication connection = null;
 		
 		String configFileName = System.getProperty("de.isc.emon.cms.configfile");
 		if (configFileName == null) {
@@ -83,7 +82,7 @@ public class AccessEmonCMS {
 			while(true) {
 				cms.writeInputData(inputName, 1, new Value(i));
 				i++;
-
+				
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
@@ -95,7 +94,7 @@ public class AccessEmonCMS {
 		}
 	}
 
-	private static EmoncmsConnection configureEmoncms(File configFile) throws EmoncmsException, FileNotFoundException {
+	private static EmoncmsCommunication configureEmoncms(File configFile) throws EmoncmsException, FileNotFoundException {
 		if (configFile == null) {
 			throw new NullPointerException("configFileName is null or the empty string.");
 		}
@@ -127,7 +126,6 @@ public class AccessEmonCMS {
 				continue;
 			}
 			else if (childName.equals("settings")) {
-				Boolean shell = null;;
 				String apiKey = null;
 				String address = null;
 				
@@ -141,29 +139,20 @@ public class AccessEmonCMS {
 					else if (settingsChildName.equals("api")) {
 						apiKey = settingsChildNode.getTextContent();
 					}
-					else if (settingsChildName.equals("directory")) {
-						shell = true;
-						address = settingsChildNode.getTextContent();
-					}
-					else if (settingsChildName.equals("url")) {
-						shell = false;
+					else if (settingsChildName.equals("address")) {
 						address = settingsChildNode.getTextContent();
 					}
 					else throw new EmoncmsException("Found unknown tag in settings:" + settingsChildName);
 				}
-				if (shell == null || apiKey == null || address == null) {
+				if (apiKey == null || address == null) {
 					throw new EmoncmsException("Emoncms configurations incomplete");
 				}
 				
 				if (!address.endsWith("/")) {
 					address = address.concat("/");
 				}
-		    	if (shell) {
-					return new EmoncmsPHPConnection(address, apiKey);
-		    	}
-		    	else {
-					return new EmoncmsHTTPConnection(address, apiKey);
-		    	}
+				
+				return new EmoncmsHTTP(address, apiKey);
 			}
 		}
 		throw new EmoncmsException("Emoncms settings not configured");

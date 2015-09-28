@@ -1,4 +1,4 @@
-package de.isc.emon.cms.connection.http;
+package de.isc.emon.cms.communication.http;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -13,12 +13,12 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.isc.emon.cms.connection.EmoncmsResponse;
-import de.isc.emon.cms.connection.RequestParameter;
+import de.isc.emon.cms.communication.EmoncmsResponse;
+import de.isc.emon.cms.communication.RequestParameter;
 
 
-public class EmoncmsTask extends Thread {
-	private final static Logger logger = LoggerFactory.getLogger(EmoncmsTask.class);
+public class HTTPTask extends Thread {
+	private final static Logger logger = LoggerFactory.getLogger(HTTPTask.class);
 	
 	private final String request;
 	private final List<RequestParameter> parameters;
@@ -32,14 +32,14 @@ public class EmoncmsTask extends Thread {
 	private EmoncmsTaskCallbacks callback;
 	
 	/**
-	 * Interface used by {@link EmoncmsTask} to notify the {@link EmoncmsHTTPConnection} handler about task events
+	 * Interface used by {@link HTTPTask} to notify the {@link EmoncmsHTTP} handler about task events
 	 */
 	public static interface EmoncmsTaskCallbacks {
 		
-		void onConnectionFailure(EmoncmsTask task);
+		void onConnectionFailure(HTTPTask task);
 	}
 	
-	public EmoncmsTask(EmoncmsTaskCallbacks callback, CountDownLatch taskFinishedSignal, 
+	public HTTPTask(EmoncmsTaskCallbacks callback, CountDownLatch taskFinishedSignal, 
 			String request, List<RequestParameter> parameters) {
 		this.callback = (EmoncmsTaskCallbacks) callback;
 		this.taskFinishedSignal = taskFinishedSignal;
