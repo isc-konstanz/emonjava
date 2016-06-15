@@ -1,0 +1,3 @@
+include 'http'
+
+project(":http").projectDir = file("projects/http")

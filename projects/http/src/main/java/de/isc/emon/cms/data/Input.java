@@ -1,8 +1,5 @@
 package de.isc.emon.cms.data;
 
-import org.json.simple.JSONObject;
-
-
 public class Input {
 	
 	private final int id;
@@ -18,12 +15,12 @@ public class Input {
 		this.processList = processList;
 	}
 	
-	public Input(JSONObject json) {
-		this.id = Integer.valueOf((String) json.get("id"));
-		this.nodeId = Integer.valueOf((String) json.get("nodeid"));
-		this.name = (String) json.get("name");
-		this.processList = (String) json.get("processList");
-	}
+//	public Input(JSONObject json) {
+//		this.id = Integer.valueOf((String) json.get("id"));
+//		this.nodeId = Integer.valueOf((String) json.get("nodeid"));
+//		this.name = (String) json.get("name");
+//		this.processList = (String) json.get("processList");
+//	}
 
 	public int getId() {
 		return id;

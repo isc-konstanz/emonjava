@@ -1,8 +1,5 @@
 package de.isc.emon.cms.data;
 
-import org.json.simple.JSONObject;
-
-
 public class Feed {
 	
 	private final int id;
@@ -15,24 +12,24 @@ public class Feed {
 	private final Value value;
 	
 	
-	public Feed(JSONObject json) {
-		this.id = Integer.valueOf((String) json.get("id"));
-		this.name = (String) json.get("name");
-		this.tag = (String) json.get("tag");
-		this.datatype = Integer.valueOf((String) json.get("datatype"));
-		this.engine = Integer.valueOf((String) json.get("engine"));
-		this.size = Integer.valueOf((String) json.get("size"));
-		
-		String valueStr = (String) json.get("value");
-		if (!valueStr.isEmpty()) {
-			value = new Value(Double.valueOf(valueStr), 
-					(long) json.get("time"));
-//					Long.valueOf((String) json.get("time")));
-		}
-		else {
-			value = null;
-		}
-	}
+//	public Feed(JSONObject json) {
+//		this.id = Integer.valueOf((String) json.get("id"));
+//		this.name = (String) json.get("name");
+//		this.tag = (String) json.get("tag");
+//		this.datatype = Integer.valueOf((String) json.get("datatype"));
+//		this.engine = Integer.valueOf((String) json.get("engine"));
+//		this.size = Integer.valueOf((String) json.get("size"));
+//		
+//		String valueStr = (String) json.get("value");
+//		if (!valueStr.isEmpty()) {
+//			value = new Value(Double.valueOf(valueStr), 
+//					(long) json.get("time"));
+////					Long.valueOf((String) json.get("time")));
+//		}
+//		else {
+//			value = null;
+//		}
+//	}
 
 	public Feed(int id, String name, String tag, int datatype, int engine, int size, Value value) {
 		this.id = id;

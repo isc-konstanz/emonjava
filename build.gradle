@@ -1,91 +1,188 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'osgi'
+apply from: "configuration.gradle"
 
-version = '0.3.0'
-group = 'de.isc.emon.framework'
-def projectName = 'EmonCMS-IPC'
-def projectNameLowerCase = 'emoncms-ipc'
-archivesBaseName = 'emoncms-ipc'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-	mavenCentral()
-	flatDir {
-		dirs 'dependencies', rootDir.getPath() + "/dependencies"
-	}
+configure(allprojects) {
+  version = cfgVersion
 }
 
-dependencies {
-	compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.+'
-	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
-	compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.+'
-	testCompile group: 'junit', name: 'junit', version: '4.11'
-}
+configure(javaProjects) {
 
-eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
-tasks.eclipse.dependsOn(cleanEclipse)
+  apply plugin: 'java'
+  apply plugin: 'eclipse'
+  apply plugin: 'osgi'
+  apply plugin: 'maven'
 
-jar {
-	manifest {
-		version = project.version.replace('-','.');
-		name = projectName
-		instruction 'Export-Package', '!*.internal.*,*'
-	}
-}
+  group = cfgGroup
 
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
 
-task libraryJar(type: Jar) {
-	from {
-		configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-	}
-	with jar
-}
+  repositories { mavenCentral() }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
+  sourceSets {
+    sample
+    itest {
+      compileClasspath += sourceSets.main.runtimeClasspath
+    }
+  }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-	classifier = 'javadoc'
-	from javadoc.destinationDir
-}
+  dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    itestCompile group: 'junit', name: 'junit', version: '4.12'
+  }
 
-task javadocs(type: Javadoc) {
-	source sourceSets.main.allJava
+  jar {
+    manifest {
+      version = project.version.replace('-','.');
+    }
+  }
   
-	exclude '**/internal/**'
-  
-	destinationDir = new File(buildDir, 'javadoc')
-  
-	classpath = sourceSets.main.compileClasspath
-	classpath += sourceSets.main.output
+  task jarAll(type: Copy) {
+    dependsOn(configurations.default.getAllArtifacts().getBuildDependencies())
+
+    //only the jar file created:
+    from configurations.default.getAllArtifacts().getFiles()
+
+    ext.isDocProject = false;
+    docProjects.findAll {
+      if (it.getPath() == project.path) {
+        isDocProject = true;
+      }
+    }
+    
+    if (isDocProject) {
+      //configurations.archives also contains source and javadoc files
+      configurations.archives.getArtifacts().all {
+        if (it.file.name.endsWith("sources.jar") || it.file.name.endsWith("javadoc.jar")) {
+          from project.files(it.file)
+        }
+      }
+    }
+
+    if (cfgCopyDependencies) {
+      if (cfgCopyToRoot) {
+        into rootDir.getPath() + "/build/libs-all"
+      }
+      else {
+        into "build/libs-all"
+      }
+      //includes all the dependencies:
+      from configurations.default
+    }
+    else {
+      if (cfgCopyToRoot) {
+        into rootDir.getPath() + "/build/libs-all"
+      }
+      else {
+        into "build/libs-all"
+      }
+    }
+  }
+
+  build.dependsOn(jarAll)
+
+  eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
+  tasks.eclipse.dependsOn(cleanEclipse)
+
+
+  task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+  }
+
+  task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+  }
+
+  artifacts {
+    archives sourcesJar
+    archives javadocJar
+  }
+
+  javadoc {
+    exclude '**/internal/**'
+    exclude '**/java-gen/**'
+    exclude '**/app/**'
+  }
+
 }
+
+configure(docProjects) {
+  jarAll.dependsOn sourcesJar
+  jarAll.dependsOn javadocJar
+}
+
+task javadocAll(type: Javadoc) {
+
+  source docProjects.collect {
+    project -> project.sourceSets.main.allJava
+  }
+
+  exclude '**/internal/**'
+
+  destinationDir = new File(buildDir, 'docs/javadoc-all')
+
+  classpath = files(distributionProjects.collect { project ->
+    project.sourceSets.main.compileClasspath })
+
+  classpath += files(distributionProjects.collect { project ->
+    project.sourceSets.main.output })
+}
+
+
+task writeSettings << {
+  Writer out = new OutputStreamWriter(new FileOutputStream("build/settings.gradle"));
+  out.write("include ");
+  boolean first = true;
+  for (Project myproject: distributionProjects) {
+    if (!myproject.getProjectDir().equals(getProjectDir())) {
+      if (first == true) {
+        first = false;
+      }
+      else {
+        out.write ", ";
+      }
+      out.write "'" + myproject.name + "'"
+    }
+  }
+  out .write "\n\n";
+
+  for (Project myproject: distributionProjects) {
+    if (!myproject.getProjectDir().equals(getProjectDir())) {
+      println myproject.name
+      out.write 'project(":' + myproject.name + '").projectDir = file("' + myproject.getProjectDir().toString().substring((int)(getProjectDir().toString().size() + 1)) + '")\n';
+    }
+  }
+
+  out.close();
+}
+
+task buildDistProjects {
+  dependsOn(distributionProjects.build)
+}
+
+tasks.withType(Tar) {
+
+  dependsOn(writeSettings)
+  dependsOn(distributionProjects.build)
+  dependsOn(javadocAll)
+
+  compression = Compression.GZIP
+  
+  destinationDir = file('build/distributions/')
+}
+
+task (tarFull, type: Tar) {
+  archiveName = project.name + "-" + project.version + "_full.tgz"
+}
+
 
 task (tar, type: Tar) {
-	dependsOn(build)
-	dependsOn(javadocs)
-
-	compression = Compression.GZIP
-
-	into(project.archivesBaseName) {
-		from('./') {
-			include 'doc/**/*'
-			include 'licenses/**/*'
-			include 'build/libs/**/*'
-			include 'build/javadoc/**/*'
-			include 'build.gradle'
-			include 'dependencies/**/*'
-			include 'src/**/*'
-		}
-	}
+  archiveName = project.name + "-" + project.version + ".tgz"
 }
 
-artifacts {
-	archives jar
-	archives sourcesJar
-	archives javadocJar
+if (!javaProjects.contains(project)) {
+  task clean (type: Delete) {
+    delete "build"
+  }
 }

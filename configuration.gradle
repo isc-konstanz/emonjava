@@ -1,0 +1,49 @@
+
+project.ext {
+
+  cfgVersion = '0.4.0'
+
+  cfgGroup = 'de.kn.isc.emonfwk'
+
+  cfgCopyDependencies = true
+
+  cfgCopyToRoot = true
+
+
+  javaProjects = subprojects
+
+  distributionProjects = subprojects.findAll {
+    it.getPath() == ':http'
+  }
+
+  docProjects = distributionProjects.findAll {
+    it.getPath() == ':http'
+  }
+}
+
+tasks.withType(Tar) {
+
+  into(project.name) {
+    from('./') {
+      include 'build.gradle'
+      include 'configuration.gradle'
+      include 'license/**'
+      include 'build/libs-all/**'
+      include 'gradle/**'
+      include 'gradle*'
+
+      include 'projects/http/src/**'
+      include 'projects/http/build.gradle'
+      include 'projects/http/build/docs/**'
+
+    }
+
+    if (name.equals("tar") ){
+      exclude '**/dependencies/**/src'
+    }
+
+    from('./build/') {
+      include 'settings.gradle'
+    }
+  }
+}

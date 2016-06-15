@@ -1,12 +1,9 @@
 package de.isc.emon.cms;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,10 +13,10 @@ import de.isc.emon.cms.communication.RequestMethod;
 import de.isc.emon.cms.communication.RequestParameter;
 import de.isc.emon.cms.data.DataType;
 import de.isc.emon.cms.data.Engine;
-import de.isc.emon.cms.data.Field;
-import de.isc.emon.cms.data.Process;
 import de.isc.emon.cms.data.Feed;
+import de.isc.emon.cms.data.Field;
 import de.isc.emon.cms.data.Input;
+import de.isc.emon.cms.data.Process;
 import de.isc.emon.cms.data.Value;
 
 
@@ -95,14 +92,14 @@ public class EmonCMS {
 
 		EmoncmsResponse response = connection.sendRequest(request, null);
 		if (!response.getMessage().equals("[]")) {
-			JSONArray jsonArr = (JSONArray) response.parseJSON();
-			Iterator<?> i = jsonArr.iterator();
-	        while (i.hasNext()) {
-	        	JSONObject json = (JSONObject) i.next();
-	        	Input input = new Input(json);
-
-	        	inputs.add(input);
-	        }
+//			JSONArray jsonArr = (JSONArray) response.parseJSON();
+//			Iterator<?> i = jsonArr.iterator();
+//	        while (i.hasNext()) {
+//	        	JSONObject json = (JSONObject) i.next();
+//	        	Input input = new Input(json);
+//
+//	        	inputs.add(input);
+//	        }
 		}
 		
 		return inputs;
@@ -115,16 +112,16 @@ public class EmonCMS {
 
 		EmoncmsResponse response = connection.sendRequest(request, null);
 		if (!response.getMessage().equals("[]")) {
-			JSONObject json = (JSONObject) ((JSONObject) response.parseJSON()).get(String.valueOf(nodeId));
-			for (Object key : json.keySet()) {
-				JSONObject j = (JSONObject) json.get(key);
-				int id = Integer.valueOf((String) j.get("id"));
-				String name = (String) key;
-				String processList = (String) j.get("processList");
-	        	Input input = new Input(id, nodeId, name, processList);
-	        	
-	        	inputs.add(input);
-			}
+//			JSONObject json = (JSONObject) ((JSONObject) response.parseJSON()).get(String.valueOf(nodeId));
+//			for (Object key : json.keySet()) {
+//				JSONObject j = (JSONObject) json.get(key);
+//				int id = Integer.valueOf((String) j.get("id"));
+//				String name = (String) key;
+//				String processList = (String) j.get("processList");
+//	        	Input input = new Input(id, nodeId, name, processList);
+//	        	
+//	        	inputs.add(input);
+//			}
 		}
 		
 		return inputs;
@@ -167,11 +164,11 @@ public class EmonCMS {
 		parameters.add(new RequestParameter(RequestMethod.POST, "processlist", process.toString()));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-			return true;
-		}
-		logger.debug("Unable to set process {} for input {}: ", process.getId(), inputId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//			return true;
+//		}
+//		logger.debug("Unable to set process {} for input {}: ", process.getId(), inputId, json.get("message"));
 		return false;
 	}
 
@@ -192,11 +189,11 @@ public class EmonCMS {
 		parameters.add(new RequestParameter(RequestMethod.POST, "processlist", processList.toString()));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-			return true;
-		}
-		logger.debug("Unable to set process list for input {}: ", inputId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//			return true;
+//		}
+//		logger.debug("Unable to set process list for input {}: ", inputId, json.get("message"));
 		return false;
 	}
 
@@ -227,11 +224,11 @@ public class EmonCMS {
 		parameters.add(new RequestParameter("inputid", String.valueOf(inputId)));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-			return true;
-		}
-		logger.debug("Unable to reset the processes of input {}: {}", inputId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//			return true;
+//		}
+//		logger.debug("Unable to reset the processes of input {}: {}", inputId, json.get("message"));
 		return false;
 	}
 
@@ -253,12 +250,12 @@ public class EmonCMS {
 		}
 
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-    		
-    		return Integer.valueOf(String.valueOf(json.get("feedid")));
-		}
-		logger.debug("Unable to create feed \"{}\": {}", feedName, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//    		
+//    		return Integer.valueOf(String.valueOf(json.get("feedid")));
+//		}
+//		logger.debug("Unable to create feed \"{}\": {}", feedName, json.get("message"));
 		return null;
 	}
 
@@ -288,14 +285,14 @@ public class EmonCMS {
 
 		EmoncmsResponse response = connection.sendRequest(request, null);
 		if (!response.getMessage().equals("[]")) {
-			JSONArray jsonArr = (JSONArray) response.parseJSON();
-			Iterator<?> i = jsonArr.iterator();
-	        while (i.hasNext()) {
-	        	JSONObject json = (JSONObject) i.next();
-	        	Feed feed = new Feed(json);
-	        	
-	        	feeds.add(feed);
-	        }
+//			JSONArray jsonArr = (JSONArray) response.parseJSON();
+//			Iterator<?> i = jsonArr.iterator();
+//	        while (i.hasNext()) {
+//	        	JSONObject json = (JSONObject) i.next();
+//	        	Feed feed = new Feed(json);
+//	        	
+//	        	feeds.add(feed);
+//	        }
 		}
 		
 		return feeds;
@@ -311,14 +308,14 @@ public class EmonCMS {
 
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
 		if (!response.getMessage().equals("[]")) {
-			JSONArray jsonArr = (JSONArray) response.parseJSON();
-			Iterator<?> i = jsonArr.iterator();
-	        while (i.hasNext()) {
-	        	JSONObject json = (JSONObject) i.next();
-	        	Feed feed = new Feed(json);
-	        	
-	        	feeds.add(feed);
-	        }
+//			JSONArray jsonArr = (JSONArray) response.parseJSON();
+//			Iterator<?> i = jsonArr.iterator();
+//	        while (i.hasNext()) {
+//	        	JSONObject json = (JSONObject) i.next();
+//	        	Feed feed = new Feed(json);
+//	        	
+//	        	feeds.add(feed);
+//	        }
 		}
 		
 		return feeds;
@@ -331,13 +328,13 @@ public class EmonCMS {
 		parameters.add(new RequestParameter("id", String.valueOf(feedId)));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if (!json.containsKey("success") || (boolean) json.get("success")) {
-    		
-			Feed feed = new Feed(json);
-    		return feed;
-		}
-		logger.debug("Unable to retrieve feed {}: {}", feedId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if (!json.containsKey("success") || (boolean) json.get("success")) {
+//    		
+//			Feed feed = new Feed(json);
+//    		return feed;
+//		}
+//		logger.debug("Unable to retrieve feed {}: {}", feedId, json.get("message"));
 		return null;
 	}
 
@@ -393,13 +390,13 @@ public class EmonCMS {
 		parameters.add(new RequestParameter("id", String.valueOf(feedId)));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if (!json.containsKey("success") || (boolean) json.get("success")) {
-			
-			Value value = new Value(json);
-			return value;
-		}
-		logger.debug("Unable to retrieve last time and value of feed {}: {}", feedId, response);
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if (!json.containsKey("success") || (boolean) json.get("success")) {
+//			
+//			Value value = new Value(json);
+//			return value;
+//		}
+//		logger.debug("Unable to retrieve last time and value of feed {}: {}", feedId, response);
 		return null;
 	}
 
@@ -500,11 +497,11 @@ public class EmonCMS {
 		parameters.add(new RequestParameter(RequestMethod.POST, "processlist", process.toString()));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-			return true;
-		}
-		logger.debug("Unable to set process {} for feed {}: ", process.getId(), feedId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//			return true;
+//		}
+//		logger.debug("Unable to set process {} for feed {}: ", process.getId(), feedId, json.get("message"));
 		return false;
 	}
 
@@ -525,11 +522,11 @@ public class EmonCMS {
 		parameters.add(new RequestParameter(RequestMethod.POST, "processlist", processList.toString()));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-			return true;
-		}
-		logger.debug("Unable to set process list for feed {}: ", feedId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//			return true;
+//		}
+//		logger.debug("Unable to set process list for feed {}: ", feedId, json.get("message"));
 		return false;
 	}
 
@@ -560,11 +557,11 @@ public class EmonCMS {
 		parameters.add(new RequestParameter("id", String.valueOf(feedId)));
 		
 		EmoncmsResponse response = connection.sendRequest(request, parameters);
-		JSONObject json = (JSONObject) response.parseJSON();
-		if ((boolean) json.get("success")) {
-			return true;
-		}
-		logger.debug("Unable to reset the processes of feed {}: {}", feedId, json.get("message"));
+//		JSONObject json = (JSONObject) response.parseJSON();
+//		if ((boolean) json.get("success")) {
+//			return true;
+//		}
+//		logger.debug("Unable to reset the processes of feed {}: {}", feedId, json.get("message"));
 		return false;
 	}
 }
