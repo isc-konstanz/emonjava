@@ -14,7 +14,8 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.data;
+package de.isc.emonjava.data;
+
 
 public class Input {
 	

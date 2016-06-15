@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms;
+package de.isc.emonjava;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -23,17 +23,17 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.isc.emon.cms.communication.EmoncmsCommunication;
-import de.isc.emon.cms.communication.EmoncmsResponse;
-import de.isc.emon.cms.communication.RequestMethod;
-import de.isc.emon.cms.communication.RequestParameter;
-import de.isc.emon.cms.data.DataType;
-import de.isc.emon.cms.data.Engine;
-import de.isc.emon.cms.data.Feed;
-import de.isc.emon.cms.data.Field;
-import de.isc.emon.cms.data.Input;
-import de.isc.emon.cms.data.Process;
-import de.isc.emon.cms.data.Value;
+import de.isc.emonjava.com.EmoncmsCommunication;
+import de.isc.emonjava.com.EmoncmsResponse;
+import de.isc.emonjava.com.RequestMethod;
+import de.isc.emonjava.com.RequestParameter;
+import de.isc.emonjava.data.DataType;
+import de.isc.emonjava.data.Engine;
+import de.isc.emonjava.data.Feed;
+import de.isc.emonjava.data.Field;
+import de.isc.emonjava.data.Input;
+import de.isc.emonjava.data.Process;
+import de.isc.emonjava.data.Value;
 
 
 public class EmonCMS {

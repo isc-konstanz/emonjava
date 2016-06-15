@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.communication.http;
+package de.isc.emonjava.com.http;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -29,8 +29,8 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.isc.emon.cms.communication.EmoncmsResponse;
-import de.isc.emon.cms.communication.RequestParameter;
+import de.isc.emonjava.com.EmoncmsResponse;
+import de.isc.emonjava.com.RequestParameter;
 
 
 public class HTTPTask extends Thread {

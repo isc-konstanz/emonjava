@@ -14,13 +14,13 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.data;
+package de.isc.emonjava.data;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import de.isc.emon.cms.EmoncmsException;
+import de.isc.emonjava.EmoncmsException;
 
 
 public class DataType {

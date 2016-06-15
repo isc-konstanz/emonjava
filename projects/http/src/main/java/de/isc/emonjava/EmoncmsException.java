@@ -14,21 +14,26 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.communication;
-
-import java.util.List;
-
-import de.isc.emon.cms.EmoncmsException;
+package de.isc.emonjava;
 
 
-public interface EmoncmsCommunication {
-	
-	public String getId();
-	
-	public String getAddress();
+public class EmoncmsException extends Exception {
+	private static final long serialVersionUID = -9155142035281509519L;
 
-	public void writeRequest(String request, List<RequestParameter> parameters);
+	public EmoncmsException() {
+		super();
+	}
 
-	public EmoncmsResponse sendRequest(String request, List<RequestParameter> parameters) throws EmoncmsException;
-	
+	public EmoncmsException(String s) {
+		super(s);
+	}
+
+	public EmoncmsException(Throwable cause) {
+		super(cause);
+	}
+
+	public EmoncmsException(String s, Throwable cause) {
+		super(s, cause);
+	}
+
 }

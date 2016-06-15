@@ -14,26 +14,29 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms;
+package de.isc.emonjava.data;
 
 
-public class EmoncmsException extends Exception {
-	private static final long serialVersionUID = -9155142035281509519L;
+public class Field {
 
-	public EmoncmsException() {
-		super();
+	private final String key;
+	private final String value;
+
+	public Field(String key, String value) {
+		this.key = key;
+		this.value = value;
 	}
 
-	public EmoncmsException(String s) {
-		super(s);
+	public String getKey() {
+		return key;
 	}
 
-	public EmoncmsException(Throwable cause) {
-		super(cause);
+	public String getValue() {
+		return value;
 	}
 
-	public EmoncmsException(String s, Throwable cause) {
-		super(s, cause);
+	@Override
+	public String toString() {
+		return "{\"" + key + "\":" + value + "}";
 	}
-
 }

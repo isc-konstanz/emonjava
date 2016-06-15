@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.communication.http;
+package de.isc.emonjava.com.http;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,11 +27,11 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.isc.emon.cms.EmoncmsException;
-import de.isc.emon.cms.communication.EmoncmsCommunication;
-import de.isc.emon.cms.communication.EmoncmsResponse;
-import de.isc.emon.cms.communication.RequestParameter;
-import de.isc.emon.cms.communication.http.HTTPTask.EmoncmsTaskCallbacks;
+import de.isc.emonjava.EmoncmsException;
+import de.isc.emonjava.com.EmoncmsCommunication;
+import de.isc.emonjava.com.EmoncmsResponse;
+import de.isc.emonjava.com.RequestParameter;
+import de.isc.emonjava.com.http.HTTPTask.EmoncmsTaskCallbacks;
 
 
 public class EmoncmsHTTP implements EmoncmsCommunication, EmoncmsTaskCallbacks {

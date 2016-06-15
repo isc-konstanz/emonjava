@@ -14,29 +14,39 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.data;
+package de.isc.emonjava.data;
 
 
-public class Field {
+public class Value {
 
-	private final String key;
-	private final String value;
+	private final Long time;
+	private final double value;
 
-	public Field(String key, String value) {
-		this.key = key;
+	
+//	public Value(JSONObject json) {
+//		this.time = Long.valueOf((String) json.get("time"))*1000;
+//		this.value = Double.valueOf((String) json.get("value"));
+//	}
+	
+	public Value(double value, Long timestamp) {
 		this.value = value;
+		this.time = timestamp;
+	}
+	
+	public Value(double value) {
+		this(value, null);
 	}
 
-	public String getKey() {
-		return key;
-	}
-
-	public String getValue() {
+	public double getValue() {
 		return value;
+	}
+
+	public Long getTime() {
+		return time;
 	}
 
 	@Override
 	public String toString() {
-		return "{\"" + key + "\":" + value + "}";
+		return "value: " + value + "; time: " + time;
 	}
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.communication;
+package de.isc.emonjava.com;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

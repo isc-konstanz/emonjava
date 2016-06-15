@@ -14,38 +14,32 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.data;
+package de.isc.emonjava.com;
 
-public class Value {
+public class EmoncmsResponse {
+    private final String response;	
 
-	private final Long time;
-	private final double value;
+	public EmoncmsResponse(String response) {
+		this.response = response;
+	}
 
-	
-//	public Value(JSONObject json) {
-//		this.time = Long.valueOf((String) json.get("time"))*1000;
-//		this.value = Double.valueOf((String) json.get("value"));
+//	public Object parseJSON() throws EmoncmsException {
+//        JSONParser parser = new JSONParser();
+//        
+//		try {
+//			return parser.parse(response);
+//			
+//		} catch (ParseException e) {
+//			throw new EmoncmsException("Error parsing JSON string \"" + response + "\": " + e.getMessage());
+//		}
 //	}
 	
-	public Value(double value, Long timestamp) {
-		this.value = value;
-		this.time = timestamp;
+	public String getMessage() {
+		return response.replace("\"", "").replace("<br>", ""); //.replace("\n", "")
 	}
 	
-	public Value(double value) {
-		this(value, null);
-	}
-
-	public double getValue() {
-		return value;
-	}
-
-	public Long getTime() {
-		return time;
-	}
-
 	@Override
 	public String toString() {
-		return "value: " + value + "; time: " + time;
+		return response;
 	}
 }

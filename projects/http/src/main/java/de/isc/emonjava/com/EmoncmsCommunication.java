@@ -14,9 +14,21 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms.communication;
+package de.isc.emonjava.com;
+
+import java.util.List;
+
+import de.isc.emonjava.EmoncmsException;
 
 
-public enum RequestMethod {
-	GET, POST;
+public interface EmoncmsCommunication {
+	
+	public String getId();
+	
+	public String getAddress();
+
+	public void writeRequest(String request, List<RequestParameter> parameters);
+
+	public EmoncmsResponse sendRequest(String request, List<RequestParameter> parameters) throws EmoncmsException;
+	
 }

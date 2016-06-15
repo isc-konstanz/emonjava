@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package de.isc.emon.cms;
+package de.isc.emonjava;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,12 +29,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import de.isc.emon.cms.communication.EmoncmsCommunication;
-import de.isc.emon.cms.communication.http.EmoncmsHTTP;
-import de.isc.emon.cms.data.Feed;
-import de.isc.emon.cms.data.Input;
-import de.isc.emon.cms.data.Process;
-import de.isc.emon.cms.data.Value;
+import de.isc.emonjava.com.EmoncmsCommunication;
+import de.isc.emonjava.com.http.EmoncmsHTTP;
+import de.isc.emonjava.data.Feed;
+import de.isc.emonjava.data.Input;
+import de.isc.emonjava.data.Process;
+import de.isc.emonjava.data.Value;
 
 
 public class AccessEmonCMS {
