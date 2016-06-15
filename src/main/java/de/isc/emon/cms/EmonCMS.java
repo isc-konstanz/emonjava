@@ -411,7 +411,10 @@ public class EmonCMS {
 		parameters.add(new RequestParameter("id", String.valueOf(feedId)));
 		parameters.add(new RequestParameter("start", String.valueOf(start)));
 		parameters.add(new RequestParameter("end", String.valueOf(end)));
-		parameters.add(new RequestParameter("interval", String.valueOf(interval)));
+		
+		int dp = (int) ((end - start)/(interval*1000));
+		parameters.add(new RequestParameter("dp", String.valueOf(dp)));
+//		parameters.add(new RequestParameter("interval", String.valueOf(interval)));
 		
 		LinkedList<Value> values = new LinkedList<Value>();
 		
@@ -419,7 +422,7 @@ public class EmonCMS {
 		if (response.getMessage().startsWith("[") && !response.getMessage().equals("[]")) {
 			String responseStr = response.getMessage().replace("[[", "").replace("]]", "");
 			if (responseStr.contains("],[")) {
-				String[] valuesArr = responseStr.split("],[");
+				String[] valuesArr = responseStr.split("\\],\\[");
 				for (int i=1; i < valuesArr.length; i++) {
 					String[] valueArr = valuesArr[i].split(",");
 	                Value v = new Value(Double.valueOf(valueArr[1]), Long.valueOf(valueArr[0]));

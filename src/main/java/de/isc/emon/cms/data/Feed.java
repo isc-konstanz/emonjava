@@ -26,7 +26,8 @@ public class Feed {
 		String valueStr = (String) json.get("value");
 		if (!valueStr.isEmpty()) {
 			value = new Value(Double.valueOf(valueStr), 
-					Long.valueOf((String) json.get("time")));
+					(long) json.get("time"));
+//					Long.valueOf((String) json.get("time")));
 		}
 		else {
 			value = null;
