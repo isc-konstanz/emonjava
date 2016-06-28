@@ -16,45 +16,35 @@
  */
 package de.isc.emonjava.data;
 
+import java.util.LinkedList;
+import java.util.List;
 
-public enum Engine {
 
-	MYSQL(0), 
-	PHPTIMESERIES(2), 
-	PHPFINA(5), 
-	PHPFIWA(6), 
-	VIRTUALFEED(7), 
-	MYSQLMEMORY(8), 
-	REDISBUFFER(9);
-
-	private final int id;
-
-	private Engine(int id) {
-		this.id = id;
+public class Data {
+	private final int node;
+	private final Long time;
+	private final List<Double> values = new LinkedList<Double>();
+	
+	
+	public Data(int node, Long time, double value) {
+		this.node = node;
+		this.time = time;
+		values.add(value);
 	}
 
-	public int getValue() {
-		return id;
+	public void add(double value) {
+		values.add(value);
 	}
 
-	public static Engine getEnum(int id) {
-		switch (id) {
-		case 0:
-			return MYSQL;
-		case 2:
-			return PHPTIMESERIES;
-		case 5:
-			return PHPFINA;
-		case 6:
-			return PHPFIWA;
-		case 7:
-			return VIRTUALFEED;
-		case 8:
-			return MYSQLMEMORY;
-		case 9:
-			return REDISBUFFER;
-		default:
-			throw new IllegalArgumentException("Unknown engine id: " + id);
-		}
+	public int getNode() {
+		return node;
+	}
+
+	public Long getTime() {
+		return time;
+	}
+	
+	public List<Double> getValues() {
+		return values;
 	}
 }

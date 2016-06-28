@@ -14,38 +14,44 @@
  * limitations under the License.
  *
  */
-package de.isc.emonjava.data;
+package de.isc.emonjava.com.http.json;
+
+import com.google.gson.JsonObject;
 
 
-public class Input {
-	
+public class JsonInputConfig {
 	private final int id;
-	private final int nodeId;
+	private final String nodeid;
 	private final String name;
 	private final String processList;
-	
 
-	public Input(int id, int nodeId, String name, String processList) {
+	
+	public JsonInputConfig(String nodeid, String name, JsonObject json) {
+		this.nodeid = nodeid;
+		this.name = name;
+
+		JsonObject nodeObject = json.getAsJsonObject(nodeid);
+		JsonObject inputObject = nodeObject.getAsJsonObject(name);
+		
+		id = inputObject.get(Const.ID).getAsInt();
+		processList = inputObject.get(Const.PROCESSLIST).getAsString();
+	}
+
+	public JsonInputConfig(int id, String nodeid, String name, String processList) {
 		this.id = id;
-		this.nodeId = nodeId;
+		this.nodeid = nodeid;
 		this.name = name;
 		this.processList = processList;
 	}
-	
-//	public Input(JSONObject json) {
-//		this.id = Integer.valueOf((String) json.get("id"));
-//		this.nodeId = Integer.valueOf((String) json.get("nodeid"));
-//		this.name = (String) json.get("name");
-//		this.processList = (String) json.get("processList");
-//	}
 
 	public int getId() {
 		return id;
 	}
 
-	public int getNodeId() {
-		return nodeId;
+	public String getNodeid() {
+		return nodeid;
 	}
+
 
 	public String getName() {
 		return name;
@@ -53,10 +59,5 @@ public class Input {
 
 	public String getProcessList() {
 		return processList;
-	}
-
-	@Override
-	public String toString() {
-		return "id: " + id + "; nodeId: " + nodeId + "; name: " + name + "; processList: " + processList;
 	}
 }

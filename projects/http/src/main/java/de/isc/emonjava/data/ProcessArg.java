@@ -17,44 +17,41 @@
 package de.isc.emonjava.data;
 
 
-public enum Engine {
+public enum ProcessArg {
 
-	MYSQL(0), 
-	PHPTIMESERIES(2), 
-	PHPFINA(5), 
-	PHPFIWA(6), 
-	VIRTUALFEED(7), 
-	MYSQLMEMORY(8), 
-	REDISBUFFER(9);
+	VALUE(0), 
+	INPUTID(1), 
+	FEEDID(2), 
+	NONE(3), 
+	TEXT(4), 
+	SCHEDULEID(5);
 
-	private final int id;
+	private final int arg;
 
-	private Engine(int id) {
-		this.id = id;
+	private ProcessArg(int arg) {
+		this.arg = arg;
 	}
 
 	public int getValue() {
-		return id;
+		return arg;
 	}
 
-	public static Engine getEnum(int id) {
-		switch (id) {
+	public static ProcessArg getEnum(int arg) {
+		switch (arg) {
 		case 0:
-			return MYSQL;
+			return VALUE;
+		case 1:
+			return INPUTID;
 		case 2:
-			return PHPTIMESERIES;
+			return FEEDID;
+		case 3:
+			return NONE;
+		case 4:
+			return TEXT;
 		case 5:
-			return PHPFINA;
-		case 6:
-			return PHPFIWA;
-		case 7:
-			return VIRTUALFEED;
-		case 8:
-			return MYSQLMEMORY;
-		case 9:
-			return REDISBUFFER;
+			return SCHEDULEID;
 		default:
-			throw new IllegalArgumentException("Unknown engine id: " + id);
+			throw new IllegalArgumentException("Unknown process argument: " + arg);
 		}
 	}
 }

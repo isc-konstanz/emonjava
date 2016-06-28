@@ -17,19 +17,16 @@
 package de.isc.emonjava.data;
 
 
-public enum Engine {
+public enum Datatype {
 
-	MYSQL(0), 
-	PHPTIMESERIES(2), 
-	PHPFINA(5), 
-	PHPFIWA(6), 
-	VIRTUALFEED(7), 
-	MYSQLMEMORY(8), 
-	REDISBUFFER(9);
+	UNDEFINED(0), 
+	REALTIME(1), 
+	DAILY(2), 
+	HISTOGRAM(3);
 
 	private final int id;
 
-	private Engine(int id) {
+	private Datatype(int id) {
 		this.id = id;
 	}
 
@@ -37,24 +34,18 @@ public enum Engine {
 		return id;
 	}
 
-	public static Engine getEnum(int id) {
+	public static Datatype getEnum(int id) {
 		switch (id) {
 		case 0:
-			return MYSQL;
+			return UNDEFINED;
+		case 1:
+			return REALTIME;
 		case 2:
-			return PHPTIMESERIES;
-		case 5:
-			return PHPFINA;
-		case 6:
-			return PHPFIWA;
-		case 7:
-			return VIRTUALFEED;
-		case 8:
-			return MYSQLMEMORY;
-		case 9:
-			return REDISBUFFER;
+			return DAILY;
+		case 3:
+			return HISTOGRAM;
 		default:
-			throw new IllegalArgumentException("Unknown engine id: " + id);
+			throw new IllegalArgumentException("Unknown datatype id: " + id);
 		}
 	}
 }

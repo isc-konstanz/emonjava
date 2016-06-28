@@ -14,9 +14,24 @@
  * limitations under the License.
  *
  */
-package de.isc.emonjava.com;
+package de.isc.emonjava.com.http.json;
 
 
-public enum RequestMethod {
-	GET, POST, PUT, DELETE;
+public class JsonTimevalue {
+	private final long time;
+	private final double value;
+
+
+	public JsonTimevalue(long time, double value) {
+		this.time = time;
+		this.value = value;
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public double getValue() {
+		return value;
+	}
 }

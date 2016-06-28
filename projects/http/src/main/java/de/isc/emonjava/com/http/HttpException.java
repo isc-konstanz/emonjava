@@ -14,21 +14,29 @@
  * limitations under the License.
  *
  */
-package de.isc.emonjava.com;
+package de.isc.emonjava.com.http;
 
-import java.util.List;
-
-import de.isc.emonjava.EmoncmsException;
+import java.io.IOException;
 
 
-public interface EmoncmsCommunication {
-	
-	public String getId();
-	
-	public String getAddress();
+public class HttpException extends IOException {
+	private static final long serialVersionUID = -2024942377965269078L;
 
-	public void writeRequest(String request, List<RequestParameter> parameters);
+	private String message = "Unknown HTTP error";
 
-	public EmoncmsResponse sendRequest(String request, List<RequestParameter> parameters) throws EmoncmsException;
-	
+	public HttpException() {
+	}
+
+	public HttpException(String message) {
+		this.message = message;
+	}
+
+	public HttpException(int httpCode) {
+		this.message = "HTTP status code: " + httpCode;
+	}
+
+	@Override
+	public String getMessage() {
+		return message;
+	}
 }

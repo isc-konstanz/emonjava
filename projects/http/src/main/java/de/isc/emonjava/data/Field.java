@@ -17,26 +17,53 @@
 package de.isc.emonjava.data;
 
 
-public class Field {
+public enum Field {
 
-	private final String key;
+	NAME("name"), 
+	TAG("tag"), 
+	DESCRIPTION("description"),
+	TIME("time"), 
+	VALUE("value"), 
+	PUBLIC("public"), 
+	SIZE("size"), 
+	DATATYPE("datatype"), 
+	ENGINE("engine"), 
+	PROCESSES("processList");
+
 	private final String value;
 
-	public Field(String key, String value) {
-		this.key = key;
+	private Field(String value) {
 		this.value = value;
-	}
-
-	public String getKey() {
-		return key;
 	}
 
 	public String getValue() {
 		return value;
 	}
 
-	@Override
-	public String toString() {
-		return "{\"" + key + "\":" + value + "}";
+	public static Field getEnum(String field) {
+		switch (field) {
+		case "name":
+			return NAME;
+		case "tag":
+			return TAG;
+		case "description":
+			return DESCRIPTION;
+		case "time":
+			return TIME;
+		case "value":
+			return VALUE;
+		case "public":
+			return PUBLIC;
+		case "size":
+			return SIZE;
+		case "datatype":
+			return DATATYPE;
+		case "engine":
+			return ENGINE;
+		case "processList":
+			return PROCESSES;
+		default:
+			throw new IllegalArgumentException("Unknown field: " + field);
+		}
 	}
 }

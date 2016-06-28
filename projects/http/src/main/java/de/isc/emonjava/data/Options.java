@@ -16,37 +16,24 @@
  */
 package de.isc.emonjava.data;
 
+import java.util.HashMap;
 
-public class Value {
 
-	private final Long time;
-	private final double value;
-
+public class Options extends HashMap<String, String> {
+	private static final long serialVersionUID = -8755240981107809706L;
 	
-//	public Value(JSONObject json) {
-//		this.time = Long.valueOf((String) json.get("time"))*1000;
-//		this.value = Double.valueOf((String) json.get("value"));
-//	}
-	
-	public Value(double value, Long timestamp) {
-		this.value = value;
-		this.time = timestamp;
-	}
-	
-	public Value(double value) {
-		this(value, null);
-	}
 
-	public double getValue() {
-		return value;
-	}
-
-	public Long getTime() {
-		return time;
-	}
-
-	@Override
-	public String toString() {
-		return "value: " + value + "; time: " + time;
+	/**
+	 * Sets the logging interval of the corresponding feed engine in milliseconds.
+	 * 
+	 * @param interval
+	 * 	the logging interval of the corresponding feed engine in milliseconds
+	 * 
+	 * @return 
+	 * 	the previous value associated with key, or null if there was no mapping for key. 
+	 * 	(A null return can also indicate that the map previously associated null with key.)
+	 */
+	public String setInterval(int interval) {
+		return put("interval", String.valueOf(interval));
 	}
 }

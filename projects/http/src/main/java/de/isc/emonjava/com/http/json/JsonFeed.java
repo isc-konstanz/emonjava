@@ -14,51 +14,35 @@
  * limitations under the License.
  *
  */
-package de.isc.emonjava.data;
+package de.isc.emonjava.com.http.json;
 
+import com.google.gson.annotations.SerializedName;
 
-public class Feed {
-	
+public class JsonFeed {
 	private final int id;
 	private final String name;
 	private final String tag;
+	@SerializedName("public")
+	private final String visible;
 	private final int datatype;
 	private final int engine;
 	private final int size;
+	private final String time;
+	private final String value;
 	
-	private final Value value;
 	
-	
-//	public Feed(JSONObject json) {
-//		this.id = Integer.valueOf((String) json.get("id"));
-//		this.name = (String) json.get("name");
-//		this.tag = (String) json.get("tag");
-//		this.datatype = Integer.valueOf((String) json.get("datatype"));
-//		this.engine = Integer.valueOf((String) json.get("engine"));
-//		this.size = Integer.valueOf((String) json.get("size"));
-//		
-//		String valueStr = (String) json.get("value");
-//		if (!valueStr.isEmpty()) {
-//			value = new Value(Double.valueOf(valueStr), 
-//					(long) json.get("time"));
-////					Long.valueOf((String) json.get("time")));
-//		}
-//		else {
-//			value = null;
-//		}
-//	}
-
-	public Feed(int id, String name, String tag, int datatype, int engine, int size, Value value) {
+	public JsonFeed(int id, String name, String tag, String visible, int datatype, int engine, int size, String time, String value) {
 		this.id = id;
 		this.name = name;
 		this.tag = tag;
+		this.visible = visible;
 		this.datatype = datatype;
 		this.engine = engine;
 		this.size = size;
-		
+		this.time = time;
 		this.value = value;
 	}
-
+	
 	public int getId() {
 		return id;
 	}
@@ -69,6 +53,11 @@ public class Feed {
 
 	public String getTag() {
 		return tag;
+	}
+
+	public boolean isPublic() {
+		if (visible.equals("1")) return true;
+		else return false;
 	}
 
 	public int getDatatype() {
@@ -83,13 +72,13 @@ public class Feed {
 		return size;
 	}
 
-	public Value getValue() {
-		return value;
+	public Long getTime() {
+		if (time == null || time.isEmpty()) return null;
+		return Long.valueOf(time);
 	}
 
-	@Override
-	public String toString() {
-		return "id: " + id + "; name: " + name + "; tag: " + tag + "; datatype: " + datatype + "; engine: " + engine + "; size: " + size
-				+ "; " + value.toString();
+	public Double getValue() {
+		if (value == null || value.isEmpty()) return null;
+		return Double.valueOf(value);
 	}
 }

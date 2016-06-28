@@ -17,44 +17,31 @@
 package de.isc.emonjava.data;
 
 
-public enum Engine {
+public class Namevalue {
 
-	MYSQL(0), 
-	PHPTIMESERIES(2), 
-	PHPFINA(5), 
-	PHPFIWA(6), 
-	VIRTUALFEED(7), 
-	MYSQLMEMORY(8), 
-	REDISBUFFER(9);
+	private final String name;
+	private final double value;
 
-	private final int id;
 
-	private Engine(int id) {
-		this.id = id;
+	public Namevalue(String name, double value) {
+		this.name = name;
+		this.value = value;
 	}
 
-	public int getValue() {
-		return id;
+	public Namevalue(double value) {
+		this(null, value);
 	}
 
-	public static Engine getEnum(int id) {
-		switch (id) {
-		case 0:
-			return MYSQL;
-		case 2:
-			return PHPTIMESERIES;
-		case 5:
-			return PHPFINA;
-		case 6:
-			return PHPFIWA;
-		case 7:
-			return VIRTUALFEED;
-		case 8:
-			return MYSQLMEMORY;
-		case 9:
-			return REDISBUFFER;
-		default:
-			throw new IllegalArgumentException("Unknown engine id: " + id);
-		}
+	public double getValue() {
+		return value;
+	}
+
+	public String getName() {
+		return name;
+	}
+	
+	@Override
+	public String toString() {
+		return "name: " + value + ", time: " + name;
 	}
 }
