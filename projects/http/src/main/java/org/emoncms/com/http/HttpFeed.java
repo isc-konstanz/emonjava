@@ -259,4 +259,8 @@ public class HttpFeed extends Feed {
 		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
 	}
 
+	@Override
+	public Feed clear() {
+		return new HttpFeed(callbacks, id);
+	}
 }

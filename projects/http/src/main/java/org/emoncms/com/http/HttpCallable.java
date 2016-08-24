@@ -90,7 +90,7 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
         	   try {
                   	connection.disconnect();
               	} catch (Exception e) {
-        	        throw new HttpException("Unknown exception while closing connection: " + e.getMessage());
+        	        throw new HttpException("Unknown exception while closing connection: " + e);
               	}
            	}
         }

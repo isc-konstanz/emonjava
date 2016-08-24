@@ -26,7 +26,6 @@ import org.emoncms.EmoncmsFactory;
 import org.emoncms.Feed;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
-import org.emoncms.com.http.HttpFeedData;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Datatype;
 import org.emoncms.data.Engine;
@@ -83,17 +82,17 @@ public class EmoncmsDemo {
 			logger.info("Inputs of node \"{}\" size: {}", node1, inputs.size());
 
 			// Load 2 feeds and create and configure them, if not existing
-			List<HttpFeedData> feeds = cms.loadFeedList();
+			List<Feed> feeds = cms.loadFeedList();
 			Feed feed1 = null;
 			Feed feed2 = null;
-			for (HttpFeedData feed : feeds) {
+			for (Feed feed : feeds) {
 				if (feed.getName().equals(input1Name)) {
-					feed1 = feed.getService();
+					feed1 = feed.clear();
 					logger.info("Feed \"{}\" found with id: {}", input1Name, feed1.getId());
 					
 				}
 				if (feed.getName().equals(input2Name)) {
-					feed2 = feed.getService();
+					feed2 = feed.clear();
 					logger.info("Feed \"{}\" found with id: {}", input2Name, feed2.getId());
 				}
 			}

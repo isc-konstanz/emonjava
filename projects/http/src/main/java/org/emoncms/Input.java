@@ -78,4 +78,6 @@ public abstract class Input {
 	public abstract void resetProcessList() throws EmoncmsException;
 
 	public abstract void delete() throws EmoncmsException;
+
+	public abstract Input clear();
 }

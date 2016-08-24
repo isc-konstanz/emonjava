@@ -1,9 +1,9 @@
 
 project.ext {
 
-  cfgVersion = '0.5.0'
+  cfgVersion = '0.5.1'
 
-  cfgGroup = 'de.kn.isc.emonfwk'
+  cfgGroup = 'org.emoncms'
 
   cfgCopyDependencies = true
 
@@ -13,11 +13,11 @@ project.ext {
   javaProjects = subprojects
 
   distributionProjects = subprojects.findAll {
-    it.getPath() == ':http'
+    it.getPath() == ':emonjava-http'
   }
 
   docProjects = distributionProjects.findAll {
-    it.getPath() == ':http'
+    it.getPath() == ':emonjava-http'
   }
 }
 

@@ -120,4 +120,6 @@ public abstract class Feed {
 	public abstract void resetProcessList() throws EmoncmsException;
 
 	public abstract void delete() throws EmoncmsException;
+
+	public abstract Feed clear();
 }

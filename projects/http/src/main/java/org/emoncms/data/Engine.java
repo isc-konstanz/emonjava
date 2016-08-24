@@ -16,8 +16,6 @@
  */
 package org.emoncms.data;
 
-import de.isc.emonjava.data.Engine;
-
 
 public enum Engine {
 

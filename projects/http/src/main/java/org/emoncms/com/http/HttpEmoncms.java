@@ -103,7 +103,7 @@ public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbac
     		submitRequest(request);
     		
 		} catch (InterruptedException | ExecutionException e) {
-        	throw new EmoncmsUnavailableException("Unable to connect to \"" + address + "\": " + e.getMessage());
+        	throw new EmoncmsUnavailableException("Unable to connect to \"" + address + "\": " + e);
         }
 	}
 	
@@ -472,7 +472,7 @@ public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbac
     		else throw new EmoncmsException("Emoncms request failed");
 	    		
 		} catch (InterruptedException | ExecutionException e) {
-			throw new EmoncmsException("Error while requesting \"" + request.toString() + "\" :" + e.getMessage());
+			throw new EmoncmsException("Error while requesting \"" + request.toString() + "\" :" + e);
 		}
 	}
 

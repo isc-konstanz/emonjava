@@ -3,8 +3,6 @@ package org.emoncms.data;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.isc.emonjava.data.Field;
-
 
 public class FieldList extends HashMap<Field, String> {
 	private static final long serialVersionUID = -3326186957769047676L;

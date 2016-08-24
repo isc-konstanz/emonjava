@@ -4,8 +4,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import de.isc.emonjava.data.Process;
-
 
 public class ProcessList extends LinkedHashMap<Process, String> {
 	private static final long serialVersionUID = 5511638846497628586L;

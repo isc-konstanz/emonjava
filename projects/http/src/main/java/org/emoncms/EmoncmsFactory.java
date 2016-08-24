@@ -32,6 +32,8 @@ import org.emoncms.com.http.HttpEmoncms;
  */
 public class EmoncmsFactory {
 	
+	public static final Integer MAX_THREADS_DEFAULT = 10;
+	
 	private static final List<HttpEmoncms> httpSingletonList = new ArrayList<HttpEmoncms>();
 	
 	
@@ -62,7 +64,7 @@ public class EmoncmsFactory {
 				return emoncms;
 			}
 		}
-		HttpEmoncms emoncms = new HttpEmoncms(url, apiKey, 10);
+		HttpEmoncms emoncms = new HttpEmoncms(url, apiKey, MAX_THREADS_DEFAULT);
 		httpSingletonList.add(emoncms);
 		
 		return emoncms;
@@ -89,9 +91,6 @@ public class EmoncmsFactory {
 		}
 		if (!url.endsWith("/")) {
 			url = url.concat("/");
-		}
-		if (!url.endsWith("emoncms/")) {
-			url = url.concat("emoncms/");
 		}
 		return url;
 	}

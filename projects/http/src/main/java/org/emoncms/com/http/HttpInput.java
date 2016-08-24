@@ -143,4 +143,9 @@ public class HttpInput extends Input {
 		
 		callbacks.onInputRequest(action, parameters, HttpRequestMethod.GET);
 	}
+
+	@Override
+	public Input clear() {
+		return new HttpInput(callbacks, id, node, name);
+	}
 }

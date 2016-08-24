@@ -82,17 +82,20 @@ public interface Emoncms {
 	 * Feeds hold only their ID in memory and retrieve other values separately for each function call.
 	 * A list of feeds, holding all current data in memory may be retrieved calling {@link #loadFeedList()}.
 	 * 
+	 * @throws EmoncmsException if the communication with the emoncms server fails.
+	 * 
 	 * @return the list of feeds.
 	 */
 	public List<Feed> getFeedList() throws EmoncmsException;
 
 	/**
-	 * Returns the list of all {@link HttpFeedData} objects of the authenticated user. A feed holds the current 
+	 * Returns the list of all {@link Feed} objects of the authenticated user. A feed holds the current 
 	 * data and configuration values.
 	 * <p>
-	 * Feed data objects hold all feed fields, such as engine configuration parameters, in memory. To retrieve
-	 * updated values or historical data, functions will be passed to an underlying {@link Feed} instance and need
-	 * to be retrieved separately for each function call.
+	 * The returned Feed data objects hold all feed fields, such as engine configuration parameters, in memory. 
+	 * To get a more lightweight object, holding only the necessary fields to identify itself, {@link Feed#clear()} may be called.
+	 * 
+	 * @throws EmoncmsException if the communication with the emoncms server fails.
 	 *
 	 * @return the list of feeds, containing all data fields.
 	 */
