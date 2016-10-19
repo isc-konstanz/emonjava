@@ -14,45 +14,30 @@
  * limitations under the License.
  *
  */
-package org.emoncms.com.http.json;
+package org.emoncms.com.http.request;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
-public class JsonInput {
-	int id;
-	String nodeid;
-	String name;
-	String description;
-	String processList;
-	long time;
-	double value;
+import org.emoncms.com.http.json.Const;
 
+public class HttpRequestAuthentication {
 
-	public int getId() {
-		return id;
+	public static final String NONE = "none";
+
+	private final String type;
+	private final String key;
+
+	public HttpRequestAuthentication(String type, String key) {
+		this.type = type;
+		this.key = key;
 	}
 
-	public String getNodeid() {
-		return nodeid;
+	public HttpRequestAuthentication(String key) {
+		this(Const.API_KEY, key);
 	}
 
-
-	public String getName() {
-		return name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public String getProcessList() {
-		return processList;
-	}
-
-	public long getTime() {
-		return time;
-	}
-
-	public double getValue() {
-		return value;
+	public String getAuthentication() throws UnsupportedEncodingException {
+		return type + "=" + URLEncoder.encode(key, "UTF-8");
 	}
 }

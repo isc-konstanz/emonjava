@@ -32,8 +32,6 @@ import org.emoncms.Feed;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsUnavailableException;
-import org.emoncms.com.http.HttpFeed.HttpFeedCallbacks;
-import org.emoncms.com.http.HttpInput.HttpInputCallbacks;
 import org.emoncms.com.http.json.Const;
 import org.emoncms.com.http.json.JsonData;
 import org.emoncms.com.http.json.JsonFeed;
@@ -41,6 +39,14 @@ import org.emoncms.com.http.json.JsonInput;
 import org.emoncms.com.http.json.JsonInputConfig;
 import org.emoncms.com.http.json.JsonInputList;
 import org.emoncms.com.http.json.ToJson;
+import org.emoncms.com.http.request.HttpCallable;
+import org.emoncms.com.http.request.HttpEmoncmsRequest;
+import org.emoncms.com.http.request.HttpEmoncmsResponse;
+import org.emoncms.com.http.request.HttpRequestAction;
+import org.emoncms.com.http.request.HttpRequestAuthentication;
+import org.emoncms.com.http.request.HttpRequestCallbacks;
+import org.emoncms.com.http.request.HttpRequestMethod;
+import org.emoncms.com.http.request.HttpRequestParameters;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Datatype;
 import org.emoncms.data.Engine;
@@ -52,16 +58,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbacks {
+public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	private static final Logger logger = LoggerFactory.getLogger(HttpEmoncms.class);
 
 	private static final int TIMEOUT = 15000;
 
 	private final String address;
-	private final String apiKey;
+	private String apiKey;
 
-	private ScheduledExecutorService executor = null;
 	private int maxThreads;
+	private ScheduledExecutorService executor = null;
 
 
 	public HttpEmoncms(String address, String apiKey, int maxThreads) {
@@ -77,6 +83,10 @@ public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbac
 
 	public String getApiKey() {
 		return apiKey;
+	}
+
+	public void setApiKey(String apiKey) {
+		this.apiKey = apiKey;
 	}
 
 	public int getMaxThreads() {
@@ -118,10 +128,26 @@ public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbac
 	}
 
 	@Override
+	public void post(String node, String name, String devicekey, Timevalue timevalue) throws EmoncmsException {
+
+		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
+		post(node, name, timevalue, authentication);
+	}
+
+	@Override
 	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
 
+		HttpRequestAuthentication authentication = null;
+		if (apiKey != null) {
+			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+		}
+		post(node, name, timevalue, authentication);
+	}
+	
+	private void post(String node, String name, Timevalue timevalue, HttpRequestAuthentication authentication) throws EmoncmsException {
+
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
-		
+
 		HttpRequestAction action = new HttpRequestAction("post");
 		action.addParameter(Const.NODE, node);
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
@@ -134,9 +160,10 @@ public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbac
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.DATA, json);
 		
-		sendRequest("input", action, parameters, HttpRequestMethod.POST);
+		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
 	}
-	
+
+	@Override
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
 
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
@@ -442,21 +469,29 @@ public class HttpEmoncms implements Emoncms, HttpInputCallbacks, HttpFeedCallbac
 	}
 
 	@Override
-	public HttpEmoncmsResponse onInputRequest(HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		return this.sendRequest("input", action, parameters, method);
+	public HttpEmoncmsResponse onRequest(String parent, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+		return sendRequest(parent, authentication, action, parameters, method);
 	}
 
 	@Override
-	public HttpEmoncmsResponse onFeedRequest(HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		return this.sendRequest("feed", action, parameters, method);
+	public HttpEmoncmsResponse onRequest(String parent, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+		return sendRequest(parent, action, parameters, method);
 	}
 	
 	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+		HttpRequestAuthentication authentication = null;
+		if (apiKey != null) {
+			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+		}
+		return sendRequest(path, authentication, action, parameters, method);
+	}
+	
+	private synchronized HttpEmoncmsResponse sendRequest(String path, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
 		String url = address + path.toLowerCase();
 		if (!url.endsWith("/"))
 			url += "/";
 		
-		HttpEmoncmsRequest request = new HttpEmoncmsRequest(url, apiKey, 
+		HttpEmoncmsRequest request = new HttpEmoncmsRequest(url, authentication, 
 				action, parameters, method);
 
         try {

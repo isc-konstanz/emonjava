@@ -1,7 +1,7 @@
 
 project.ext {
 
-  cfgVersion = '0.5.1'
+  cfgVersion = '0.6.0'
 
   cfgGroup = 'org.emoncms'
 
@@ -13,11 +13,12 @@ project.ext {
   javaProjects = subprojects
 
   distributionProjects = subprojects.findAll {
+    it.getPath() == ':emonjava-api' ||
     it.getPath() == ':emonjava-http'
   }
 
   docProjects = distributionProjects.findAll {
-    it.getPath() == ':emonjava-http'
+    it.getPath() == ':emonjava-api'
   }
 }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package org.emoncms.com.http;
+package org.emoncms.com.http.request;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -31,6 +31,7 @@ import org.emoncms.com.http.json.JsonInputConfig;
 import org.emoncms.com.http.json.JsonInputList;
 import org.emoncms.com.http.json.JsonTimevalue;
 import org.emoncms.data.Timevalue;
+
 
 public class HttpEmoncmsResponse {
 

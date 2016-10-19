@@ -17,6 +17,7 @@
 package org.emoncms.com.http;
 
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.data.Datatype;
 import org.emoncms.data.Engine;
 import org.emoncms.data.Field;
@@ -34,7 +35,7 @@ public class HttpFeedData extends HttpFeed {
 	private Timevalue timevalue;
 
 
-	public HttpFeedData(HttpFeedCallbacks callbacks, int id, 
+	public HttpFeedData(HttpRequestCallbacks callbacks, int id, 
 			String name, String tag, boolean visible, int size, Datatype datatype, Engine engine, Timevalue value) {
 		super(callbacks, id);
 		

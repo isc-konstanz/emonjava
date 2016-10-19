@@ -25,7 +25,7 @@ import org.emoncms.data.DataList;
 public class JsonData extends LinkedList<String> {
 	private static final long serialVersionUID = -6298302842917994931L;
 
-	private final Long referenceTime;
+	Long referenceTime;
 	
 	
 	public JsonData(DataList dataList) {

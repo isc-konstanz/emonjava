@@ -22,6 +22,12 @@ import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.http.json.Const;
 import org.emoncms.com.http.json.ToJson;
+import org.emoncms.com.http.request.HttpEmoncmsResponse;
+import org.emoncms.com.http.request.HttpRequestAction;
+import org.emoncms.com.http.request.HttpRequestAuthentication;
+import org.emoncms.com.http.request.HttpRequestCallbacks;
+import org.emoncms.com.http.request.HttpRequestMethod;
+import org.emoncms.com.http.request.HttpRequestParameters;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
@@ -34,29 +40,29 @@ public class HttpInput extends Input {
 	/**
 	 * The Inputs' current callback object, which is notified of request events
 	 */
-	private final HttpInputCallbacks callbacks;
-	
-	/**
-	 * Interface used by {@link HttpInput} to notify the {@link HttpEmoncms} 
-	 * implementation about request events
-	 */
-	public static interface HttpInputCallbacks {
-		
-		HttpEmoncmsResponse onInputRequest(HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method)
-			throws EmoncmsException;
-	}
+	private final HttpRequestCallbacks callbacks;
 	
 	
-	public HttpInput(HttpInputCallbacks callbacks, int id, String node, String name) {
+	public HttpInput(HttpRequestCallbacks callbacks, int id, String node, String name) {
 		super(id, node, name);
 		this.callbacks = callbacks;
 	}
 
 	@Override
 	public void post(Timevalue timevalue) throws EmoncmsException {
+		requestPost(null, timevalue);
+	}
+
+	@Override
+	public void post(String devicekey, Timevalue timevalue) throws EmoncmsException {
+		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
+		requestPost(authentication, timevalue);
+	}
+	
+	private void requestPost(HttpRequestAuthentication authentication, Timevalue timevalue) throws EmoncmsException {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
-		
+
 		HttpRequestAction action = new HttpRequestAction("post");
 		action.addParameter(Const.NODE, node);
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
@@ -69,7 +75,12 @@ public class HttpInput extends Input {
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.DATA, json);
 		
-		callbacks.onInputRequest(action, parameters, HttpRequestMethod.POST);
+		if (authentication != null) {
+			callbacks.onRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+		}
+		else {
+			callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+		}
 	}
 
 	@Override
@@ -87,7 +98,7 @@ public class HttpInput extends Input {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onInputRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -100,7 +111,7 @@ public class HttpInput extends Input {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onInputRequest(action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
 		return new ProcessList(response.getResponse().replace("\"", ""));
 	}
 
@@ -115,7 +126,7 @@ public class HttpInput extends Input {
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList.toString());
 		
-		callbacks.onInputRequest(action, parameters, HttpRequestMethod.POST);
+		callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
 	}
 
 	@Override
@@ -128,7 +139,7 @@ public class HttpInput extends Input {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onInputRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -141,7 +152,7 @@ public class HttpInput extends Input {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onInputRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override

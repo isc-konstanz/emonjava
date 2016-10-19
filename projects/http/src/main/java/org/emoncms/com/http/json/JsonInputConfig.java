@@ -20,12 +20,16 @@ import com.google.gson.JsonObject;
 
 
 public class JsonInputConfig {
-	private final int id;
-	private final String nodeid;
-	private final String name;
-	private final String processList;
+	int id;
+	String nodeid;
+	String name;
+	String processList;
 
 	
+	public JsonInputConfig() {
+		super();
+	}
+
 	public JsonInputConfig(String nodeid, String name, JsonObject json) {
 		this.nodeid = nodeid;
 		this.name = name;

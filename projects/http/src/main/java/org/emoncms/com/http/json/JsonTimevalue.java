@@ -18,14 +18,9 @@ package org.emoncms.com.http.json;
 
 
 public class JsonTimevalue {
-	private final long time;
-	private final double value;
+	long time;
+	double value;
 
-
-	public JsonTimevalue(long time, double value) {
-		this.time = time;
-		this.value = value;
-	}
 
 	public long getTime() {
 		return time;

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package org.emoncms.com.http;
+package org.emoncms.com.http.request;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
 
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.com.http.HttpException;
 
 
 public class HttpCallable implements Callable<HttpEmoncmsResponse> {

@@ -60,6 +60,8 @@ public abstract class Input {
 
 	public abstract void post(Timevalue timevalue) throws EmoncmsException;
 
+	public abstract void post(String devicekey, Timevalue timevalue) throws EmoncmsException;
+
 	public void setField(Field field, String value) throws EmoncmsException {
 		FieldList fields = new FieldList(field, value);
 		this.setFields(fields);

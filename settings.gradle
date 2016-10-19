@@ -1,3 +1,4 @@
-include 'emonjava-http'
+include 'emonjava-api', 'emonjava-http'
 
+project(":emonjava-api").projectDir = file("projects/api")
 project(":emonjava-http").projectDir = file("projects/http")

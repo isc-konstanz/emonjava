@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package org.emoncms.com.http;
+package org.emoncms.com.http.request;
 
 
 public enum HttpRequestMethod {

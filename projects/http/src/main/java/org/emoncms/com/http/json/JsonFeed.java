@@ -19,30 +19,18 @@ package org.emoncms.com.http.json;
 import com.google.gson.annotations.SerializedName;
 
 public class JsonFeed {
-	private final int id;
-	private final String name;
-	private final String tag;
+	int id;
+	String name;
+	String tag;
 	@SerializedName("public")
-	private final String visible;
-	private final int datatype;
-	private final int engine;
-	private final int size;
-	private final String time;
-	private final String value;
-	
-	
-	public JsonFeed(int id, String name, String tag, String visible, int datatype, int engine, int size, String time, String value) {
-		this.id = id;
-		this.name = name;
-		this.tag = tag;
-		this.visible = visible;
-		this.datatype = datatype;
-		this.engine = engine;
-		this.size = size;
-		this.time = time;
-		this.value = value;
-	}
-	
+	String visible;
+	int datatype;
+	int engine;
+	int size;
+	String time;
+	String value;
+
+
 	public int getId() {
 		return id;
 	}

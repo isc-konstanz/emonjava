@@ -1,3 +1,4 @@
+package org.emoncms;
 /*
  * Copyright 2016 ISC Konstanz
  *
@@ -14,7 +15,6 @@
  * limitations under the License.
  *
  */
-package org.emoncms;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,19 +30,22 @@ import org.emoncms.com.http.HttpEmoncms;
  * <li>Methods that create and return an {@link HttpEmoncms} implementation, set up with commonly useful configuration settings.</li>
  * </ul>
  */
-public class EmoncmsFactory {
-	
-	public static final Integer MAX_THREADS_DEFAULT = 10;
-	
+public class HttpEmoncmsFactory {
+
+	public static final Integer MAX_THREADS_DEFAULT = 1;
+
 	private static final List<HttpEmoncms> httpSingletonList = new ArrayList<HttpEmoncms>();
-	
-	
-	public static Emoncms newEmoncmsHttpConnection(String address, String apiKey, int maxThreads) {
+
+
+	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String address, String apiKey, int maxThreads) {
 
 		String url = verifyAddress(address);
-		
+
 		for (HttpEmoncms emoncms : httpSingletonList) {
-			if (emoncms.getAddress().equals(url) && emoncms.getApiKey().equals(apiKey)) {
+			if (emoncms.getAddress().equals(url)) {
+				if (!emoncms.getApiKey().equals(apiKey)) {
+					emoncms.setApiKey(apiKey);
+				}
 				if (emoncms.getMaxThreads() != maxThreads) {
 					emoncms.setMaxThreads(maxThreads);
 				}
@@ -51,35 +54,53 @@ public class EmoncmsFactory {
 		}
 		HttpEmoncms emoncms = new HttpEmoncms(url, apiKey, maxThreads);
 		httpSingletonList.add(emoncms);
-		
+
 		return emoncms;
 	}
-	
-	public static Emoncms newEmoncmsHttpConnection(String address, String apiKey) {
+
+	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String address, String apiKey) {
 
 		String url = verifyAddress(address);
-		
+
 		for (HttpEmoncms emoncms : httpSingletonList) {
-			if (emoncms.getAddress().equals(url) && emoncms.getApiKey().equals(apiKey)) {
+			if (emoncms.getAddress().equals(url)) {
+				if (!emoncms.getApiKey().equals(apiKey)) {
+					emoncms.setApiKey(apiKey);
+				}
 				return emoncms;
 			}
 		}
 		HttpEmoncms emoncms = new HttpEmoncms(url, apiKey, MAX_THREADS_DEFAULT);
 		httpSingletonList.add(emoncms);
-		
+
 		return emoncms;
 	}
-	
-	public static Emoncms newEmoncmsHttpConnection(String apiKey, int maxThreads) {
-		
-		return newEmoncmsHttpConnection("localhost", apiKey, maxThreads);
+
+	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String apiKey, int maxThreads) {
+
+		return newAuthenticatedHttpEmoncmsConnection("localhost", apiKey, maxThreads);
 	}
-	
-	public static Emoncms newEmoncmsHttpConnection(String apiKey) {
-		
-		return newEmoncmsHttpConnection("localhost", apiKey);
+
+	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String apiKey) {
+
+		return newAuthenticatedHttpEmoncmsConnection("localhost", apiKey);
 	}
-	
+
+	public static Emoncms newHttpEmoncmsConnection(String address, int maxThreads) {
+
+		return newAuthenticatedHttpEmoncmsConnection(address, null, maxThreads);
+	}
+
+	public static Emoncms newHttpEmoncmsConnection(String address) {
+
+		return newAuthenticatedHttpEmoncmsConnection(address, null);
+	}
+
+	public static Emoncms newHttpEmoncmsConnection() {
+
+		return newAuthenticatedHttpEmoncmsConnection(null);
+	}
+
 	private static String verifyAddress(String address) {
 
 		String url;

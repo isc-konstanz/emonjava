@@ -26,6 +26,10 @@ import com.google.gson.JsonObject;
 public class JsonInputList extends ArrayList<JsonInputConfig> {
 	private static final long serialVersionUID = -8635109389933023875L;
 
+	
+	public JsonInputList() {
+		super();
+	}
 
 	public JsonInputList(JsonObject json) {
 		super();

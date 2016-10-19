@@ -17,6 +17,7 @@
 package org.emoncms.com.http;
 
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 
@@ -28,7 +29,7 @@ public class HttpInputData extends HttpInput {
 	private Timevalue timevalue;
 
 
-	public HttpInputData(HttpInputCallbacks callbacks, int id, String node, String name, 
+	public HttpInputData(HttpRequestCallbacks callbacks, int id, String node, String name, 
 			String description, ProcessList processList, Timevalue value) {
 		super(callbacks, id, node, name);
 		

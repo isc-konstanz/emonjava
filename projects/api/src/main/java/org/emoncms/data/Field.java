@@ -19,7 +19,9 @@ package org.emoncms.data;
 
 public enum Field {
 
-	NAME("name"), 
+	INPUTID("inputid"), 
+	NODE("nodeid"), 
+	NAME("name"),
 	TAG("tag"), 
 	DESCRIPTION("description"),
 	TIME("time"), 
@@ -28,7 +30,16 @@ public enum Field {
 	SIZE("size"), 
 	DATATYPE("datatype"), 
 	ENGINE("engine"), 
-	PROCESSES("processList");
+	PROCESSES("processList"),
+	DISABLED("disabled"), 
+	ADDRESS("address"), 
+	PASSWORD("password"), 
+	DEVICEKEY("devicekey"), 
+	TYPE("type"), 
+	DRIVERS("drivers"), 
+	DEVICES("devices"), 
+	CHANNELS("channels"), 
+	CONFIG("config");
 
 	private final String value;
 
@@ -42,6 +53,8 @@ public enum Field {
 
 	public static Field getEnum(String field) {
 		switch (field) {
+		case "nodeid":
+			return NODE;
 		case "name":
 			return NAME;
 		case "tag":
@@ -62,6 +75,24 @@ public enum Field {
 			return ENGINE;
 		case "processList":
 			return PROCESSES;
+		case "disabled":
+			return DISABLED;
+		case "address":
+			return ADDRESS;
+		case "password":
+			return PASSWORD;
+		case "devicekey":
+			return DEVICEKEY;
+		case "type":
+			return TYPE;
+		case "drivers":
+			return DRIVERS;
+		case "devices":
+			return DEVICES;
+		case "channels":
+			return CHANNELS;
+		case "config":
+			return CONFIG;
 		default:
 			throw new IllegalArgumentException("Unknown field: " + field);
 		}

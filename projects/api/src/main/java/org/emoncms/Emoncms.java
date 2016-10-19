@@ -42,7 +42,6 @@ import org.emoncms.data.Timevalue;
  * </ul>
  */
 public interface Emoncms {
-	
 
 	/**
 	 * Start the content management systems' communication, such as the initiation of thread pools or
@@ -56,25 +55,27 @@ public interface Emoncms {
 	 * Shuts the content management systems' communication down and cleans up resources.
 	 */
 	public void stop();
-	
+
+	public void post(String node, String name, String devicekey, Timevalue timevalue) throws EmoncmsException;
+
 	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException;
-	
+
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException;
-	
+
 	public void post(DataList data) throws EmoncmsException;
-	
+
 	public List<Input> getInputList(String node) throws EmoncmsException;
 
 	public List<Input> getInputList() throws EmoncmsException;
-	
+
 	public List<Input> loadInputList() throws EmoncmsException;
-	
+
 	public void cleanInputList() throws EmoncmsException;
-	
+
 	public Input getInput(String node, String name) throws EmoncmsException;
-	
+
 	public Input loadInput(int id) throws EmoncmsException;
-	
+
 	/**
 	 * Returns the list of all {@link Feed} objects of the authenticated user. A feed allows to retrieve 
 	 * the latest data and configuration values, as well as historical data through e.g. {@link Feed#getData(long, long, int)}.
@@ -100,13 +101,13 @@ public interface Emoncms {
 	 * @return the list of feeds, containing all data fields.
 	 */
 	public List<Feed> loadFeedList() throws EmoncmsException;
-	
+
 	public Feed getFeed(int id) throws EmoncmsException;
-	
+
 	public Feed loadFeed(int id) throws EmoncmsException;
-	
+
 	public Map<Feed, Double> getFeedValues(List<Feed> feeds) throws EmoncmsException;
-	
+
 	public int newFeed(String name, String tag, Datatype type, Engine engine, Options options) throws EmoncmsException;
 
 }

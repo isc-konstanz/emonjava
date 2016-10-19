@@ -21,13 +21,19 @@ public class Const {
 
 	public final static String SUCCESS = "success";
 	public final static String MESSAGE = "message";
-	
+
 	public final static String API_KEY = "apikey";
+	public final static String DEVICE_KEY = "devicekey";
 
 	public final static String ID = "id";
 	public final static String IDS = "ids";
-	public final static String INPUTID = "inputid";
 	public final static String FEEDID = "feedid";
+	public final static String INPUTID = "inputid";
+	public final static String CHANNELID = "channelid";
+	public final static String DRIVERID = "driverid";
+	public final static String DEVICEID = "deviceid";
+	public final static String MUCID = "mucid";
+	public final static String NODEID = "nodeid";
 	public final static String NODE = "node";
 	public final static String NAME = "name";
 	public final static String DESCRIPTION = "description";
@@ -44,4 +50,6 @@ public class Const {
 	public final static String INTERVAL = "interval";
 	public final static String TIME = "time";
 	public final static String VALUE = "value";
+	public final static String ADDRESS = "address";
+	public final static String CONFIG = "config";
 }

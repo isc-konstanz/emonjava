@@ -14,10 +14,9 @@
  * limitations under the License.
  *
  */
-package org.emoncms.com.http;
+package org.emoncms.com.http.request;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 import org.emoncms.com.http.json.Const;
 
@@ -25,18 +24,18 @@ import org.emoncms.com.http.json.Const;
 public class HttpEmoncmsRequest {
 
 	private final String url;
-	private final String apiKey;
+	private final HttpRequestAuthentication authentication;
 	private final HttpRequestAction action;
 	private final HttpRequestParameters parameters;
 	private final HttpRequestMethod method;
 
 
-	public HttpEmoncmsRequest(String url, String apiKey, 
+	public HttpEmoncmsRequest(String url, HttpRequestAuthentication authentication, 
 			HttpRequestAction action, HttpRequestParameters parameters, 
 			HttpRequestMethod method) {
 		
 		this.url = url;
-		this.apiKey = apiKey;
+		this.authentication = authentication;
 		this.action = action;
 		this.parameters = parameters;
 		this.method = method;
@@ -46,8 +45,8 @@ public class HttpEmoncmsRequest {
 		return url;
 	}
 	
-	public String getApiKey() {
-		return apiKey;
+	public String getAuthentication() throws UnsupportedEncodingException {
+		return authentication.getAuthentication();
 	}
 
 	public HttpRequestAction getAction() {
@@ -76,11 +75,11 @@ public class HttpEmoncmsRequest {
 		if (action != null) {
 			request += action.parseAction();
 		}
-		if (apiKey != null) {
+		if (authentication != null) {
 			if (action != null && action.size() > 0) {
 				request += "&";
 			}
-			request += Const.API_KEY + "=" + URLEncoder.encode(apiKey, "UTF-8");
+			request += authentication.getAuthentication();
 		}
 		return request;
 	}
@@ -98,13 +97,13 @@ public class HttpEmoncmsRequest {
 			}
 			request += parameters.toString();
 		}
-		if (apiKey != null) {
+		if (authentication != null) {
 			if (parameters != null && parameters.size() > 0 &&
 					action != null && action.size() > 0) {
 				
 				request += "&";
 			}
-			request += Const.API_KEY + "=" + apiKey;
+			request += Const.API_KEY + "=" + authentication;
 		}
 		return request;
 	}

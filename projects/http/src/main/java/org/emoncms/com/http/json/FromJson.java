@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 
 public class FromJson {
@@ -62,19 +63,18 @@ public class FromJson {
 		return jse.getAsJsonArray();
 	}
 	
-	public Object getObject(Class<?> objectClass) throws ClassCastException {
+	public Object getObject(Class<?> objectClass) throws ClassCastException, JsonSyntaxException {
 
 		return gson.fromJson(jse, objectClass);			
 	}
 	
-	public ArrayList<Object> getArrayList(Class<?> objectClass) throws ClassCastException {
+	public ArrayList<Object> getArrayList(Class<?> objectClass) throws ClassCastException, JsonSyntaxException {
 
 		ArrayList<Object> objectList = new ArrayList<Object>();
 		JsonArray jsa = jse.getAsJsonArray();
 
-		Iterator<JsonElement> iteratorJsonArray = jsa.iterator();
-		while (iteratorJsonArray.hasNext()) {
-			Object object = gson.fromJson(iteratorJsonArray.next(), objectClass);
+		for (JsonElement objectJson : jsa) {
+			Object object = gson.fromJson(objectJson, objectClass);
 			objectList.add(object);
 		}
 		return objectList;

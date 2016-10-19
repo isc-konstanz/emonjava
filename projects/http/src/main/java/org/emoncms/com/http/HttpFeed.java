@@ -24,6 +24,11 @@ import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.http.json.Const;
 import org.emoncms.com.http.json.JsonTimevalue;
 import org.emoncms.com.http.json.ToJson;
+import org.emoncms.com.http.request.HttpEmoncmsResponse;
+import org.emoncms.com.http.request.HttpRequestAction;
+import org.emoncms.com.http.request.HttpRequestCallbacks;
+import org.emoncms.com.http.request.HttpRequestMethod;
+import org.emoncms.com.http.request.HttpRequestParameters;
 import org.emoncms.data.Field;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
@@ -37,20 +42,10 @@ public class HttpFeed extends Feed {
 	/**
 	 * The Feeds' current callback object, which is notified of request events
 	 */
-	private final HttpFeedCallbacks callbacks;
-	
-	/**
-	 * Interface used by {@link HttpFeed} to notify the {@link HttpEmoncms} 
-	 * implementation about request events
-	 */
-	public static interface HttpFeedCallbacks {
-		
-		HttpEmoncmsResponse onFeedRequest(HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method)
-			throws EmoncmsException;
-	}
+	private final HttpRequestCallbacks callbacks;
 	
 	
-	public HttpFeed(HttpFeedCallbacks callbacks, int id) {
+	public HttpFeed(HttpRequestCallbacks callbacks, int id) {
 		super(id);
 		this.callbacks = callbacks;
 	}
@@ -66,7 +61,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 		return response.getResponse().replaceAll("\"", "");
 	}
 
@@ -85,7 +80,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -98,7 +93,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 		return Double.valueOf(response.getResponse().replaceAll("\"", ""));
 	}
 
@@ -112,7 +107,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 		try {
 			JsonTimevalue jsonTimevalue = response.getTimevalue();
 			Timevalue timevalue = new Timevalue(jsonTimevalue.getTime(), jsonTimevalue.getValue());
@@ -137,7 +132,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 		try {
 			return response.getTimevalues();
 			
@@ -158,7 +153,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -173,7 +168,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -187,7 +182,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -202,7 +197,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -215,7 +210,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 		return new ProcessList(response.getResponse().replaceAll("\"", ""));
 	}
 
@@ -230,7 +225,7 @@ public class HttpFeed extends Feed {
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList.toString());
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.POST);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.POST);
 	}
 
 	@Override
@@ -243,7 +238,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
@@ -256,7 +251,7 @@ public class HttpFeed extends Feed {
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		callbacks.onFeedRequest(action, parameters, HttpRequestMethod.GET);
+		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
 	}
 
 	@Override
