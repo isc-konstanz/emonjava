@@ -32,6 +32,7 @@ import org.emoncms.com.http.HttpEmoncms;
  */
 public class HttpEmoncmsFactory {
 
+	public static final String ADDRESS_DEFAULT = "http://localhost/emoncms/";
 	public static final Integer MAX_THREADS_DEFAULT = 1;
 
 	private static final List<HttpEmoncms> httpSingletonList = new ArrayList<HttpEmoncms>();
@@ -78,12 +79,12 @@ public class HttpEmoncmsFactory {
 
 	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String apiKey, int maxThreads) {
 
-		return newAuthenticatedHttpEmoncmsConnection("localhost", apiKey, maxThreads);
+		return newAuthenticatedHttpEmoncmsConnection(ADDRESS_DEFAULT, apiKey, maxThreads);
 	}
 
 	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String apiKey) {
 
-		return newAuthenticatedHttpEmoncmsConnection("localhost", apiKey);
+		return newAuthenticatedHttpEmoncmsConnection(ADDRESS_DEFAULT, apiKey);
 	}
 
 	public static Emoncms newHttpEmoncmsConnection(String address, int maxThreads) {
