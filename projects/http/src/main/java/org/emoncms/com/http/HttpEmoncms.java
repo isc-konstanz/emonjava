@@ -57,6 +57,8 @@ import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonSyntaxException;
+
 
 public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	private static final Logger logger = LoggerFactory.getLogger(HttpEmoncms.class);
@@ -506,7 +508,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
     		}
     		else throw new EmoncmsException("Emoncms request failed");
 	    		
-		} catch (InterruptedException | ExecutionException e) {
+		} catch (InterruptedException | ExecutionException | JsonSyntaxException e) {
 			throw new EmoncmsException("Error while requesting \"" + request.toString() + "\" :" + e);
 		}
 	}
