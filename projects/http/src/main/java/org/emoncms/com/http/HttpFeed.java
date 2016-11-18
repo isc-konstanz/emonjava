@@ -19,9 +19,12 @@ package org.emoncms.com.http;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.emoncms.Emoncms;
 import org.emoncms.Feed;
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.json.Const;
+import org.emoncms.com.http.json.JsonFeed;
 import org.emoncms.com.http.json.JsonTimevalue;
 import org.emoncms.com.http.json.ToJson;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
@@ -29,7 +32,8 @@ import org.emoncms.com.http.request.HttpRequestAction;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
-import org.emoncms.data.Field;
+import org.emoncms.data.Datatype;
+import org.emoncms.data.Engine;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
@@ -44,20 +48,26 @@ public class HttpFeed extends Feed {
 	 */
 	private final HttpRequestCallbacks callbacks;
 	
-	
+
+	public HttpFeed(HttpRequestCallbacks callbacks, int id, String name, String tag, 
+			boolean visible, int size, Datatype datatype, Engine engine, ProcessList pocessList, Timevalue value) {
+		super(id, name, tag, visible, size, datatype, engine, pocessList, value);
+		this.callbacks = callbacks;
+	}
+
 	public HttpFeed(HttpRequestCallbacks callbacks, int id) {
 		super(id);
 		this.callbacks = callbacks;
 	}
 
 	@Override
-	public String getField(Field field) throws EmoncmsException {
+	public String getField(String field) throws EmoncmsException {
 
-		logger.debug("Requesting to get field \"{}\" for feed with id: {}", field.getValue(), id);
+		logger.debug("Requesting to get field \"{}\" for feed with id: {}", field, id);
 
 		HttpRequestAction action = new HttpRequestAction("get");
 		action.addParameter(Const.ID, id);
-		action.addParameter(Const.FIELD, field.getValue());
+		action.addParameter(Const.FIELD, field);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
@@ -84,7 +94,7 @@ public class HttpFeed extends Feed {
 	}
 
 	@Override
-	public double getLatestValue() throws EmoncmsException {
+	public Double getLatestValue() throws EmoncmsException {
 		
 		logger.debug("Requesting to get latest value for feed with id: {}", id);
 
@@ -201,21 +211,7 @@ public class HttpFeed extends Feed {
 	}
 
 	@Override
-	public ProcessList getProcessList() throws EmoncmsException {
-
-		logger.debug("Requesting process list for feed with id: {}", id);
-		
-		HttpRequestAction action = new HttpRequestAction("process/get");
-		action.addParameter(Const.ID, id);
-		
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		
-		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
-		return new ProcessList(response.getResponse().replaceAll("\"", ""));
-	}
-
-	@Override
-	public void setProcessList(ProcessList processList) throws EmoncmsException {
+	public void setProcessList(String processList) throws EmoncmsException {
 
 		logger.debug("Requesting to set process list for feed with id: {}", id, processList);
 		
@@ -223,7 +219,7 @@ public class HttpFeed extends Feed {
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
-		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList.toString());
+		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList);
 		
 		callbacks.onRequest("feed", action, parameters, HttpRequestMethod.POST);
 	}
@@ -255,7 +251,38 @@ public class HttpFeed extends Feed {
 	}
 
 	@Override
-	public Feed clear() {
-		return new HttpFeed(callbacks, id);
+	public void load() throws EmoncmsException {
+
+		logger.debug("Requesting feed with id: {}", id);
+
+		HttpRequestAction action = new HttpRequestAction("aget");
+		action.addParameter(Const.ID, id);
+		
+		HttpRequestParameters parameters = new HttpRequestParameters();
+		
+		HttpEmoncmsResponse response = callbacks.onRequest("feed", action, parameters, HttpRequestMethod.GET);
+		try {
+			JsonFeed jsonFeed = response.getFeed();
+			
+			this.name = jsonFeed.getName();
+			this.tag = jsonFeed.getTag();
+			this.visible = jsonFeed.isPublic();
+			this.size = jsonFeed.getSize();
+			this.datatype =  Datatype.getEnum(jsonFeed.getDatatype());
+			this.engine = Engine.getEnum(jsonFeed.getEngine());
+			if (jsonFeed.getTime() != null && jsonFeed.getValue() != null) {
+				this.timevalue = new Timevalue(jsonFeed.getTime(), jsonFeed.getValue());
+			}
+			
+		} catch (ClassCastException e) {
+			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
+		}
+	}
+	
+	public static Feed connect(Emoncms connection, int id) throws EmoncmsUnavailableException {
+		if (connection != null && connection instanceof HttpRequestCallbacks) {
+			return new HttpFeed((HttpRequestCallbacks) connection, id);
+		}
+		else throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
 	}
 }

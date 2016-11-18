@@ -16,11 +16,15 @@
  */
 package org.emoncms.com.http;
 
+import java.util.List;
 import java.util.Map;
 
+import org.emoncms.Emoncms;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.json.Const;
+import org.emoncms.com.http.json.JsonInput;
 import org.emoncms.com.http.json.ToJson;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
 import org.emoncms.com.http.request.HttpRequestAction;
@@ -43,6 +47,12 @@ public class HttpInput extends Input {
 	private final HttpRequestCallbacks callbacks;
 	
 	
+	public HttpInput(HttpRequestCallbacks callbacks, int id, String node, String name, 
+			String description, ProcessList processList, Timevalue timevalue) {
+		super(id, node, name, description, processList, timevalue);
+		this.callbacks = callbacks;
+	}
+
 	public HttpInput(HttpRequestCallbacks callbacks, int id, String node, String name) {
 		super(id, node, name);
 		this.callbacks = callbacks;
@@ -102,21 +112,7 @@ public class HttpInput extends Input {
 	}
 
 	@Override
-	public ProcessList getProcessList() throws EmoncmsException {
-
-		logger.debug("Requesting process list for input \"{}\" of node \"{}\"", name, node);
-		
-		HttpRequestAction action = new HttpRequestAction("process/get");
-		action.addParameter(Const.INPUTID, id);
-		
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		
-		HttpEmoncmsResponse response = callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
-		return new ProcessList(response.getResponse().replace("\"", ""));
-	}
-
-	@Override
-	public void setProcessList(ProcessList processList) throws EmoncmsException {
+	public void setProcessList(String processList) throws EmoncmsException {
 
 		logger.debug("Requesting to set process list for input \"{}\" of node \"{}\": {}", name, node, processList);
 		
@@ -124,7 +120,7 @@ public class HttpInput extends Input {
 		action.addParameter(Const.INPUTID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
-		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList.toString());
+		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList);
 		
 		callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
 	}
@@ -156,7 +152,37 @@ public class HttpInput extends Input {
 	}
 
 	@Override
-	public Input clear() {
-		return new HttpInput(callbacks, id, node, name);
+	public void load() throws EmoncmsException {
+
+		logger.debug("Requesting input with id: {}", id);
+
+		HttpRequestAction action = new HttpRequestAction("list");
+		HttpRequestParameters parameters = new HttpRequestParameters();
+		
+		HttpEmoncmsResponse response = callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		try {
+			List<JsonInput> jsonInputList = response.getInputList();
+
+			for (JsonInput jsonInput : jsonInputList) {
+				if (jsonInput.getId() == id) {
+					this.name = jsonInput.getName();
+					this.description = jsonInput.getDescription();
+					this.processList = new ProcessList(jsonInput.getProcessList());
+					this.timevalue = new Timevalue(jsonInput.getTime(), jsonInput.getValue());
+					
+					break;
+				}
+			}
+			
+		} catch (ClassCastException e) {
+			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
+		}
+	}
+	
+	public static Input connect(Emoncms connection, int id, String name, String node) throws EmoncmsUnavailableException {
+		if (connection != null && connection instanceof HttpRequestCallbacks) {
+			return new HttpInput((HttpRequestCallbacks) connection, id, name, node);
+		}
+		else throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
 	}
 }

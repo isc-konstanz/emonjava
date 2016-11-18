@@ -25,7 +25,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.emoncms.Emoncms;
 import org.emoncms.Feed;
@@ -69,7 +73,8 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	private String apiKey;
 
 	private int maxThreads;
-	private ScheduledExecutorService executor = null;
+	private ThreadPoolExecutor executor = null;
+	private ScheduledExecutorService scheduler = null;
 
 
 	public HttpEmoncms(String address, String apiKey, int maxThreads) {
@@ -107,7 +112,13 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		if (executor != null) {
 			executor.shutdown();
 		}
-		executor = Executors.newScheduledThreadPool(maxThreads);
+        NamedThreadFactory namedThreadFactory = new NamedThreadFactory("EmonJava HTTP request pool - thread-");
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(maxThreads, namedThreadFactory);
+
+		if (scheduler != null) {
+			scheduler.shutdown();
+		}
+		scheduler = Executors.newScheduledThreadPool(maxThreads);
     	
 		// Verify the connection to the given address
     	try {
@@ -130,7 +141,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public void post(String node, String name, String devicekey, Timevalue timevalue) throws EmoncmsException {
+	public void post(String node, String name, Timevalue timevalue, String devicekey) throws EmoncmsException {
 
 		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
 		post(node, name, timevalue, authentication);
@@ -166,7 +177,23 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
+	public void post(String node, Long time, List<Namevalue> namevalues, String devicekey) throws EmoncmsException {
+
+		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
+		post(node, time, namevalues, authentication);
+	}
+
+	@Override
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
+		
+		HttpRequestAuthentication authentication = null;
+		if (apiKey != null) {
+			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+		}
+		post(node, time, namevalues, authentication);
+	}
+
+	private void post(String node, Long time, List<Namevalue> namevalues, HttpRequestAuthentication authentication) throws EmoncmsException {
 
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
@@ -184,7 +211,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		}
 		parameters.addParameter(Const.DATA, json);
 		
-		sendRequest("input", action, parameters, HttpRequestMethod.POST);
+		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
 	}
 
 	@Override
@@ -207,9 +234,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public List<Input> getInputList(String node) throws EmoncmsException {
-		if (node != null) {
-			logger.debug("Requesting input list for node \"{}\"", node);
-		}
+		logger.debug("Requesting input list for node \"{}\"", node);
 
 		HttpRequestAction action = new HttpRequestAction("get_inputs");
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -220,8 +245,10 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			
 			List<Input> inputList = new ArrayList<Input>(jsonInputList.size());
 			for (JsonInputConfig jsonInput : jsonInputList) {
+				
+				ProcessList processList = new ProcessList(jsonInput.getProcessList());
 				HttpInput input = new HttpInput(this,
-						jsonInput.getId(), jsonInput.getNodeid(), jsonInput.getName());
+						jsonInput.getId(), jsonInput.getNodeid(), jsonInput.getName(), null, processList, null);
 				
 				inputList.add(input);
 			}
@@ -237,14 +264,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		logger.debug("Requesting input list");
 
-		return getInputList(null);
-	}
-
-	@Override
-	public List<Input> loadInputList() throws EmoncmsException {
-		
-		logger.debug("Requesting to load input list");
-
 		HttpRequestAction action = new HttpRequestAction("list");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
@@ -257,7 +276,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 				
 				ProcessList processList = new ProcessList(jsonInput.getProcessList());
 				Timevalue timevalue = new Timevalue(jsonInput.getTime(), jsonInput.getValue());
-				HttpInputData input = new HttpInputData(this,
+				HttpInput input = new HttpInput(this,
 						jsonInput.getId(), jsonInput.getNodeid(), jsonInput.getName(), 
 						jsonInput.getDescription(), processList, timevalue);
 				
@@ -267,24 +286,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			
 		} catch (ClassCastException e) {
 			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
-		}
-	}
-
-	@Override
-	public void cleanInputList() throws EmoncmsException {
-
-		logger.debug("Requesting to clean input list");
-		
-		HttpRequestAction action = new HttpRequestAction("clean");
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		
-		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
-		
-		String result = response.getResponse();
-		if (logger.isDebugEnabled()) {
-			logger.debug("{} deleted inputs: {}", 
-					result.substring(0, result.toLowerCase().indexOf("delete")), 
-					result.substring(result.indexOf(":")+1, result.indexOf("<br>")-1));
 		}
 	}
 
@@ -299,26 +300,42 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
 		try {
 			JsonInputConfig jsonInputConfig = response.getInputConfig(node, name);
+			
+			ProcessList processList = new ProcessList(jsonInputConfig.getProcessList());
 			return new HttpInput(this,
-					jsonInputConfig.getId(), jsonInputConfig.getNodeid(), jsonInputConfig.getName());
-							
+					jsonInputConfig.getId(), jsonInputConfig.getNodeid(), jsonInputConfig.getName(), null, processList, null);
+			
 		} catch (ClassCastException e) {
 			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
 		}
 	}
 
 	@Override
-	public Input loadInput(int id) throws EmoncmsException {
+	public Input getInput(int id) throws EmoncmsException {
 
-		logger.debug("Requesting to load input with id: ", id);
+		logger.debug("Requesting input with id: {}", id);
+
+		HttpRequestAction action = new HttpRequestAction("list");
+		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		List<Input> inputList = loadInputList();
-		for (Input input : inputList) {
-			if (input.getId() == id) {
-				return input;
+		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
+		try {
+			List<JsonInput> jsonInputList = response.getInputList();
+
+			for (JsonInput jsonInput : jsonInputList) {
+				if (jsonInput.getId() == id) {
+					ProcessList processList = new ProcessList(jsonInput.getProcessList());
+					Timevalue timevalue = new Timevalue(jsonInput.getTime(), jsonInput.getValue());
+					return new HttpInput(this,
+							jsonInput.getId(), jsonInput.getNodeid(), jsonInput.getName(), 
+							jsonInput.getDescription(), processList, timevalue);
+				}
 			}
+			
+		} catch (ClassCastException e) {
+			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
 		}
-		throw new EmoncmsException("Input not found for id: " + id);
+		return null;
 	}
 
 	@Override
@@ -326,48 +343,28 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		logger.debug("Requesting feed list");
 
-		List<JsonFeed> jsonFeedList = getJsonFeedList();
-
-		List<Feed> feedList = new ArrayList<Feed>(jsonFeedList.size());
-		for (JsonFeed jsonFeed : jsonFeedList) {
-			HttpFeed feed = new HttpFeed(this, jsonFeed.getId());
-			
-			feedList.add(feed);
-		}
-		return feedList;
-	}
-
-	@Override
-	public List<Feed> loadFeedList() throws EmoncmsException {
-		
-		logger.debug("Requesting to load feed list");
-
-		List<JsonFeed> jsonFeedList = getJsonFeedList();
-
-		List<Feed> feedList = new ArrayList<Feed>(jsonFeedList.size());
-		for (JsonFeed jsonFeed : jsonFeedList) {
-			Timevalue timevalue = null;
-			if (jsonFeed.getTime() != null && jsonFeed.getValue() != null) {
-				timevalue = new Timevalue(jsonFeed.getTime(), jsonFeed.getValue());
-			}
-			HttpFeedData feed = new HttpFeedData(this, jsonFeed.getId(), 
-					jsonFeed.getName(), jsonFeed.getTag(), jsonFeed.isPublic(), jsonFeed.getSize(),
-					Datatype.getEnum(jsonFeed.getDatatype()), Engine.getEnum(jsonFeed.getEngine()),
-					timevalue);
-			
-			feedList.add(feed);
-		}
-		return feedList;
-	}
-
-	private List<JsonFeed> getJsonFeedList() throws EmoncmsException {
-
 		HttpRequestAction action = new HttpRequestAction("list");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
 		try {
-			return response.getFeedList();
+			List<JsonFeed> jsonFeedList = response.getFeedList();
+
+			List<Feed> feedList = new ArrayList<Feed>(jsonFeedList.size());
+			for (JsonFeed jsonFeed : jsonFeedList) {
+				Timevalue timevalue = null;
+				if (jsonFeed.getTime() != null && jsonFeed.getValue() != null) {
+					timevalue = new Timevalue(jsonFeed.getTime(), jsonFeed.getValue());
+				}
+				ProcessList processList = new ProcessList(jsonFeed.getProcessList());
+				HttpFeed feed = new HttpFeed(this, jsonFeed.getId(), 
+						jsonFeed.getName(), jsonFeed.getTag(), jsonFeed.isPublic(), jsonFeed.getSize(),
+						Datatype.getEnum(jsonFeed.getDatatype()), Engine.getEnum(jsonFeed.getEngine()),
+						processList, timevalue);
+				
+				feedList.add(feed);
+			}
+			return feedList;
 			
 		} catch (ClassCastException e) {
 			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
@@ -375,14 +372,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public Feed getFeed(int id) {
-
-		logger.debug("Returning new feed instance with id: {}", id);
-		return new HttpFeed(this, id);
-	}
-
-	@Override
-	public HttpFeedData loadFeed(int id) throws EmoncmsException {
+	public Feed getFeed(int id) throws EmoncmsException {
 
 		logger.debug("Requesting feed with id: {}", id);
 
@@ -518,19 +508,37 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		HttpCallable task = new HttpCallable(request);
 		Future<HttpEmoncmsResponse> submit;
+		ScheduledFuture<?> timeout;
 		synchronized (executor) {
 			submit = executor.submit(task);
-			executor.schedule(new Runnable(){
+			timeout = scheduler.schedule(new Runnable(){
 			     public void run(){
 			    	 submit.cancel(true);
 			     }
 			}, TIMEOUT, TimeUnit.MILLISECONDS);
 		}
 		HttpEmoncmsResponse response = submit.get();
+		timeout.cancel(true);
 
     	if (logger.isTraceEnabled()) {
     		logger.trace("Request took {}ms to respond", System.currentTimeMillis() - start);
     	}
 		return response;
+	}
+
+	private class NamedThreadFactory implements ThreadFactory {
+
+	    private final String name;
+	    private final AtomicInteger counter = new AtomicInteger(0);
+
+	    public NamedThreadFactory(String name) {
+	        this.name = name;
+	    }
+
+	    @Override
+	    public Thread newThread(Runnable r) {
+	        String threadName = name + counter.incrementAndGet();
+	        return new Thread(r, threadName);
+	    }
 	}
 }

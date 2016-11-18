@@ -27,6 +27,7 @@ public class JsonFeed {
 	int datatype;
 	int engine;
 	int size;
+	String processList;
 	String time;
 	String value;
 
@@ -58,6 +59,10 @@ public class JsonFeed {
 
 	public int getSize() {
 		return size;
+	}
+
+	public String getProcessList() {
+		return processList;
 	}
 
 	public Long getTime() {
