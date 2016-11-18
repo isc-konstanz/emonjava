@@ -113,14 +113,12 @@ public interface Emoncms {
 	 * @param node the common Node ID of the inputs, a value should be posted to.
 	 * @param time the timestamp, the posted values should be processed with.
 	 * @param namevalues the list of namevalues that will be posted.
-	 * 
-	 * @return the indicator, if the post was successful.
 	 */
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException;
 
 
 	/**
-	 * Post a set of {@link Data} values to a set of {@link Input}s.
+	 * Post data to a set of {@link Input}s.
 	 * 
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
 	 * 
@@ -130,7 +128,7 @@ public interface Emoncms {
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user and the specified node ID. 
-	 * An input allows to configure processes and post data through e.g. {@link Input#post(timevalue)}.
+	 * An input allows to configure processes and post data through e.g. {@link Input#post(Timevalue)}.
 	 * <p>
 	 * Inputs hold all their configuration fields in memory, but may be cleared to only hold their ID, node and name 
 	 * by calling {@link Input#clear()}. Input methods only need those variables to maintain their functionality 
@@ -139,12 +137,14 @@ public interface Emoncms {
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
 	 * 
 	 * @param node the Node ID, inputs should be returned for.
+	 * 
+	 * @return the list of inputs.
 	 */
 	public List<Input> getInputList(String node) throws EmoncmsException;
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user. 
-	 * An input allows to configure processes and post data through e.g. {@link Input#post(timevalue)}.
+	 * An input allows to configure processes and post data through e.g. {@link Input#post(Timevalue)}.
 	 * <p>
 	 * Inputs hold all their configuration fields in memory, but may be cleared to only hold their ID, node and name 
 	 * by calling {@link Input#clear()}. Input methods only need those variables to maintain their functionality 
@@ -158,7 +158,7 @@ public interface Emoncms {
 
 	/**
 	 * Returns the {@link Input} object for the specified node and name. An input allows to configure processes 
-	 * and post data through e.g. {@link Input#post(timevalue)}.
+	 * and post data through e.g. {@link Input#post(Timevalue)}.
 	 * <p>
 	 * Inputs hold all their configuration fields in memory, but may be cleared to only hold their ID, node and name 
 	 * by calling {@link Input#clear()}. Input methods only need those variables to maintain their functionality 
@@ -175,7 +175,7 @@ public interface Emoncms {
 
 	/**
 	 * Returns the {@link Input} object for the specified input ID. An input allows to configure processes 
-	 * and post data through e.g. {@link Input#post(timevalue)}.
+	 * and post data through e.g. {@link Input#post(Timevalue)}.
 	 * <p>
 	 * Inputs hold all their configuration fields in memory, but may be cleared to only hold their ID, node and name 
 	 * by calling {@link Input#clear()}. Input methods only need those variables to maintain their functionality 
@@ -211,7 +211,7 @@ public interface Emoncms {
 	 * 
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
 	 * 
-	 * @param the ID of the feed to get.
+	 * @param id the ID of the feed to get.
 	 * 
 	 * @return the feed object.
 	 */
@@ -222,7 +222,7 @@ public interface Emoncms {
 	 *
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
 	 * 
-	 * @param id the list of feeds to get the latest values for.
+	 * @param feeds the list of feeds to get the latest values for.
 	 * 
 	 * @return a map of corresponding feed values.
 	 */
