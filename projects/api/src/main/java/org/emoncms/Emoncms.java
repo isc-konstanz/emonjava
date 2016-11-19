@@ -57,7 +57,7 @@ public interface Emoncms {
 	public void stop();
 
 	/**
-	 * Post a {@link Timevalue} to a defined {@link Input}, identified by its node and name.
+	 * Post a {@link Timevalue} to a defined {@link Input}, identified by its node and name and authenticated by a device API key.
 	 * <p>
 	 * If the timevalues timestamp equals null, the CMS will use the current timestamp, to further process the input. 
 	 * The HTTP post requests may be authenticated with a devicekey, enabling to write values to a defined 
@@ -86,7 +86,7 @@ public interface Emoncms {
 	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException;
 
 	/**
-	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node.
+	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node and name and authenticated by a device API key.
 	 * <p>
 	 * If the time equals null, the CMS will use the current timestamp, to further process the inputs.
 	 * <p>
@@ -128,7 +128,7 @@ public interface Emoncms {
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user and the specified node ID. 
-	 * An input allows to configure processes and post data through e.g. {@link Input#post(Timevalue)}.
+	 * An input allows to configure processes and post data through e.g. {@link Input#post(Timevalue)}. 
 	 * <p>
 	 * Inputs hold all their configuration fields in memory, but may be cleared to only hold their ID, node and name 
 	 * by calling {@link Input#clear()}. Input methods only need those variables to maintain their functionality 
@@ -229,7 +229,7 @@ public interface Emoncms {
 	public Map<Feed, Double> getFeedValues(List<Feed> feeds) throws EmoncmsException;
 
 	/**
-	 * Creates a new {@link Feed} on the emoncms server. A feed allows to retrieve the latest data 
+	 * Creates a new {@link Feed} for the emoncms server. A feed allows to retrieve the latest data 
 	 * and configuration fields, as well as historical data through e.g. {@link Feed#getData(long, long, int)}.
 	 * 
 	 * @throws EmoncmsException if the communication with the emoncms server fails.

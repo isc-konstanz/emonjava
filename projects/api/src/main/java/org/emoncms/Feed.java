@@ -121,7 +121,7 @@ public abstract class Feed {
 		return processList;
 	}
 
-	protected void setProcessList(ProcessList processes) throws EmoncmsException {
+	public void setProcessList(ProcessList processes) throws EmoncmsException {
 		
 		this.setProcessList(processes.toString());
 		this.processList = processes;
