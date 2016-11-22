@@ -1,13 +1,13 @@
 
 project.ext {
 
-  cfgVersion = '0.8.1'
+  cfgVersion = '0.8.2'
 
   cfgGroup = 'org.emoncms'
 
   cfgCopyDependencies = true
 
-  cfgCopyToRoot = true
+  cfgCopyToRoot = false
 
   javaProjects = subprojects
   
@@ -43,7 +43,7 @@ tasks.withType(Tar) {
       include "gradle/wrapper/**"
       include "gradlew"
       include "gradlew.bat"
-      include "build/libs-all/**"
+      include "build/libs/**"
       include "dependencies/**"
       include "src/**"
 

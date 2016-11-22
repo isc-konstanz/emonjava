@@ -62,20 +62,20 @@ configure(javaProjects) {
 
     if (cfgCopyDependencies) {
       if (cfgCopyToRoot) {
-        into rootDir.getPath() + "/build/libs-all"
+        into rootDir.getPath() + "/build/libs"
       }
       else {
-        into "build/libs-all"
+        into "build/libs"
       }
       //includes all the dependencies:
       from configurations.default
     }
     else {
       if (cfgCopyToRoot) {
-        into rootDir.getPath() + "/build/libs-all"
+        into rootDir.getPath() + "/build/libs"
       }
       else {
-        into "build/libs-all"
+        into "build/libs"
       }
     }
   }
@@ -118,7 +118,7 @@ task javadocAll(type: Javadoc) {
   exclude "**/java-gen/**"
   exclude "**/app/**"
 
-  destinationDir = new File(buildDir, "docs/javadoc-all")
+  destinationDir = new File(buildDir, "docs/javadoc")
 
   classpath = files(distributionProjects.collect { project ->
     project.sourceSets.main.compileClasspath })
