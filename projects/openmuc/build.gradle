@@ -1,0 +1,44 @@
+
+configurations.create('embed')
+
+def osgiversion = '4.3.1'
+def openmucversion = '0.16.1'
+def emonjavaversion = '0.8.0'
+def gsonversion = '2.7'
+
+repositories {
+  flatDir {
+    dirs 'dependencies/openmuc', rootDir.getPath() + "/dependencies/openmuc"
+  }
+}
+
+dependencies {
+  compile group: 'org.osgi', name: 'org.osgi.core', version: osgiversion
+  compile group: 'org.osgi', name: 'org.osgi.compendium', version: osgiversion
+  compile group: 'org.openmuc.framework', name: 'openmuc-core-api', version: openmucversion
+  compile group: 'org.openmuc.framework', name: 'openmuc-core-spi', version: openmucversion
+
+  compile project(':emoncms-api')
+  embed project(':emoncms-api')
+  
+  compile project(':emoncms-http')
+  embed project(':emoncms-http')
+
+  compile group: 'com.google.code.gson', name: 'gson', version: gsonversion
+  embed group: 'com.google.code.gson', name: 'gson', version: gsonversion
+}
+
+jar {
+  manifest {
+    name = "Emoncms Java - OpenMUC Data Logger"
+    instruction 'Bundle-ClassPath', '.,lib/emoncms-api-' + emonjavaversion + '.jar,lib/emoncms-http-' + emonjavaversion + '.jar,lib/gson-' + gsonversion + '.jar'
+    instruction 'Import-Package', '!org.emoncms.*,!com.google.gson.*,*'
+    instruction 'Export-Package', ''
+  }
+}
+
+jar {
+  into('lib') {
+    from configurations.embed
+  }
+}

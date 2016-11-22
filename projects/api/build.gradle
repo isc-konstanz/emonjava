@@ -5,7 +5,7 @@ dependencies {
 
 jar {
   manifest {
-    name = "Emoncms IPC - API"
+    name = "Emoncms Java - API"
     instruction 'Export-Package', '*'
   }
 }

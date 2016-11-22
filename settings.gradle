@@ -1,4 +1,5 @@
-include 'emonjava-api', 'emonjava-http'
+include 'emoncms-api', 'emoncms-http', 'emoncms-logger'
 
-project(":emonjava-api").projectDir = file("projects/api")
-project(":emonjava-http").projectDir = file("projects/http")
+project(":emoncms-api").projectDir = file("projects/api")
+project(":emoncms-http").projectDir = file("projects/http")
+project(":emoncms-logger").projectDir = file("projects/openmuc")

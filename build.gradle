@@ -1,3 +1,14 @@
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "biz.aQute.bnd:biz.aQute.bnd.gradle:3.0.0"
+  }
+}
+
 apply from: "configuration.gradle"
 
 configure(allprojects) {
@@ -6,15 +17,22 @@ configure(allprojects) {
 
 configure(javaProjects) {
 
-  apply plugin: 'java'
-  apply plugin: 'eclipse'
-  apply plugin: 'osgi'
-  apply plugin: 'maven'
-
+  apply plugin: "java"
+  apply plugin: "eclipse"
+  apply plugin: "osgi"
+  apply plugin: "maven"
+  apply plugin: "biz.aQute.bnd.builder"
+  
   group = cfgGroup
 
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
+  if (!project.properties.containsKey("cfgJavaVersion")) {
+    project.ext {
+      cfgJavaVersion = "1.7"
+    }
+  }
+
+  sourceCompatibility = cfgJavaVersion
+  targetCompatibility = cfgJavaVersion
 
   repositories { mavenCentral() }
 
@@ -26,13 +44,13 @@ configure(javaProjects) {
   }
 
   dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    itestCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: "junit", name: "junit", version: "4.12"
+    itestCompile group: "junit", name: "junit", version: "4.12"
   }
 
   jar {
     manifest {
-      version = project.version.replace('-','.');
+      version = project.version.replace("-",".");
     }
   }
   
@@ -41,22 +59,6 @@ configure(javaProjects) {
 
     //only the jar file created:
     from configurations.default.getAllArtifacts().getFiles()
-
-    ext.isDocProject = false;
-    docProjects.findAll {
-      if (it.getPath() == project.path) {
-        isDocProject = true;
-      }
-    }
-    
-    if (isDocProject) {
-      //configurations.archives also contains source and javadoc files
-      configurations.archives.getArtifacts().all {
-        if (it.file.name.endsWith("sources.jar") || it.file.name.endsWith("javadoc.jar")) {
-          from project.files(it.file)
-        }
-      }
-    }
 
     if (cfgCopyDependencies) {
       if (cfgCopyToRoot) {
@@ -77,20 +79,20 @@ configure(javaProjects) {
       }
     }
   }
-
-  build.dependsOn(jarAll)
+  
+  build.dependsOn {jarAll}
 
   eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
   tasks.eclipse.dependsOn(cleanEclipse)
 
 
   task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    classifier = "sources"
     from sourceSets.main.allSource
   }
 
   task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    classifier = "javadoc"
     from javadoc.destinationDir
   }
 
@@ -100,16 +102,10 @@ configure(javaProjects) {
   }
 
   javadoc {
-    exclude '**/internal/**'
-    exclude '**/java-gen/**'
-    exclude '**/app/**'
+    exclude "**/internal/**"
+    exclude "**/java-gen/**"
+    exclude "**/app/**"
   }
-
-}
-
-configure(docProjects) {
-  jarAll.dependsOn sourcesJar
-  jarAll.dependsOn javadocJar
 }
 
 task javadocAll(type: Javadoc) {
@@ -118,9 +114,11 @@ task javadocAll(type: Javadoc) {
     project -> project.sourceSets.main.allJava
   }
 
-  exclude '**/internal/**'
+  exclude "**/internal/**"
+  exclude "**/java-gen/**"
+  exclude "**/app/**"
 
-  destinationDir = new File(buildDir, 'docs/javadoc-all')
+  destinationDir = new File(buildDir, "docs/javadoc-all")
 
   classpath = files(distributionProjects.collect { project ->
     project.sourceSets.main.compileClasspath })
@@ -142,7 +140,7 @@ task writeSettings << {
       else {
         out.write ", ";
       }
-      out.write "'" + myproject.name + "'"
+      out.write '"' + myproject.name + '"'
     }
   }
   out .write "\n\n";
@@ -169,20 +167,14 @@ tasks.withType(Tar) {
 
   compression = Compression.GZIP
   
-  destinationDir = file('build/distributions/')
+  destinationDir = file("build/distributions/")
 }
-
-task (tarFull, type: Tar) {
-  archiveName = project.name + "-" + project.version + "_full.tgz"
-}
-
 
 task (tar, type: Tar) {
   archiveName = project.name + "-" + project.version + ".tgz"
 }
 
-if (!javaProjects.contains(project)) {
-  task clean (type: Delete) {
-    delete "build"
-  }
+task (tarFull, type: Tar) {
+  dependsOn(tar)
+  archiveName = project.name + "-" + project.version + "_full.tgz"
 }

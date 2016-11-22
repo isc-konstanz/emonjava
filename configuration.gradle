@@ -1,7 +1,7 @@
 
 project.ext {
 
-  cfgVersion = '0.7.1'
+  cfgVersion = '0.8.0'
 
   cfgGroup = 'org.emoncms'
 
@@ -9,42 +9,63 @@ project.ext {
 
   cfgCopyToRoot = true
 
-
   javaProjects = subprojects
+  
+  jarDefaultImportPackageVersion=";version=0"
 
   distributionProjects = subprojects.findAll {
-    it.getPath() == ':emonjava-api' ||
-    it.getPath() == ':emonjava-http'
+    it.getPath() == ':emoncms-api' ||
+    it.getPath() == ':emoncms-http' ||
+    it.getPath() == ':emoncms-logger'
   }
 
   docProjects = distributionProjects.findAll {
-    it.getPath() == ':emonjava-api'
+    it.getPath() == ':emoncms-api'
   }
+
+  repositoryProjects = distributionProjects
+
+}
+
+configure(javaProjects) {
+  apply plugin: "java"
+  apply plugin: "maven"
 }
 
 tasks.withType(Tar) {
-
+  
   into(project.name) {
-    from('./') {
-      include 'build.gradle'
-      include 'configuration.gradle'
-      include 'license/**'
-      include 'build/libs-all/**'
-      include 'gradle/**'
-      include 'gradle*'
 
-      include 'projects/http/src/**'
-      include 'projects/http/build.gradle'
-      include 'projects/http/build/docs/**'
+    from("./") {
+      include "build.gradle"
+      include "configuration.gradle"
+      include "license/**"
+      include "gradle/wrapper/**"
+      include "gradlew"
+      include "gradlew.bat"
+      include "build/libs-all/**"
+      include "dependencies/**"
+      include "src/**"
+
+      exclude "**/projects/**/bin"
+      exclude "**/projects/**/build"
+      exclude "**/projects/**/.settings"
+      exclude "**/projects/**/.project"
+      exclude "**/projects/**/.classpath"
+      exclude "**/projects/**/.gradle"
+
+      for (Project myproject: distributionProjects) {
+        include myproject.getProjectDir().toString().substring((int)(getProjectDir().toString().size() + 1)) + "/**";
+      }
 
     }
 
     if (name.equals("tar") ){
-      exclude '**/dependencies/**/src'
+      exclude "**/dependencies/**/src"
     }
 
-    from('./build/') {
-      include 'settings.gradle'
+    from("./build/") {
+      include "settings.gradle"
     }
   }
 }

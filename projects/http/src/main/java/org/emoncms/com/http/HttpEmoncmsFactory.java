@@ -1,4 +1,4 @@
-package org.emoncms;
+package org.emoncms.com.http;
 /*
  * Copyright 2016 ISC Konstanz
  *
@@ -19,7 +19,7 @@ package org.emoncms;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.emoncms.com.http.HttpEmoncms;
+import org.emoncms.Emoncms;
 
 
 /**

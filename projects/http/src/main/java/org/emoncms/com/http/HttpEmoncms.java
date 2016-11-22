@@ -107,7 +107,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	@Override
 	public void start() throws EmoncmsUnavailableException {
     	
-    	logger.info("Registering energy monitoring content management \"{}\"", address);
+    	logger.info("Registering Energy Monitoring Content Management System connection \"{}\"", address);
 
 		if (executor != null) {
 			executor.shutdown();
@@ -133,7 +133,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	@Override
 	public void stop() {
 		
-		logger.info("Shutting energy monitoring content management \"{}\" down", address);
+		logger.info("Shutting emoncms connection \"{}\" down", address);
     	
 		if (executor != null) {
 			executor.shutdown();
@@ -507,16 +507,14 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		long start = System.currentTimeMillis();
 		
 		HttpCallable task = new HttpCallable(request);
-		Future<HttpEmoncmsResponse> submit;
-		ScheduledFuture<?> timeout;
-		synchronized (executor) {
-			submit = executor.submit(task);
-			timeout = scheduler.schedule(new Runnable(){
-			     public void run(){
-			    	 submit.cancel(true);
-			     }
-			}, TIMEOUT, TimeUnit.MILLISECONDS);
-		}
+		
+		final Future<HttpEmoncmsResponse> submit = executor.submit(task);
+		final ScheduledFuture<?> timeout = scheduler.schedule(new Runnable(){
+		     public void run(){
+		    	 submit.cancel(true);
+		     }
+		}, TIMEOUT, TimeUnit.MILLISECONDS);
+		
 		HttpEmoncmsResponse response = submit.get();
 		timeout.cancel(true);
 
