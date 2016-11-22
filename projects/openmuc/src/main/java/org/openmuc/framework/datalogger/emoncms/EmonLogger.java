@@ -1,9 +1,9 @@
 package org.openmuc.framework.datalogger.emoncms;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.emoncms.Emoncms;
 import org.emoncms.Input;
@@ -11,8 +11,7 @@ import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.HttpEmoncmsFactory;
 import org.emoncms.com.http.HttpInput;
-import org.emoncms.com.http.request.HttpRequestCallbacks;
-import org.emoncms.data.Timevalue;
+import org.emoncms.data.Namevalue;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
@@ -29,11 +28,7 @@ public class EmonLogger implements DataLoggerService {
 
 	private final static Logger logger = LoggerFactory.getLogger(EmonLogger.class);
 
-	private final static String INPUTID = "inputid";
-	private final static String NODE = "nodeid";
-	private final static String APIKEY = "apikey";
-
-	private final HashMap<String, ChannelInputContainer> channelInputsById = new HashMap<String, ChannelInputContainer>();
+	private final HashMap<String, ChannelInput> channelInputsById = new HashMap<String, ChannelInput>();
 
 	private Emoncms cms = null;
 
@@ -86,61 +81,108 @@ public class EmonLogger implements DataLoggerService {
 		// Will be called if OpenMUC starts the logger
 		channelInputsById.clear();
 		
-		// TODO add log interval groups and post List of Namevalues
-		for (LogChannel channel : channels) {
-			Map<String, String> settings = new HashMap<String, String>();
-			
-			String settingStr = channel.getLoggingSettings();
-			if (settingStr != null && !settingStr.isEmpty()) {
-				String[] parameters = settingStr.split(",");
-				for (String parameter : parameters) {
-					String[] keyValue = parameter.split(":");
-					settings.put(keyValue[0], keyValue[1]);
-				}
-			}
-			
-			Input input = null;
-			if (cms != null && settings.containsKey(INPUTID) && settings.containsKey(NODE)) {
-				int id = Integer.valueOf(settings.get(INPUTID));
-				input = new HttpInput((HttpRequestCallbacks) cms, id, settings.get(NODE), channel.getId());
-			}
-			
-			if (input != null && settings.containsKey(APIKEY)) {
-				ChannelInputContainer container = new ChannelInputContainer(input, settings.get(APIKEY));
+		if (cms != null) synchronized (cms) {
+			for (LogChannel channel : channels) {
+				SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
 				
-				channelInputsById.put(channel.getId(), container);
-			}
-			else {
-				logger.warn("Unable to configure logging for Channel \"{}\"", channel.getId());
-			}
-			if (logger.isTraceEnabled()) {
-				logger.trace("Channel \"{}\"configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
+				if (settings.isValid()) {
+					try {
+						Input input = HttpInput.connect(cms, settings.getInputId(), settings.getNode(), channel.getId());
+						ChannelInput container = new ChannelInput(input, settings.getApiKey());
+						
+						channelInputsById.put(channel.getId(), container);
+						
+					} catch (EmoncmsUnavailableException e) {
+						logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
+					}
+				}
+				if (logger.isTraceEnabled()) {
+					logger.trace("Channel \"{}\"configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
+				}
 			}
 		}
 	}
 
 	@Override
 	public synchronized void log(List<LogRecordContainer> containers, long timestamp) {
-		
-		for (LogRecordContainer container : containers) {
-			if (channelInputsById.containsKey(container.getChannelId())) {
+
+		if (cms != null) synchronized (cms) {
+			if (containers.size() > 1) {
+				LogRecordContainer container = containers.get(0);
+
+				if (logger.isTraceEnabled()) {
+					logger.trace("Attempting to log record for channel \"{}\": {}", container.getChannelId(), container.getRecord());
+				}
 				try {
-					ChannelInputContainer channel = channelInputsById.get(container.getChannelId());
-					Record record = container.getRecord();
+					if (channelInputsById.containsKey(container.getChannelId())) {
+						channelInputsById.get(container.getChannelId()).post(container.getRecord());
+					}
 					
-					if (logger.isTraceEnabled()) {
-						logger.trace("Logging to Channel \"{}\": {}", container.getChannelId(), container.getRecord());
-					}
-					if (record != null && record.getValue() != null) {
-						Timevalue timevalue = new Timevalue(record.getTimestamp(), record.getValue().asDouble());
-						channel.getInput().post(channel.getAuthenticator(), timevalue);
-					}
 				} catch (EmoncmsException | TypeConversionException e) {
-					logger.debug("Failed to log record for Channel \"{}\": {}", container.getChannelId(), e.getMessage());
+					logger.debug("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
 				}
 			}
 			else {
-				logger.debug("Unable to log record for Channel \"{}\"", container.getChannelId());
+				// Check, if several channels can be posted for the same device at once
+				List<DeviceValuesCollection> devices = new ArrayList<DeviceValuesCollection>();
+				for (LogRecordContainer container : containers) {
+					if (channelInputsById.containsKey(container.getChannelId())) {
+						if (logger.isTraceEnabled()) {
+							logger.trace("Preparing record to log for channel \"{}\": {}", container.getChannelId(), container.getRecord());
+						}
+						ChannelInput channel = channelInputsById.get(container.getChannelId());
+						if (container.getRecord() != null && container.getRecord().getValue() != null) {
+							try {
+								Record record = container.getRecord();
+								Namevalue value = new Namevalue(container.getChannelId(), record.getValue().asDouble());
+								
+								long time = timestamp;
+								if (container.getRecord().getTimestamp() != null) {
+									time = container.getRecord().getTimestamp();
+								}
+								
+								DeviceValuesCollection device = null;
+								for (DeviceValuesCollection d : devices) {
+									if (d.getNode().equals(channel.getInput().getNode()) && 
+											d.getAuthenticator().equals(channel.getAuthenticator()) &&
+											d.getTimestamp() == time) {
+										
+										d.add(value);
+										device = d;
+										break;
+									}
+								}
+								if (device == null) {
+									// No input collection for that device exists yet, so it needs to be created
+									device = new DeviceValuesCollection(channel.getInput().getNode(), channel.getAuthenticator(), time);
+									device.add(value);
+									devices.add(device);
+								}
+							} catch (TypeConversionException e) {
+								logger.debug("Failed to prepare record to log to Channel \"{}\": {}", container.getChannelId(), e.getMessage());
+							}
+						}
+						else {
+							logger.debug("Preparing to log an empty record for channel \"{}\" was skipped", container.getChannelId());
+						}
+					}
+					else {
+						logger.debug("Logging for channel \"{}\" not prepared yet", container.getChannelId());
+					}
+				}
+				
+				for (DeviceValuesCollection device : devices) {
+
+					if (logger.isTraceEnabled()) {
+						logger.trace("Attempting to log values for {} channels at device node \"{}\"", device.size(), device.getNode());
+					}
+					try {
+						cms.post(device.getNode(), device.getTimestamp(), device, device.getAuthenticator());
+						
+					} catch (EmoncmsException e) {
+						logger.debug("Failed to log values for device node \"{}\": {}", device.getNode(), e.getMessage());
+					}
+				}
 			}
 		}
 	}
