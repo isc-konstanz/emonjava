@@ -1,4 +1,4 @@
-include 'emoncms-api', 'emoncms-http', 'emoncms-logger'
+include "emoncms-api", "emoncms-http", "emoncms-logger"
 
 project(":emoncms-api").projectDir = file("projects/api")
 project(":emoncms-http").projectDir = file("projects/http")

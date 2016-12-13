@@ -3,7 +3,7 @@ configurations.create('embed')
 
 def osgiversion = '4.3.1'
 def openmucversion = '0.16.1'
-def emonjavaversion = '0.8.2'
+def emonjavaversion = '0.8.3'
 def gsonversion = '2.7'
 
 repositories {

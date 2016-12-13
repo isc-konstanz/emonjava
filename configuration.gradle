@@ -1,29 +1,25 @@
 
 project.ext {
 
-  cfgVersion = '0.8.2'
+  cfgVersion = "0.8.3"
 
-  cfgGroup = 'org.emoncms'
+  cfgGroup = "org.emoncms"
 
   cfgCopyDependencies = true
 
-  cfgCopyToRoot = false
+  cfgCopyToRoot = true
 
   javaProjects = subprojects
-  
-  jarDefaultImportPackageVersion=";version=0"
 
   distributionProjects = subprojects.findAll {
-    it.getPath() == ':emoncms-api' ||
-    it.getPath() == ':emoncms-http' ||
-    it.getPath() == ':emoncms-logger'
+    it.getPath() == ":emoncms-api" ||
+    it.getPath() == ":emoncms-http" ||
+    it.getPath() == ":emoncms-logger"
   }
 
   docProjects = distributionProjects.findAll {
-    it.getPath() == ':emoncms-api'
+    it.getPath() == ":emoncms-api"
   }
-
-  repositoryProjects = distributionProjects
 
 }
 

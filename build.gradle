@@ -106,6 +106,7 @@ configure(javaProjects) {
     exclude "**/java-gen/**"
     exclude "**/app/**"
   }
+
 }
 
 task javadocAll(type: Javadoc) {
