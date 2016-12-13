@@ -23,5 +23,8 @@ local.properties
 build/
 !/build
 /build/*
-!/build/libs
 !/build/docs
+!/build/libs
+/build/libs/*
+!/build/libs/emoncms*
+/projects/
