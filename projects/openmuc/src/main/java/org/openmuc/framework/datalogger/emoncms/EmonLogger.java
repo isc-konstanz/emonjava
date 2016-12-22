@@ -97,7 +97,7 @@ public class EmonLogger implements DataLoggerService {
 					}
 				}
 				if (logger.isTraceEnabled()) {
-					logger.trace("Channel \"{}\"configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
+					logger.trace("Channel \"{}\" configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
 				}
 			}
 		}

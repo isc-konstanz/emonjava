@@ -507,6 +507,9 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		long start = System.currentTimeMillis();
 		
 		HttpCallable task = new HttpCallable(request);
+		if (logger.isTraceEnabled()) {
+			logger.trace("Requesting \"{}\"", request.toString());
+		}
 		
 		final Future<HttpEmoncmsResponse> submit = executor.submit(task);
 		final ScheduledFuture<?> timeout = scheduler.schedule(new Runnable(){
@@ -517,9 +520,13 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		HttpEmoncmsResponse response = submit.get();
 		timeout.cancel(true);
-
+		
     	if (logger.isTraceEnabled()) {
-    		logger.trace("Request took {}ms to respond", System.currentTimeMillis() - start);
+    		String rsp = "Returned null";
+    		if (response != null) {
+    			rsp = response.getResponse();
+    		}
+    		logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
     	}
 		return response;
 	}

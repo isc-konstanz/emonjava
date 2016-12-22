@@ -27,4 +27,4 @@ build/
 !/build/libs
 /build/libs/*
 !/build/libs/emoncms*
-/projects/
+!/build/libs/openmuc*

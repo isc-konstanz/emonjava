@@ -3,7 +3,6 @@ configurations.create('embed')
 
 def osgiversion = '4.3.1'
 def openmucversion = '0.16.1'
-def emonjavaversion = '0.8.3'
 def gsonversion = '2.7'
 
 repositories {
@@ -20,7 +19,7 @@ dependencies {
 
   compile project(':emoncms-api')
   embed project(':emoncms-api')
-  
+
   compile project(':emoncms-http')
   embed project(':emoncms-http')
 
@@ -30,8 +29,8 @@ dependencies {
 
 jar {
   manifest {
-    name = "Emoncms Java - OpenMUC Data Logger"
-    instruction 'Bundle-ClassPath', '.,lib/emoncms-api-' + emonjavaversion + '.jar,lib/emoncms-http-' + emonjavaversion + '.jar,lib/gson-' + gsonversion + '.jar'
+    name = "OpenMUC Data Logger - Emoncms Java"
+    instruction 'Bundle-ClassPath', '.,lib/emoncms-api-' + cfgVersion + '.jar,lib/emoncms-http-' + cfgVersion + '.jar,lib/gson-' + gsonversion + '.jar'
     instruction 'Import-Package', '!org.emoncms.*,!com.google.gson.*,*'
     instruction 'Export-Package', ''
   }

@@ -1,5 +1,6 @@
-include "emoncms-api", "emoncms-http", "emoncms-logger"
+include "emoncms-api", "emoncms-http", "openmuc-datalogger-emoncms"
 
 project(":emoncms-api").projectDir = file("projects/api")
 project(":emoncms-http").projectDir = file("projects/http")
-project(":emoncms-logger").projectDir = file("projects/openmuc")
+
+project(":openmuc-datalogger-emoncms").projectDir = file("projects/openmuc")

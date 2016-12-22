@@ -40,4 +40,9 @@ public class HttpRequestAuthentication {
 	public String getAuthentication() throws UnsupportedEncodingException {
 		return type + "=" + URLEncoder.encode(key, "UTF-8");
 	}
+	
+	@Override
+	public String toString() {
+		return type + "=" + key;
+	}
 }

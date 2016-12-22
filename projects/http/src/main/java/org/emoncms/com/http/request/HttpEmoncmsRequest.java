@@ -18,8 +18,6 @@ package org.emoncms.com.http.request;
 
 import java.io.UnsupportedEncodingException;
 
-import org.emoncms.com.http.json.Const;
-
 
 public class HttpEmoncmsRequest {
 
@@ -103,7 +101,7 @@ public class HttpEmoncmsRequest {
 				
 				request += "&";
 			}
-			request += Const.API_KEY + "=" + authentication;
+			request += authentication.toString();
 		}
 		return request;
 	}
