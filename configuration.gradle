@@ -1,7 +1,7 @@
 
 project.ext {
 
-  cfgVersion = "0.8.4"
+  cfgVersion = "0.8.5"
 
   cfgGroup = "org.emoncms"
 
@@ -14,7 +14,7 @@ project.ext {
   distributionProjects = subprojects.findAll {
     it.getPath() == ":emoncms-api" ||
     it.getPath() == ":emoncms-http" ||
-    it.getPath() == ":emoncms-logger"
+    it.getPath() == ":openmuc-datalogger-emoncms"
   }
 
   docProjects = distributionProjects.findAll {
