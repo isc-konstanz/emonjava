@@ -128,22 +128,7 @@ public class EmonLogger implements DataLoggerService {
 
 		if (cms != null) synchronized (cms) {
 			if (containers.size() > 1) {
-				LogRecordContainer container = containers.get(0);
-
-				if (logger.isTraceEnabled()) {
-					logger.trace("Attempting to log record for channel \"{}\": {}", container.getChannelId(), container.getRecord());
-				}
-				try {
-					if (channelInputsById.containsKey(container.getChannelId())) {
-						channelInputsById.get(container.getChannelId()).post(container.getRecord());
-					}
-					
-				} catch (EmoncmsException | TypeConversionException e) {
-					logger.debug("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
-				}
-			}
-			else {
-				// Check, if several channels can be posted for the same device at once
+				// TODO: Check, if several channels can be posted for the same device at once
 				List<DeviceValuesCollection> devices = new ArrayList<DeviceValuesCollection>();
 				for (LogRecordContainer container : containers) {
 					if (channelInputsById.containsKey(container.getChannelId())) {
@@ -202,6 +187,21 @@ public class EmonLogger implements DataLoggerService {
 					} catch (EmoncmsException e) {
 						logger.debug("Failed to log values for device node \"{}\": {}", device.getNode(), e.getMessage());
 					}
+				}
+			}
+			else {
+				LogRecordContainer container = containers.get(0);
+
+				if (logger.isTraceEnabled()) {
+					logger.trace("Attempting to log record for channel \"{}\": {}", container.getChannelId(), container.getRecord());
+				}
+				try {
+					if (channelInputsById.containsKey(container.getChannelId())) {
+						channelInputsById.get(container.getChannelId()).post(container.getRecord());
+					}
+					
+				} catch (EmoncmsException | TypeConversionException e) {
+					logger.debug("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
 				}
 			}
 		}
