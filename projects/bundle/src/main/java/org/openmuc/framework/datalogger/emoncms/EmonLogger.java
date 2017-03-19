@@ -189,7 +189,7 @@ public class EmonLogger implements DataLoggerService {
 					}
 				}
 			}
-			else {
+			else if (containers.size() > 0) {
 				LogRecordContainer container = containers.get(0);
 
 				if (logger.isTraceEnabled()) {
