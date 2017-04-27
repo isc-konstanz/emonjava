@@ -83,10 +83,10 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	public HttpEmoncms(String address, String apiKey, int maxThreads) {
 		
-    	this.address = address;
-    	this.apiKey = apiKey;
-    	this.maxThreads = maxThreads;
-    }
+		this.address = address;
+		this.apiKey = apiKey;
+		this.maxThreads = maxThreads;
+	}
 
 	public String getAddress() {
 		return address;
@@ -110,35 +110,35 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	
 	@Override
 	public void start() throws EmoncmsUnavailableException {
-    	
-    	logger.info("Registering Energy Monitoring Content Management System connection \"{}\"", address);
+		
+		logger.info("Registering Energy Monitoring Content Management System connection \"{}\"", address);
 
 		if (executor != null) {
 			executor.shutdown();
 		}
-        NamedThreadFactory namedThreadFactory = new NamedThreadFactory("EmonJava HTTP request pool - thread-");
-        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(maxThreads, namedThreadFactory);
+		NamedThreadFactory namedThreadFactory = new NamedThreadFactory("EmonJava HTTP request pool - thread-");
+		executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(maxThreads, namedThreadFactory);
 
 		if (scheduler != null) {
 			scheduler.shutdown();
 		}
 		scheduler = Executors.newScheduledThreadPool(maxThreads);
-    	
+		
 		// Verify the connection to the given address
-    	try {
-    		HttpEmoncmsRequest request = new HttpEmoncmsRequest(address, null, null, null, HttpRequestMethod.GET);
-    		submitRequest(request);
-    		
+		try {
+			HttpEmoncmsRequest request = new HttpEmoncmsRequest(address, null, null, null, HttpRequestMethod.GET);
+			submitRequest(request);
+			
 		} catch (InterruptedException | ExecutionException e) {
-        	throw new EmoncmsUnavailableException("Unable to connect to \"" + address + "\": " + e);
-        }
+			throw new EmoncmsUnavailableException("Unable to connect to \"" + address + "\": " + e);
+		}
 	}
 	
 	@Override
 	public void stop() {
 		
 		logger.info("Shutting emoncms connection \"{}\" down", address);
-    	
+		
 		if (executor != null) {
 			executor.shutdown();
 		}
@@ -418,9 +418,9 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			
 			idsBuilder.append(feed.getId());
 
-        	if (iteratorFeedList.hasNext()) {
-        		idsBuilder.append(',');
-        	}
+			if (iteratorFeedList.hasNext()) {
+				idsBuilder.append(',');
+			}
 		}
 		
 		HttpRequestAction action = new HttpRequestAction("fetch");
@@ -457,7 +457,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
 		try {
-    		return Integer.valueOf(response.getString(Const.FEEDID));
+			return Integer.valueOf(response.getString(Const.FEEDID));
 			
 		} catch (ClassCastException e) {
 			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
@@ -482,7 +482,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		return sendRequest(path, authentication, action, parameters, method);
 	}
 	
-	private synchronized HttpEmoncmsResponse sendRequest(String path, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
 		String url = address + path.toLowerCase();
 		if (!url.endsWith("/"))
 			url += "/";
@@ -490,18 +490,18 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		HttpEmoncmsRequest request = new HttpEmoncmsRequest(url, authentication, 
 				action, parameters, method);
 
-        try {
-    		HttpEmoncmsResponse response = submitRequest(request);
-    		if (response != null) {
-	    		if (response.isSuccess()) {
-	    			return response;
-	    		}
-	    		else {
-	    			throw new EmoncmsException("Emoncms request responsed \"false\"");
-	    		}
-    		}
-    		else throw new EmoncmsException("Emoncms request failed");
-	    		
+		try {
+			HttpEmoncmsResponse response = submitRequest(request);
+			if (response != null) {
+				if (response.isSuccess()) {
+					return response;
+				}
+				else {
+					throw new EmoncmsException("Emoncms request responsed \"false\"");
+				}
+			}
+			else throw new EmoncmsException("Emoncms request failed");
+				
 		} catch (InterruptedException | ExecutionException | JsonSyntaxException e) {
 			throw new EmoncmsException("Error while requesting \"" + request.toString() + "\" :" + e);
 		}
@@ -516,38 +516,48 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		}
 		
 		final Future<HttpEmoncmsResponse> submit = executor.submit(task);
-		final ScheduledFuture<?> timeout = scheduler.schedule(new Runnable(){
-		     public void run(){
-		    	 submit.cancel(true);
-		     }
-		}, TIMEOUT, TimeUnit.MILLISECONDS);
+		final ScheduledFuture<?> timeout = scheduler.schedule(new ScheduledInterruptTask(submit), TIMEOUT, TimeUnit.MILLISECONDS);
 		
 		HttpEmoncmsResponse response = submit.get();
 		timeout.cancel(true);
 		
-    	if (logger.isTraceEnabled()) {
-    		String rsp = "Returned null";
-    		if (response != null) {
-    			rsp = response.getResponse();
-    		}
-    		logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
-    	}
+		if (logger.isTraceEnabled()) {
+			String rsp = "Returned null";
+			if (response != null) {
+				rsp = response.getResponse();
+			}
+			logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
+		}
 		return response;
+	}
+	
+	private class ScheduledInterruptTask implements Runnable {
+
+		private final Future<HttpEmoncmsResponse> task;
+		
+		public ScheduledInterruptTask(Future<HttpEmoncmsResponse> task) {
+			this.task = task;
+		}
+		
+		public void run() {
+			logger.warn("Interrupting running HTTP request after {} seconds", TIMEOUT/1000);
+			task.cancel(true);
+		}
 	}
 
 	private class NamedThreadFactory implements ThreadFactory {
 
-	    private final String name;
-	    private final AtomicInteger counter = new AtomicInteger(0);
+		private final String name;
+		private final AtomicInteger counter = new AtomicInteger(0);
 
-	    public NamedThreadFactory(String name) {
-	        this.name = name;
-	    }
+		public NamedThreadFactory(String name) {
+			this.name = name;
+		}
 
-	    @Override
-	    public Thread newThread(Runnable r) {
-	        String threadName = name + counter.incrementAndGet();
-	        return new Thread(r, threadName);
-	    }
+		@Override
+		public Thread newThread(Runnable r) {
+			String threadName = name + counter.incrementAndGet();
+			return new Thread(r, threadName);
+		}
 	}
 }

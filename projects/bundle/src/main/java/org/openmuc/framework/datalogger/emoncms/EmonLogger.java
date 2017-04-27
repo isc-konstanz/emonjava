@@ -32,6 +32,8 @@ import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.HttpEmoncmsFactory;
 import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Namevalue;
+import org.emoncms.data.Timevalue;
+import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
@@ -99,112 +101,136 @@ public class EmonLogger implements DataLoggerService {
 	public void setChannelsToLog(List<LogChannel> channels) {
 		
 		// Will be called if OpenMUC starts the logger
+		if (cms == null) {
+			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
+			return;
+		}
 		channelInputsById.clear();
 		
-		if (cms != null) synchronized (cms) {
-			for (LogChannel channel : channels) {
-				SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
-				
-				if (settings.isValid()) {
-					try {
-						Input input = HttpInput.connect(cms, settings.getInputId(), settings.getNode(), channel.getId());
-						ChannelInput container = new ChannelInput(input, settings.getApiKey());
-						
-						channelInputsById.put(channel.getId(), container);
-						
-					} catch (EmoncmsUnavailableException e) {
-						logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
-					}
+		for (LogChannel channel : channels) {
+			SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
+			
+			if (settings.isValid()) {
+				try {
+					Input input = HttpInput.connect(cms, settings.getInputId(), settings.getNode(), channel.getId());
+					ChannelInput container = new ChannelInput(input, settings.getApiKey());
+					
+					channelInputsById.put(channel.getId(), container);
+					
+				} catch (EmoncmsUnavailableException e) {
+					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
 				}
+
 				if (logger.isTraceEnabled()) {
 					logger.trace("Channel \"{}\" configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
 				}
 			}
+			else logger.warn("Unable to configure invalid syntax for logging Channel \"{}\"", channel.getId());
 		}
 	}
 
 	@Override
 	public synchronized void log(List<LogRecordContainer> containers, long timestamp) {
 
-		if (cms != null) synchronized (cms) {
-			if (containers.size() > 1) {
-				// TODO: Check, if several channels can be posted for the same device at once
-				List<DeviceValuesCollection> devices = new ArrayList<DeviceValuesCollection>();
-				for (LogRecordContainer container : containers) {
-					if (channelInputsById.containsKey(container.getChannelId())) {
-						if (logger.isTraceEnabled()) {
-							logger.trace("Preparing record to log for channel \"{}\": {}", container.getChannelId(), container.getRecord());
-						}
-						ChannelInput channel = channelInputsById.get(container.getChannelId());
-						if (container.getRecord() != null && container.getRecord().getValue() != null) {
-							try {
-								Record record = container.getRecord();
-								Namevalue value = new Namevalue(container.getChannelId(), record.getValue().asDouble());
-								
-								long time = timestamp;
-								if (container.getRecord().getTimestamp() != null) {
-									time = container.getRecord().getTimestamp();
-								}
-								
-								DeviceValuesCollection device = null;
-								for (DeviceValuesCollection d : devices) {
-									if (d.getNode().equals(channel.getInput().getNode()) && 
-											d.getAuthenticator().equals(channel.getAuthenticator()) &&
-											d.getTimestamp() == time) {
-										
-										d.add(value);
-										device = d;
-										break;
-									}
-								}
-								if (device == null) {
-									// No input collection for that device exists yet, so it needs to be created
-									device = new DeviceValuesCollection(channel.getInput().getNode(), channel.getAuthenticator(), time);
-									device.add(value);
-									devices.add(device);
-								}
-							} catch (TypeConversionException e) {
-								logger.debug("Failed to prepare record to log to Channel \"{}\": {}", container.getChannelId(), e.getMessage());
-							}
-						}
-						else {
-							logger.debug("Preparing to log an empty record for channel \"{}\" was skipped", container.getChannelId());
-						}
-					}
-					else {
-						logger.debug("Logging for channel \"{}\" not prepared yet", container.getChannelId());
-					}
-				}
-				
-				for (DeviceValuesCollection device : devices) {
-
-					if (logger.isTraceEnabled()) {
-						logger.trace("Attempting to log values for {} channels at device node \"{}\"", device.size(), device.getNode());
-					}
-					try {
-						cms.post(device.getNode(), device.getTimestamp(), device, device.getAuthenticator());
-						
-					} catch (EmoncmsException e) {
-						logger.debug("Failed to log values for device node \"{}\": {}", device.getNode(), e.getMessage());
-					}
-				}
-			}
-			else if (containers.size() > 0) {
-				LogRecordContainer container = containers.get(0);
-
-				if (logger.isTraceEnabled()) {
-					logger.trace("Attempting to log record for channel \"{}\": {}", container.getChannelId(), container.getRecord());
-				}
+		if (cms == null) {
+			logger.error("Requested to log values for deactivated Emoncms logger");
+		}
+		else if (containers == null || containers.isEmpty()) {
+			logger.warn("Requested Emoncms logger to log an empty container list");
+		}
+		else if (containers.size() == 1) {
+			
+			LogRecordContainer container = containers.get(0);
+			if (isValid(container)) {
+				ChannelInput channel = channelInputsById.get(container.getChannelId());
 				try {
-					if (channelInputsById.containsKey(container.getChannelId())) {
-						channelInputsById.get(container.getChannelId()).post(container.getRecord());
+					Record record = container.getRecord();
+					Long time = record.getTimestamp();
+					if (time == null) {
+						time = timestamp;
 					}
+					Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
+					
+					channel.post(timevalue);
 					
 				} catch (EmoncmsException | TypeConversionException e) {
-					logger.debug("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
+					logger.warn("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
 				}
 			}
 		}
+		else {
+			// TODO: Check, if several channels can be posted for the same device at once
+			List<DeviceValuesCollection> devices = new ArrayList<DeviceValuesCollection>();
+			for (LogRecordContainer container : containers) {
+				if (isValid(container)) {
+					ChannelInput channel = channelInputsById.get(container.getChannelId());
+					try {
+						Record record = container.getRecord();
+						Long time = record.getTimestamp();
+						if (time == null) {
+							time = timestamp;
+						}
+						Namevalue value = new Namevalue(container.getChannelId(), record.getValue().asDouble());
+						
+						DeviceValuesCollection device = null;
+						for (DeviceValuesCollection d : devices) {
+							if (d.getNode().equals(channel.getInput().getNode()) && 
+									d.getAuthenticator().equals(channel.getAuthenticator()) &&
+									d.getTimestamp() == time) {
+								
+								d.add(value);
+								device = d;
+								break;
+							}
+						}
+						if (device == null) {
+							// No input collection for that device exists yet, so it needs to be created
+							device = new DeviceValuesCollection(channel.getInput().getNode(), channel.getAuthenticator(), time);
+							device.add(value);
+							devices.add(device);
+						}
+						
+					} catch (TypeConversionException e) {
+						logger.warn("Failed to prepare record to log to Channel \"{}\": {}", container.getChannelId(), e.getMessage());
+					}
+				}
+			}
+			
+			for (DeviceValuesCollection device : devices) {
+
+				if (logger.isTraceEnabled()) {
+					logger.trace("Attempting to log values for {} channels at device node \"{}\"", device.size(), device.getNode());
+				}
+				try {
+					cms.post(device.getNode(), device.getTimestamp(), device, device.getAuthenticator());
+					
+				} catch (EmoncmsException e) {
+					logger.warn("Failed to log values for device node \"{}\": {}", device.getNode(), e.getMessage());
+				}
+			}
+		}
+	}
+
+	private boolean isValid(LogRecordContainer container) {
+		
+		if (channelInputsById.containsKey(container.getChannelId())) {
+		
+			if (container.getRecord() != null) {
+				if (container.getRecord().getFlag() == Flag.VALID && container.getRecord().getValue() != null) {
+					
+					if (logger.isTraceEnabled()) {
+						logger.trace("Preparing record to log for channel \"{}\": {}", container.getChannelId(), container.getRecord());
+					}
+					return true;
+				}
+				else logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
+						container.getChannelId(), container.getRecord().getFlag().toString());
+			}
+			else logger.warn("Failed to log an empty record for channel \"{}\"", container.getChannelId());
+		}
+		else logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());
+		
+		return false;
 	}
 
 	@Override

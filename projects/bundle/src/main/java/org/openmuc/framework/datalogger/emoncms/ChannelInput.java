@@ -23,8 +23,6 @@ package org.openmuc.framework.datalogger.emoncms;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.data.Timevalue;
-import org.openmuc.framework.data.Record;
-import org.openmuc.framework.data.TypeConversionException;
 
 public class ChannelInput {
 
@@ -44,18 +42,13 @@ public class ChannelInput {
 		return authenticator;
 	}
 	
-	public boolean post(Record record) throws EmoncmsException, TypeConversionException {
+	public void post(Timevalue timevalue) throws EmoncmsException {
 
-		if (record != null && record.getValue() != null) {
-			Timevalue timevalue = new Timevalue(record.getTimestamp(), record.getValue().asDouble());
-			if (authenticator != null) {
-				input.post(authenticator, timevalue);
-			}
-			else {
-				input.post(timevalue);
-			}
-			return true;
+		if (authenticator != null) {
+			input.post(authenticator, timevalue);
 		}
-		else return false;
+		else {
+			input.post(timevalue);
+		}
 	}
 }
