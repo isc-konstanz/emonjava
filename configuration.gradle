@@ -1,11 +1,13 @@
 
 project.ext {
 
-  cfgVersion = "0.8.8"
+  cfgVersion = "0.8.9"
 
   cfgGroup = "org.emoncms"
 
-  cfgCopyDependencies = true
+  cfgCopyDependencies = false
+
+  cfgCopyArtefacts = true
 
   cfgCopyToRoot = true
 
