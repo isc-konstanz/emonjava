@@ -27,7 +27,7 @@ configure(javaProjects) {
 
   if (!project.properties.containsKey("cfgJavaVersion")) {
     project.ext {
-      cfgJavaVersion = "1.7"
+      cfgJavaVersion = "1.8"
     }
   }
 
@@ -53,38 +53,6 @@ configure(javaProjects) {
       version = project.version.replace("-",".");
     }
   }
-  
-  task jarAll(type: Copy) {
-    dependsOn(configurations.default.getAllArtifacts().getBuildDependencies())
-
-    //only the jar file created:
-    from configurations.default.getAllArtifacts().getFiles()
-
-    if (cfgCopyDependencies) {
-      if (cfgCopyToRoot) {
-        into rootDir.getPath() + "/build/libs"
-      }
-      else {
-        into "build/libs"
-      }
-      //includes all the dependencies:
-      from configurations.default
-    }
-    else {
-      if (cfgCopyToRoot) {
-        into rootDir.getPath() + "/build/libs"
-      }
-      else {
-        into "build/libs"
-      }
-    }
-  }
-  
-  build.dependsOn {jarAll}
-
-  eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
-  tasks.eclipse.dependsOn(cleanEclipse)
-
 
   task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = "sources"
@@ -96,6 +64,32 @@ configure(javaProjects) {
     from javadoc.destinationDir
   }
 
+  task jarAll(type: Copy) {
+    dependsOn(configurations.default.getAllArtifacts().getBuildDependencies())
+
+    from configurations.default.getAllArtifacts().getFiles()
+    if (cfgCopyDependencies) {
+      // Includes all dependencies
+      from configurations.default
+    }
+
+    if (cfgCopyToRoot) {
+      if (cfgCopyArtefacts) {
+        from sourcesJar
+        from javadocJar
+      }
+      into rootDir.getPath() + "/build/libs"
+    }
+    else {
+      into "build/libs"
+    }
+  }
+  
+  build.dependsOn { jarAll }
+
+  eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
+  tasks.eclipse.dependsOn(cleanEclipse)
+
   artifacts {
     archives sourcesJar
     archives javadocJar
@@ -106,7 +100,6 @@ configure(javaProjects) {
     exclude "**/java-gen/**"
     exclude "**/app/**"
   }
-
 }
 
 task javadocAll(type: Javadoc) {
