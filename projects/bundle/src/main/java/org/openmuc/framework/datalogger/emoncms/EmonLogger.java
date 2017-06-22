@@ -136,7 +136,7 @@ public class EmonLogger implements DataLoggerService {
 			logger.error("Requested to log values for deactivated Emoncms logger");
 		}
 		else if (containers == null || containers.isEmpty()) {
-			logger.warn("Requested Emoncms logger to log an empty container list");
+			logger.debug("Requested Emoncms logger to log an empty container list");
 		}
 		else if (containers.size() == 1) {
 			
