@@ -238,7 +238,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	private void post(DataList dataList, HttpRequestAuthentication authentication) throws EmoncmsException {
 		
-		logger.debug("Requesting to post values for {} nodes", dataList.size());
+		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
 		HttpRequestAction action = new HttpRequestAction("bulk");
 		

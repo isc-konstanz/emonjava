@@ -63,5 +63,6 @@ public class ToJsonArray {
 			valueObj.addProperty(namevalue.getName(), namevalue.getValue());
 			dataArray.add(valueObj);
 		}
+		jsonArray.add(dataArray);
 	}
 }
