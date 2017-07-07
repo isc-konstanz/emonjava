@@ -41,12 +41,12 @@ import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.json.Const;
-import org.emoncms.com.http.json.JsonData;
 import org.emoncms.com.http.json.JsonFeed;
 import org.emoncms.com.http.json.JsonInput;
 import org.emoncms.com.http.json.JsonInputConfig;
 import org.emoncms.com.http.json.JsonInputList;
-import org.emoncms.com.http.json.ToJson;
+import org.emoncms.com.http.json.ToJsonArray;
+import org.emoncms.com.http.json.ToJsonObject;
 import org.emoncms.com.http.request.HttpCallable;
 import org.emoncms.com.http.request.HttpEmoncmsRequest;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
@@ -55,6 +55,7 @@ import org.emoncms.com.http.request.HttpRequestAuthentication;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
+import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Datatype;
 import org.emoncms.data.Engine;
@@ -173,7 +174,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		}
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
-		ToJson json = new ToJson();
+		ToJsonObject json = new ToJsonObject();
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.DATA, json);
 		
@@ -201,39 +202,64 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
-		HttpRequestAction action = new HttpRequestAction("post");
+		HttpRequestAction action = new HttpRequestAction("bulk");
 		action.addParameter(Const.NODE, node);
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
 			action.addParameter(Const.TIME, time/1000);
 		}
-		
+
 		HttpRequestParameters parameters = new HttpRequestParameters();
-		ToJson json = new ToJson();
+		ToJsonObject json = new ToJsonObject();
 		for (Namevalue namevalue : namevalues) {
 			json.addDouble(namevalue.getName(), namevalue.getValue());
 		}
 		parameters.addParameter(Const.DATA, json);
-		
+
 		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
 	}
 
 	@Override
-	public void post(DataList data) throws EmoncmsException {
+	public void post(DataList dataList, String devicekey) throws EmoncmsException {
 
-		logger.debug("Requesting to post values for {} nodes", data.size());
+		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
+		post(dataList, authentication);
+	}
+
+	@Override
+	public void post(DataList dataList) throws EmoncmsException {
+		
+		HttpRequestAuthentication authentication = null;
+		if (apiKey != null) {
+			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+		}
+		post(dataList, authentication);
+	}
+
+	private void post(DataList dataList, HttpRequestAuthentication authentication) throws EmoncmsException {
+		
+		logger.debug("Requesting to post values for {} nodes", dataList.size());
 		
 		HttpRequestAction action = new HttpRequestAction("bulk");
-		JsonData json = new JsonData(data);
-		if (json.getTime() != null && json.getTime() > 0) {
+		
+		Long time = dataList.getTime();
+		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, json.getTime()/1000);
+			action.addParameter(Const.TIME, time/1000);
 		}
+		else {
+			time = System.currentTimeMillis();
+		}
+		dataList.sort();
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
+		ToJsonArray json = new ToJsonArray();
+		for (Data data : dataList) {
+			json.addData(time, data);
+		}
 		parameters.addParameter(Const.DATA, json.toString());
 		
-		sendRequest("input", action, parameters, HttpRequestMethod.POST);
+		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
 	}
 
 	@Override
@@ -448,7 +474,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		action.addParameter(Const.DATATYPE, type.getValue());
 		action.addParameter(Const.ENGINE, engine.getValue());
 		if (options != null && !options.isEmpty()) {
-			ToJson json = new ToJson();
+			ToJsonObject json = new ToJsonObject();
 			json.addOptions(options);
 			action.addParameter(Const.OPTIONS, json);
 		}

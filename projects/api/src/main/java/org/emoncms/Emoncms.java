@@ -92,8 +92,6 @@ public interface Emoncms {
 	/**
 	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node and name and authenticated by a device API key.
 	 * <p>
-	 * If the time equals null, the CMS will use the current timestamp, to further process the inputs.
-	 * <p>
 	 * If the timevalues timestamp equals null, the CMS will use the current timestamp, to further process the input. 
 	 * The HTTP post requests may be authenticated with a devicekey, enabling to write values to a defined 
 	 * devices' node ID. This can be useful, to avoid the storage of an API key with more permissions.
@@ -129,6 +127,20 @@ public interface Emoncms {
 	 * @param data the data to post to the CMS.
 	 */
 	public void post(DataList data) throws EmoncmsException;
+
+
+	/**
+	 * Post data to a set of {@link Input}s, authenticated by a device API key.
+	 * <p>
+	 * The HTTP post requests may be authenticated with a devicekey, enabling to write values to a defined 
+	 * devices' node ID. This can be useful, to avoid the storage of an API key with more permissions.
+	 * 
+	 * @throws EmoncmsException if the communication with the emoncms server fails.
+	 * 
+	 * @param data the data to post to the CMS.
+	 * @param devicekey the device API Key, to authenticate the request.
+	 */
+	public void post(DataList data, String devicekey) throws EmoncmsException;
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user and the specified node ID. 

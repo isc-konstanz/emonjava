@@ -20,43 +20,46 @@
  */
 package org.emoncms.data;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 
 
 public class DataList extends LinkedList<Data> {
 	private static final long serialVersionUID = 3972451487664220862L;
-	
-	@Override
-	public boolean add(Data data) {
-		boolean result = super.add(data);
 
-        if (result) {
-        	Comparator<Data> comparator = new SortTime();
-    		Collections.sort(this, comparator);
-        }
-		return result;
-	}
-	
-	public boolean add(int node, Timevalue timevalue) {
+	private Long referenceTime = null;
+
+	public boolean add(Long time, String node, Namevalue namevalue) {
 		boolean result = false;
 		
+		if (time != null && (referenceTime == null || referenceTime > time)) {
+			referenceTime = time;
+		}
+		
 		for (Data data : this) {
-			if (data.getNode() == node && data.getTime() == timevalue.getTime()) {
-				data.add(timevalue.getValue());
+			if (data.getNode() == node && data.getTime() == time) {
+				data.add(namevalue);
 				
 				result = true;
 				break;
 			}
 		}
 		if (!result) {
-			Data newData = new Data(node, timevalue.getTime(), timevalue.getValue());
-			result = this.add(newData);
+			Data newData = new Data(time, node, namevalue);
+			result = add(newData);
 		}
 		return result;
 	}
-	
+
+	public Long getTime() {
+		return referenceTime;
+	}
+
+	public void sort() {
+    	Comparator<Data> comparator = new SortTime();
+		sort(comparator);
+	}
+
 	private class SortTime implements Comparator<Data>{
 		@Override
 		public int compare(Data d1, Data d2){

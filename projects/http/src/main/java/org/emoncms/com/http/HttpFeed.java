@@ -30,7 +30,7 @@ import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.json.Const;
 import org.emoncms.com.http.json.JsonFeed;
 import org.emoncms.com.http.json.JsonTimevalue;
-import org.emoncms.com.http.json.ToJson;
+import org.emoncms.com.http.json.ToJsonObject;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
 import org.emoncms.com.http.request.HttpRequestAction;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
@@ -86,7 +86,7 @@ public class HttpFeed extends Feed {
 
 		HttpRequestAction action = new HttpRequestAction("set");
 		action.addParameter(Const.ID, id);
-		ToJson json = new ToJson();
+		ToJsonObject json = new ToJsonObject();
 		for (Map.Entry<String, String> field : fields.entrySet()) {
 			json.addString(field.getKey(), field.getValue());
 		}

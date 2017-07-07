@@ -54,11 +54,11 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public boolean isSuccess() throws EmoncmsSyntaxException {
-		if (response.toLowerCase().equals("ok")) {
+		if (response.toLowerCase().startsWith("ok")) {
 			// Posted input values will be responded with "ok"
 			return true;
 		}
-		else if (response.toLowerCase().equals("null")) {
+		else if (response.equalsIgnoreCase("null")) {
 			// Responded string for deleted inputs or feeds.
 			// TODO: Verify necessity for future versions.
 			return true;

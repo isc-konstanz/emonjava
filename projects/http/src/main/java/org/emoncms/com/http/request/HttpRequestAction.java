@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.emoncms.com.http.json.ToJson;
+import org.emoncms.com.http.json.ToJsonObject;
 
 
 public class HttpRequestAction extends LinkedHashMap<String, String>{
@@ -43,7 +43,7 @@ public class HttpRequestAction extends LinkedHashMap<String, String>{
 		this.action = action;
 	}
 	
-	public void addParameter(String key, ToJson value) {
+	public void addParameter(String key, ToJsonObject value) {
 		super.put(key, value.toString());
 	}
 	

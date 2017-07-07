@@ -159,8 +159,7 @@ public class EmonLogger implements DataLoggerService {
 			}
 		}
 		else {
-			// TODO: Check, if several channels can be posted for the same device at once
-			List<DeviceValuesCollection> devices = new ArrayList<DeviceValuesCollection>();
+			List<DeviceDataList> devices = new ArrayList<DeviceDataList>();
 			for (LogRecordContainer container : containers) {
 				if (isValid(container)) {
 					ChannelInput channel = channelInputsById.get(container.getChannelId());
@@ -172,21 +171,20 @@ public class EmonLogger implements DataLoggerService {
 						}
 						Namevalue value = new Namevalue(container.getChannelId(), record.getValue().asDouble());
 						
-						DeviceValuesCollection device = null;
-						for (DeviceValuesCollection d : devices) {
-							if (d.getNode().equals(channel.getInput().getNode()) && 
-									d.getAuthenticator().equals(channel.getAuthenticator()) &&
-									d.getTimestamp() == time) {
+						DeviceDataList device = null;
+						for (DeviceDataList d : devices) {
+							if (d.getAuthenticator().equals(channel.getAuthenticator())) {
 								
-								d.add(value);
+								d.add(time, channel.getInput().getNode(), value);
 								device = d;
 								break;
 							}
 						}
 						if (device == null) {
 							// No input collection for that device exists yet, so it needs to be created
-							device = new DeviceValuesCollection(channel.getInput().getNode(), channel.getAuthenticator(), time);
-							device.add(value);
+							device = new DeviceDataList(channel.getAuthenticator());
+							device.add(time, channel.getInput().getNode(), value);
+							
 							devices.add(device);
 						}
 						
@@ -196,16 +194,16 @@ public class EmonLogger implements DataLoggerService {
 				}
 			}
 			
-			for (DeviceValuesCollection device : devices) {
+			for (DeviceDataList device : devices) {
 
 				if (logger.isTraceEnabled()) {
-					logger.trace("Attempting to log values for {} channels at device node \"{}\"", device.size(), device.getNode());
+					logger.trace("Attempting to log {} values for key \"{}\"", device.size(), device.getAuthenticator());
 				}
 				try {
-					cms.post(device.getNode(), device.getTimestamp(), device, device.getAuthenticator());
+					cms.post(device, device.getAuthenticator());
 					
 				} catch (EmoncmsException e) {
-					logger.warn("Failed to log values for device node \"{}\": {}", device.getNode(), e.getMessage());
+					logger.warn("Failed to log values for key \"{}\": {}", device.getAuthenticator(), e.getMessage());
 				}
 			}
 		}
@@ -226,7 +224,7 @@ public class EmonLogger implements DataLoggerService {
 				else logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
 						container.getChannelId(), container.getRecord().getFlag().toString());
 			}
-			else logger.warn("Failed to log an empty record for channel \"{}\"", container.getChannelId());
+			else logger.debug("Failed to log an empty record for channel \"{}\"", container.getChannelId());
 		}
 		else logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());
 		

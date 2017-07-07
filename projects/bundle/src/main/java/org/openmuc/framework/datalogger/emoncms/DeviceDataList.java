@@ -18,38 +18,20 @@
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.emoncms.data;
+package org.openmuc.framework.datalogger.emoncms;
 
-import java.util.LinkedList;
-import java.util.List;
+import org.emoncms.data.DataList;
 
+public class DeviceDataList extends DataList {
+	private static final long serialVersionUID = 1720223912529518324L;
 
-public class Data {
-	private final Long time;
-	private final String node;
-	private final List<Namevalue> namevalues = new LinkedList<Namevalue>();
-	
-	
-	public Data(Long time, String node, Namevalue namevalue) {
-		this.time = time;
-		this.node = node;
-		namevalues.add(namevalue);
+	private final String authenticator;
+
+	public DeviceDataList(String key) {
+		this.authenticator = key;
 	}
 
-	public void add(Namevalue namevalue) {
-		namevalues.add(namevalue);
+	public String getAuthenticator() {
+		return authenticator;
 	}
-
-	public Long getTime() {
-		return time;
-	}
-
-	public String getNode() {
-		return node;
-	}
-	
-	public List<Namevalue> getNamevalues() {
-		return namevalues;
-	}
-	
 }
