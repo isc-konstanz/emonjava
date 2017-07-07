@@ -29,6 +29,7 @@ import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.json.Const;
 import org.emoncms.com.http.json.JsonInput;
+import org.emoncms.com.http.json.ToJsonArray;
 import org.emoncms.com.http.json.ToJsonObject;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
 import org.emoncms.com.http.request.HttpRequestAction;
@@ -36,6 +37,8 @@ import org.emoncms.com.http.request.HttpRequestAuthentication;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
+import org.emoncms.data.Data;
+import org.emoncms.data.DataList;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
@@ -64,16 +67,16 @@ public class HttpInput extends Input {
 
 	@Override
 	public void post(Timevalue timevalue) throws EmoncmsException {
-		requestPost(null, timevalue);
+		requestPost(timevalue, null);
 	}
 
 	@Override
-	public void post(String devicekey, Timevalue timevalue) throws EmoncmsException {
+	public void post(Timevalue timevalue, String devicekey) throws EmoncmsException {
 		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
-		requestPost(authentication, timevalue);
+		requestPost(timevalue, authentication);
 	}
-	
-	private void requestPost(HttpRequestAuthentication authentication, Timevalue timevalue) throws EmoncmsException {
+
+	private void requestPost(Timevalue timevalue, HttpRequestAuthentication authentication) throws EmoncmsException {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
@@ -88,6 +91,53 @@ public class HttpInput extends Input {
 		ToJsonObject json = new ToJsonObject();
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.DATA, json);
+		
+		if (authentication != null) {
+			callbacks.onRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+		}
+		else {
+			callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+		}
+	}
+
+	@Override
+	public void post(List<Timevalue> timevalues) throws EmoncmsException {
+		requestPost(timevalues, null);
+	}
+
+	@Override
+	public void post(List<Timevalue> timevalues, String devicekey) throws EmoncmsException {
+		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
+		requestPost(timevalues, authentication);
+	}
+
+	private void requestPost(List<Timevalue> timevalues, HttpRequestAuthentication authentication) throws EmoncmsException {
+		
+		logger.debug("Requesting to bulk post {} data sets for input \"{}\" of node \"{}\"", timevalues.size(), name, node);
+		
+		HttpRequestAction action = new HttpRequestAction("bulk");
+		
+		DataList dataList = new DataList();
+		for (Timevalue timevalue : timevalues) {
+			dataList.add(node, name, timevalue);
+		}
+		
+		Long time = dataList.getTime();
+		if (time != null && time > 0) {
+			// Posted UNIX time values need to be sent in seconds
+			action.addParameter(Const.TIME, time/1000);
+		}
+		else {
+			time = System.currentTimeMillis();
+		}
+		dataList.sort();
+		
+		HttpRequestParameters parameters = new HttpRequestParameters();
+		ToJsonArray json = new ToJsonArray();
+		for (Data data : dataList) {
+			json.addData(time, data);
+		}
+		parameters.addParameter(Const.DATA, json.toString());
 		
 		if (authentication != null) {
 			callbacks.onRequest("input", authentication, action, parameters, HttpRequestMethod.POST);

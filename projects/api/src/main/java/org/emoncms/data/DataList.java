@@ -51,6 +51,10 @@ public class DataList extends LinkedList<Data> {
 		return result;
 	}
 
+	public boolean add(String node, String name, Timevalue timevalue) {
+		return add(timevalue.getTime(), node, new Namevalue(timevalue.getValue()));
+	}
+
 	public Long getTime() {
 		return referenceTime;
 	}

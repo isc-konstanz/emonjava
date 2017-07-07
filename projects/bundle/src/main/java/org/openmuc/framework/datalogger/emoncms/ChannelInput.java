@@ -45,7 +45,7 @@ public class ChannelInput {
 	public void post(Timevalue timevalue) throws EmoncmsException {
 
 		if (authenticator != null) {
-			input.post(authenticator, timevalue);
+			input.post(timevalue, authenticator);
 		}
 		else {
 			input.post(timevalue);

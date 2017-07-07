@@ -20,6 +20,7 @@
  */
 package org.emoncms;
 
+import java.util.List;
 import java.util.Map;
 
 import org.emoncms.com.EmoncmsException;
@@ -118,7 +119,11 @@ public abstract class Input {
 
 	public abstract void post(Timevalue timevalue) throws EmoncmsException;
 
-	public abstract void post(String devicekey, Timevalue timevalue) throws EmoncmsException;
+	public abstract void post(Timevalue timevalue, String devicekey) throws EmoncmsException;
+
+	public abstract void post(List<Timevalue> timevalues) throws EmoncmsException;
+
+	public abstract void post(List<Timevalue> timevalues, String devicekey) throws EmoncmsException;
 
 	public void setField(Field field, String value) throws EmoncmsException {
 
