@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
 import org.emoncms.com.EmoncmsException;
@@ -35,6 +36,7 @@ import org.emoncms.com.http.HttpException;
 
 public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	
+	private final static Charset CHARSET = StandardCharsets.UTF_8;
 	private final static int CONNECTION_TIMEOUT = 5000;
 	private final static int READ_TIMEOUT = 10000;
 
@@ -69,18 +71,20 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 		
 		HttpURLConnection connection = null;
         try {
-	        URL u = new URL(request.getRequest());
+	        URL u = new URL(request.getRequest(CHARSET));
 	        connection = (HttpURLConnection) u.openConnection();
-
-	        connection.setRequestMethod("GET");
-	        connection.setRequestProperty("Charset", "UTF-8");
-	        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+	        
+	        connection.setRequestMethod(HttpRequestMethod.GET.name());
+	        connection.setRequestProperty("Charset", CHARSET.name());
+	        connection.setRequestProperty("Accept-Charset", CHARSET.name());
+	        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="+CHARSET.name());
 	        connection.setRequestProperty("Content-length", "0");
 	        
 	        connection.setInstanceFollowRedirects(false);
 	        connection.setAllowUserInteraction(false);
 	        connection.setUseCaches(false);
 	        connection.setDoOutput(true);
+	        connection.setDoInput(true);
 	        connection.setConnectTimeout(CONNECTION_TIMEOUT);
 	        connection.setReadTimeout(READ_TIMEOUT);
 	        connection.connect();
@@ -105,17 +109,18 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 		
 		HttpURLConnection connection = null;
         try {
-	        URL u = new URL(request.getRequest());
-	        connection = (HttpURLConnection) u.openConnection();
-
-	        connection.setRequestMethod("POST");
-	        connection.setRequestProperty("Charset", "UTF-8");
-	        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+	        URL u = new URL(request.getRequest(CHARSET));
 	        
-        	byte[] data = null;
+	        connection = (HttpURLConnection) u.openConnection();
+	        connection.setRequestMethod(HttpRequestMethod.POST.name());
+	        connection.setRequestProperty("Charset", CHARSET.name());
+	        connection.setRequestProperty("Accept-Charset", CHARSET.name());
+	        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="+CHARSET.name());
+	        
+        	byte[] content = null;
 	        if (request.getParameters() != null) {
-		        data = request.parseParameters().getBytes(Charset.forName("UTF-8"));
-		        connection.setRequestProperty("Content-Length", String.valueOf(data.length));
+		        content = request.parseParameters(CHARSET).getBytes(CHARSET);
+		        connection.setRequestProperty("Content-Length", Integer.toString(content.length));
 	        }
 	        else {
 		        connection.setRequestProperty("Content-length", "0");
@@ -125,14 +130,15 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	        connection.setAllowUserInteraction(false);
 	        connection.setUseCaches(false);
 	        connection.setDoOutput(true);
+	        connection.setDoInput(true);
 	        connection.setConnectTimeout(CONNECTION_TIMEOUT);
 	        connection.setReadTimeout(READ_TIMEOUT);
 	
-	        if (data != null) {
+	        if (content != null) {
 		        DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-		        wr.write(data);
-				wr.flush();
-				wr.close();
+                wr.write(content);
+                wr.flush();
+                wr.close();
 	        }
 	        else {
 	        	connection.connect();
@@ -156,7 +162,7 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	
 	private HttpEmoncmsResponse read(HttpURLConnection connection) throws IOException {
 
-		BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+		BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET.name()));
         StringBuilder sb = new StringBuilder();
         
         String line;

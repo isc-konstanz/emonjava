@@ -113,7 +113,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public void start() throws EmoncmsUnavailableException {
 		
 		logger.info("Registering Energy Monitoring Content Management System connection \"{}\"", address);
-
+		
+		// The HttpURLConnection implementation is in older JREs somewhat buggy with keeping connections alive. 
+		// To avoid this, the http.keepAlive system property can be set to false. 
+		System.setProperty("http.keepAlive", "false");
+		
 		if (executor != null) {
 			executor.shutdown();
 		}

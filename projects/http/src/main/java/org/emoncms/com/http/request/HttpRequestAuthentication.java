@@ -22,6 +22,7 @@ package org.emoncms.com.http.request;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 
 import org.emoncms.com.http.json.Const;
 
@@ -41,10 +42,10 @@ public class HttpRequestAuthentication {
 		this(Const.API_KEY, key);
 	}
 
-	public String getAuthentication() throws UnsupportedEncodingException {
-		return type + "=" + URLEncoder.encode(key, "UTF-8");
+	public String getAuthentication(Charset charset) throws UnsupportedEncodingException {
+		return URLEncoder.encode(type, charset.name()) + '=' + URLEncoder.encode(key, charset.name());
 	}
-	
+
 	@Override
 	public String toString() {
 		return type + "=" + key;

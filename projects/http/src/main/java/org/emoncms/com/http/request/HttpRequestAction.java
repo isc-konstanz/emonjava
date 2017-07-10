@@ -22,6 +22,7 @@ package org.emoncms.com.http.request;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,8 +38,8 @@ public class HttpRequestAction extends LinkedHashMap<String, String>{
 	public HttpRequestAction(String action) {
 		super();
 
-		if (!action.endsWith(".json?")) {
-			action = action.concat(".json?");
+		if (!action.endsWith(".json")) {
+			action = action.concat(".json");
 		}
 		this.action = action;
 	}
@@ -67,42 +68,50 @@ public class HttpRequestAction extends LinkedHashMap<String, String>{
 		super.put(key, String.valueOf(value));
 	}
 	
-	public String parseAction() throws UnsupportedEncodingException {
-        StringBuilder parameterListBuilder = new StringBuilder();
+	public String parseAction(Charset charset) throws UnsupportedEncodingException {
+        StringBuilder actionBuilder = new StringBuilder();
+		actionBuilder.append(URLEncoder.encode(action, charset.name()));
+        if (size() > 0) {
+    		actionBuilder.append('?');
+        }
 
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-        	parameterListBuilder.append(URLEncoder.encode(parameter.getKey(), "UTF-8"));
-        	parameterListBuilder.append('=');
-        	parameterListBuilder.append(URLEncoder.encode(parameter.getValue(), "UTF-8"));
+        	actionBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
+        	actionBuilder.append('=');
+        	actionBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
 
         	if (iteratorParameterList.hasNext()) {
-        		parameterListBuilder.append('&');
+        		actionBuilder.append('&');
         	}
 		}
 		
-        return action + parameterListBuilder.toString();
+        return actionBuilder.toString();
 	}
 
 	@Override
 	public String toString() {
-        StringBuilder parameterListBuilder = new StringBuilder();
+        StringBuilder actionBuilder = new StringBuilder();
+		actionBuilder.append(action);
+        if (size() > 0) {
+    		actionBuilder.append('?');
+        }
 
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-        	parameterListBuilder.append(parameter.getKey());
-        	parameterListBuilder.append('=');
-        	parameterListBuilder.append(parameter.getValue());
+        	actionBuilder.append(parameter.getKey());
+        	actionBuilder.append('=');
+        	actionBuilder.append(parameter.getValue());
 
         	if (iteratorParameterList.hasNext()) {
-        		parameterListBuilder.append('&');
+        		actionBuilder.append('&');
         	}
 		}
 		
-        return action + parameterListBuilder.toString();
+        return actionBuilder.toString();
 	}
 }
