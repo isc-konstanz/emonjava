@@ -18,38 +18,44 @@
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.openmuc.framework.datalogger.emoncms;
+package org.emoncms.data;
 
-import org.emoncms.Input;
-import org.emoncms.com.EmoncmsException;
-import org.emoncms.data.Authentication;
-import org.emoncms.data.Timevalue;
+public class Authentication {
 
-public class ChannelInput {
+	private final Authorization authorization;
+	private final String key;
 
-	private final Input input;
-	private final Authentication authentication;
-
-	public ChannelInput(Input input, Authentication authentication) {
-		this.input = input;
-		this.authentication = authentication;
+	public Authentication(Authorization authorization, String key) {
+		this.authorization = authorization;
+		this.key = key;
 	}
 
-	public Input getInput() {
-		return input;
+	public Authentication(String key) {
+		this(Authorization.WRITE, key);
 	}
 
-	public Authentication getAuthentication() {
-		return authentication;
+	public Authorization getAuthorization() {
+		return authorization;
 	}
-	
-	public void post(Timevalue timevalue) throws EmoncmsException {
 
-		if (authentication != null) {
-			input.post(timevalue, authentication);
+	public String getKey() {
+		return key;
+	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (object instanceof Authentication) {
+			Authentication authentication = (Authentication) object;
+			if (authentication.getAuthorization() == authorization &&
+					authentication.getKey().equals(key)) {
+				return true;
+			}
 		}
-		else {
-			input.post(timevalue);
-		}
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return authorization.getValue() + "=" + key;
 	}
 }

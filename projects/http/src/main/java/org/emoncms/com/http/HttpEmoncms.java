@@ -51,10 +51,11 @@ import org.emoncms.com.http.request.HttpCallable;
 import org.emoncms.com.http.request.HttpEmoncmsRequest;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
 import org.emoncms.com.http.request.HttpRequestAction;
-import org.emoncms.com.http.request.HttpRequestAuthentication;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
+import org.emoncms.data.Authentication;
+import org.emoncms.data.Authorization;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Datatype;
@@ -128,15 +129,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			scheduler.shutdown();
 		}
 		scheduler = Executors.newScheduledThreadPool(maxThreads);
-		
-		// Verify the connection to the given address
-		try {
-			HttpEmoncmsRequest request = new HttpEmoncmsRequest(address, null, null, null, HttpRequestMethod.GET);
-			submitRequest(request);
-			
-		} catch (InterruptedException | ExecutionException e) {
-			throw new EmoncmsUnavailableException("Unable to connect to \"" + address + "\": " + e);
-		}
 	}
 	
 	@Override
@@ -150,23 +142,17 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public void post(String node, String name, Timevalue timevalue, String devicekey) throws EmoncmsException {
+	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
 
-		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
+		Authentication authentication = null;
+		if (apiKey != null) {
+			authentication = new Authentication(Authorization.WRITE, apiKey);
+		}
 		post(node, name, timevalue, authentication);
 	}
 
 	@Override
-	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
-
-		HttpRequestAuthentication authentication = null;
-		if (apiKey != null) {
-			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
-		}
-		post(node, name, timevalue, authentication);
-	}
-	
-	private void post(String node, String name, Timevalue timevalue, HttpRequestAuthentication authentication) throws EmoncmsException {
+	public void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
@@ -186,23 +172,17 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public void post(String node, Long time, List<Namevalue> namevalues, String devicekey) throws EmoncmsException {
-
-		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
-		post(node, time, namevalues, authentication);
-	}
-
-	@Override
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
 		
-		HttpRequestAuthentication authentication = null;
+		Authentication authentication = null;
 		if (apiKey != null) {
-			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+			authentication = new Authentication(Authorization.WRITE, apiKey);
 		}
 		post(node, time, namevalues, authentication);
 	}
 
-	private void post(String node, Long time, List<Namevalue> namevalues, HttpRequestAuthentication authentication) throws EmoncmsException {
+	@Override
+	public  void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
 
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
@@ -224,23 +204,17 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public void post(DataList dataList, String devicekey) throws EmoncmsException {
-
-		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
-		post(dataList, authentication);
-	}
-
-	@Override
 	public void post(DataList dataList) throws EmoncmsException {
 		
-		HttpRequestAuthentication authentication = null;
+		Authentication authentication = null;
 		if (apiKey != null) {
-			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+			authentication = new Authentication(Authorization.WRITE, apiKey);
 		}
 		post(dataList, authentication);
 	}
 
-	private void post(DataList dataList, HttpRequestAuthentication authentication) throws EmoncmsException {
+	@Override
+	public  void post(DataList dataList, Authentication authentication) throws EmoncmsException {
 		
 		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
@@ -495,7 +469,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public HttpEmoncmsResponse onRequest(String parent, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+	public HttpEmoncmsResponse onRequest(String parent, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
 		return sendRequest(parent, authentication, action, parameters, method);
 	}
 
@@ -505,14 +479,14 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 	
 	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		HttpRequestAuthentication authentication = null;
+		Authentication authentication = null;
 		if (apiKey != null) {
-			authentication = new HttpRequestAuthentication(Const.API_KEY, apiKey);
+			authentication = new Authentication(Authorization.WRITE, apiKey);
 		}
 		return sendRequest(path, authentication, action, parameters, method);
 	}
 	
-	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+	private HttpEmoncmsResponse sendRequest(String path, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
 		String url = address + path.toLowerCase();
 		if (!url.endsWith("/"))
 			url += "/";

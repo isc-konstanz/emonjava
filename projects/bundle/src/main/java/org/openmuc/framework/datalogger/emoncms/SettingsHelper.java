@@ -23,11 +23,16 @@ package org.openmuc.framework.datalogger.emoncms;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.emoncms.data.Authentication;
+import org.emoncms.data.Authorization;
+
 public class SettingsHelper {
 
+	private final static String NODE_ID = "nodeid";
 	private final static String INPUT_ID = "inputid";
-	private final static String DEVICE_NODE_ID = "nodeid";
-	private final static String DEVICE_API_KEY = "apikey";
+	private final static String FEED_ID = "feedid";
+	private final static String AUTHORIZATION = "authorization";
+	private final static String KEY = "key";
 
     private final Map<String, String> settingsMap = new HashMap<>();
 
@@ -41,35 +46,42 @@ public class SettingsHelper {
         }
     }
 
+    public String getNode() {
+        if (settingsMap.containsKey(NODE_ID)) {
+            return settingsMap.get(NODE_ID);
+        }
+        else return null;
+    }
+
     public Integer getInputId() {
         if (settingsMap.containsKey(INPUT_ID)) {
             return Integer.parseInt(settingsMap.get(INPUT_ID).trim());
         }
-
-        return null;
+        else return null;
     }
 
-    public String getNode() {
-        if (settingsMap.containsKey(DEVICE_NODE_ID)) {
-            return settingsMap.get(DEVICE_NODE_ID);
+    public Integer getFeedId() {
+        if (settingsMap.containsKey(FEED_ID)) {
+            return Integer.parseInt(settingsMap.get(FEED_ID).trim());
         }
-
-        return null;
+        else return null;
     }
-    
-    public String getApiKey() {
-        if (settingsMap.containsKey(DEVICE_API_KEY)) {
-            return settingsMap.get(DEVICE_API_KEY);
-        }
 
-        return null;
-    }
-    
     public boolean isValid() {
-        if (settingsMap.containsKey(INPUT_ID) && !settingsMap.get(INPUT_ID).trim().isEmpty() && 
-        		settingsMap.containsKey(DEVICE_NODE_ID) && !settingsMap.get(DEVICE_NODE_ID).trim().isEmpty()) {
+        if (settingsMap.containsKey(NODE_ID) && !settingsMap.get(NODE_ID).trim().isEmpty() &&
+        		settingsMap.containsKey(INPUT_ID) && !settingsMap.get(INPUT_ID).trim().isEmpty()) {
         	return true;
         }
         else return false;
+    }
+    
+    public Authentication getAuthentication() {
+    	if (settingsMap.containsKey(AUTHORIZATION) &&
+    			settingsMap.containsKey(KEY)) {
+    		
+    		Authorization auth = Authorization.valueOf(settingsMap.get(AUTHORIZATION).trim());
+    		return new Authentication(auth, settingsMap.get(KEY).trim());
+    	}
+    	else return null;
     }
 }

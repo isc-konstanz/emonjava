@@ -113,7 +113,7 @@ public class EmonLogger implements DataLoggerService {
 			if (settings.isValid()) {
 				try {
 					Input input = HttpInput.connect(cms, settings.getInputId(), settings.getNode(), channel.getId());
-					ChannelInput container = new ChannelInput(input, settings.getApiKey());
+					ChannelInput container = new ChannelInput(input, settings.getAuthentication());
 					
 					channelInputsById.put(channel.getId(), container);
 					
@@ -173,7 +173,7 @@ public class EmonLogger implements DataLoggerService {
 						
 						DeviceDataList device = null;
 						for (DeviceDataList d : devices) {
-							if (d.getAuthenticator().equals(channel.getAuthenticator())) {
+							if (d.getAuthenticator().equals(channel.getAuthentication())) {
 								
 								d.add(time, channel.getInput().getNode(), value);
 								device = d;
@@ -182,7 +182,7 @@ public class EmonLogger implements DataLoggerService {
 						}
 						if (device == null) {
 							// No input collection for that device exists yet, so it needs to be created
-							device = new DeviceDataList(channel.getAuthenticator());
+							device = new DeviceDataList(channel.getAuthentication());
 							device.add(time, channel.getInput().getNode(), value);
 							
 							devices.add(device);

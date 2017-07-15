@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.data.Authentication;
 import org.emoncms.data.Field;
 import org.emoncms.data.FieldList;
 import org.emoncms.data.ProcessList;
@@ -119,11 +120,11 @@ public abstract class Input {
 
 	public abstract void post(Timevalue timevalue) throws EmoncmsException;
 
-	public abstract void post(Timevalue timevalue, String devicekey) throws EmoncmsException;
+	public abstract void post(Timevalue timevalue, Authentication authentication) throws EmoncmsException;
 
 	public abstract void post(List<Timevalue> timevalues) throws EmoncmsException;
 
-	public abstract void post(List<Timevalue> timevalues, String devicekey) throws EmoncmsException;
+	public abstract void post(List<Timevalue> timevalues, Authentication authentication) throws EmoncmsException;
 
 	public void setField(Field field, String value) throws EmoncmsException {
 

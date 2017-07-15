@@ -26,9 +26,6 @@ public class Const {
 	public final static String SUCCESS = "success";
 	public final static String MESSAGE = "message";
 
-	public final static String API_KEY = "apikey";
-	public final static String DEVICE_KEY = "devicekey";
-
 	public final static String ID = "id";
 	public final static String IDS = "ids";
 	public final static String FEEDID = "feedid";

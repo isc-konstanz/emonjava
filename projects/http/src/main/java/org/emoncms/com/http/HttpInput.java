@@ -33,12 +33,12 @@ import org.emoncms.com.http.json.ToJsonArray;
 import org.emoncms.com.http.json.ToJsonObject;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
 import org.emoncms.com.http.request.HttpRequestAction;
-import org.emoncms.com.http.request.HttpRequestAuthentication;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
+import org.emoncms.data.Authentication;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
@@ -67,16 +67,11 @@ public class HttpInput extends Input {
 
 	@Override
 	public void post(Timevalue timevalue) throws EmoncmsException {
-		requestPost(timevalue, null);
+		post(timevalue, null);
 	}
 
 	@Override
-	public void post(Timevalue timevalue, String devicekey) throws EmoncmsException {
-		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
-		requestPost(timevalue, authentication);
-	}
-
-	private void requestPost(Timevalue timevalue, HttpRequestAuthentication authentication) throws EmoncmsException {
+	public void post(Timevalue timevalue, Authentication authentication) throws EmoncmsException {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
@@ -102,16 +97,11 @@ public class HttpInput extends Input {
 
 	@Override
 	public void post(List<Timevalue> timevalues) throws EmoncmsException {
-		requestPost(timevalues, null);
+		post(timevalues, null);
 	}
 
 	@Override
-	public void post(List<Timevalue> timevalues, String devicekey) throws EmoncmsException {
-		HttpRequestAuthentication authentication = new HttpRequestAuthentication(Const.DEVICE_KEY, devicekey);
-		requestPost(timevalues, authentication);
-	}
-
-	private void requestPost(List<Timevalue> timevalues, HttpRequestAuthentication authentication) throws EmoncmsException {
+	public void post(List<Timevalue> timevalues, Authentication authentication) throws EmoncmsException {
 		
 		logger.debug("Requesting to bulk post {} data sets for input \"{}\" of node \"{}\"", timevalues.size(), name, node);
 		

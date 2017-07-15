@@ -18,21 +18,22 @@
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.openmuc.framework.datalogger.emoncms;
+package org.emoncms.data;
 
-import org.emoncms.data.Authentication;
-import org.emoncms.data.DataList;
 
-public class DeviceDataList extends DataList {
-	private static final long serialVersionUID = 1720223912529518324L;
+public enum Authorization {
 
-	private final Authentication authentication;
+	READ("apikey"), 
+	WRITE("apikey"), 
+	DEVICE("devicekey");
 
-	public DeviceDataList(Authentication authentication) {
-		this.authentication = authentication;
+	private final String value;
+
+	private Authorization(String value) {
+		this.value = value;
 	}
 
-	public Authentication getAuthenticator() {
-		return authentication;
+	public String getValue() {
+		return value;
 	}
 }

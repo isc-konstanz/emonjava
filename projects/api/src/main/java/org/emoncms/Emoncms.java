@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsUnavailableException;
+import org.emoncms.data.Authentication;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Datatype;
 import org.emoncms.data.Engine;
@@ -64,7 +65,7 @@ public interface Emoncms {
 	 * Post a {@link Timevalue} to a defined {@link Input}, identified by its node and name and authenticated by a device API key.
 	 * <p>
 	 * If the timevalues timestamp equals null, the CMS will use the current timestamp, to further process the input. 
-	 * The HTTP post requests may be authenticated with a devicekey, enabling to write values to a defined 
+	 * The HTTP post requests may be authenticated with a specific API key, enabling to write values to a defined 
 	 * devices' node ID. This can be useful, to avoid the storage of an API key with more permissions.
 	 * 
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
@@ -72,9 +73,9 @@ public interface Emoncms {
 	 * @param node the Node ID of the input, a timevalue should be posted to.
 	 * @param name the Name of the input, a timevalue should be posted to.
 	 * @param timevalue the timevalue to post.
-	 * @param devicekey the device API Key, to authenticate the request.
+	 * @param authentication the specific API Key, to authenticate the request.
 	 */
-	public void post(String node, String name, Timevalue timevalue, String devicekey) throws EmoncmsException;
+	public void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException;
 
 	/**
 	 * Post a {@link Timevalue} to a defined {@link Input}, identified by its node and name.
@@ -93,7 +94,7 @@ public interface Emoncms {
 	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node and name and authenticated by a device API key.
 	 * <p>
 	 * If the timevalues timestamp equals null, the CMS will use the current timestamp, to further process the input. 
-	 * The HTTP post requests may be authenticated with a devicekey, enabling to write values to a defined 
+	 * The HTTP post requests may be authenticated with a specific API key, enabling to write values to a defined 
 	 * devices' node ID. This can be useful, to avoid the storage of an API key with more permissions.
 	 * 
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
@@ -101,9 +102,9 @@ public interface Emoncms {
 	 * @param node the common Node ID of the inputs, a value should be posted to.
 	 * @param time the timestamp, the posted values should be processed with.
 	 * @param namevalues the list of namevalues that will be posted.
-	 * @param devicekey the device API Key, to authenticate the request.
+	 * @param authentication the specific API Key, to authenticate the request.
 	 */
-	public void post(String node, Long time, List<Namevalue> namevalues, String devicekey) throws EmoncmsException;
+	public void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException;
 
 	/**
 	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node.
@@ -132,15 +133,15 @@ public interface Emoncms {
 	/**
 	 * Post data to a set of {@link Input}s, authenticated by a device API key.
 	 * <p>
-	 * The HTTP post requests may be authenticated with a devicekey, enabling to write values to a defined 
+	 * The HTTP post requests may be authenticated with a specific API key, enabling to write values to a defined 
 	 * devices' node ID. This can be useful, to avoid the storage of an API key with more permissions.
 	 * 
 	 * @throws EmoncmsException if the communication with the emoncms server fails.
 	 * 
 	 * @param data the data to post to the CMS.
-	 * @param devicekey the device API Key, to authenticate the request.
+	 * @param authentication the specific API Key, to authenticate the request.
 	 */
-	public void post(DataList data, String devicekey) throws EmoncmsException;
+	public void post(DataList data, Authentication authentication) throws EmoncmsException;
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user and the specified node ID. 

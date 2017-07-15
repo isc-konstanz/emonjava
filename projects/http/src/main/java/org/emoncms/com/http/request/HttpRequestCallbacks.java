@@ -22,6 +22,7 @@ package org.emoncms.com.http.request;
 
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.http.HttpEmoncms;
+import org.emoncms.data.Authentication;
 
 
 /**
@@ -33,7 +34,7 @@ public interface HttpRequestCallbacks {
 	HttpEmoncmsResponse onRequest(String parent, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method)
 		throws EmoncmsException;
 	
-	HttpEmoncmsResponse onRequest(String parent, HttpRequestAuthentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) 
+	HttpEmoncmsResponse onRequest(String parent, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) 
 			throws EmoncmsException;
 
 }

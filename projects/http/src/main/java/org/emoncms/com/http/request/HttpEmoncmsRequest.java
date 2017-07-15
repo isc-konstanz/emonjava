@@ -21,19 +21,22 @@
 package org.emoncms.com.http.request;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
+
+import org.emoncms.data.Authentication;
 
 
 public class HttpEmoncmsRequest {
 
 	private final String url;
-	private final HttpRequestAuthentication authentication;
+	private final Authentication authentication;
 	private final HttpRequestAction action;
 	private final HttpRequestParameters parameters;
 	private final HttpRequestMethod method;
 
 
-	public HttpEmoncmsRequest(String url, HttpRequestAuthentication authentication, 
+	public HttpEmoncmsRequest(String url, Authentication authentication, 
 			HttpRequestAction action, HttpRequestParameters parameters, 
 			HttpRequestMethod method) {
 		
@@ -43,19 +46,20 @@ public class HttpEmoncmsRequest {
 		this.parameters = parameters;
 		this.method = method;
 	}
-	
+
 	public String getUrl() {
 		return url;
 	}
-	
+
 	public String getAuthentication(Charset charset) throws UnsupportedEncodingException {
-		return authentication.getAuthentication(charset);
+        return URLEncoder.encode(authentication.getAuthorization().getValue(), charset.name()) + 
+        		'=' + URLEncoder.encode(authentication.getKey(), charset.name());
 	}
 
 	public HttpRequestAction getAction() {
 		return action;
 	}
-	
+
 	public String parseAction(Charset charset) throws UnsupportedEncodingException {
 		return action.parseAction(charset);
 	}
@@ -63,15 +67,15 @@ public class HttpEmoncmsRequest {
 	public HttpRequestParameters getParameters() {
 		return parameters;
 	}
-	
+
 	public String parseParameters(Charset charset) throws UnsupportedEncodingException {
 		return parameters.parseParameters(charset);
 	}
-	
+
 	public HttpRequestMethod getMethod() {
 		return method;
 	}
-	
+
 	public String getRequest(Charset charset) throws UnsupportedEncodingException {
 		
 		String request = url;
@@ -82,7 +86,7 @@ public class HttpEmoncmsRequest {
 			if (action != null && action.size() > 0) {
 				request += '&';
 			}
-			request += authentication.getAuthentication(charset);
+			request += getAuthentication(charset);
 		}
 		return request;
 	}
