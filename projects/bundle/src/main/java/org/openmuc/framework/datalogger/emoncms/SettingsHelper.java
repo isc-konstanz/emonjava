@@ -31,7 +31,7 @@ public class SettingsHelper {
 	private final static String NODE_ID = "nodeid";
 	private final static String INPUT_ID = "inputid";
 	private final static String FEED_ID = "feedid";
-	private final static String AUTHORIZATION = "authorization";
+	private final static String AUTHORIZATION = "auth";
 	private final static String KEY = "key";
 
     private final Map<String, String> settingsMap = new HashMap<>();
