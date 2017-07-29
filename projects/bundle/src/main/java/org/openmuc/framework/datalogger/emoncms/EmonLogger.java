@@ -35,20 +35,28 @@ import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
+import org.openmuc.framework.config.ChannelConfig;
+import org.openmuc.framework.config.ConfigChangeListener;
+import org.openmuc.framework.config.ConfigService;
+import org.openmuc.framework.config.RootConfig;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
+import org.openmuc.framework.dataaccess.DataAccessService;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
 import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.openmuc.framework.datalogger.spi.LogRecordContainer;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 @Component
-public class EmonLogger implements DataLoggerService {
+public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 	private final static Logger logger = LoggerFactory.getLogger(EmonLogger.class);
 
 	private final static String ADDRESS = "org.openmuc.framework.datalogger.emoncms.address";
@@ -56,10 +64,14 @@ public class EmonLogger implements DataLoggerService {
 	private final static String AUTHENTICATION = "org.openmuc.framework.datalogger.emoncms.authentication";
 	private final static String MAX_THREADS = "org.openmuc.framework.datalogger.emoncms.maxThreads";
 
-	private final HashMap<String, ChannelInput> channelInputsById = new HashMap<String, ChannelInput>();
+	private DataAccessService dataAccessService;
+	private ConfigService configService;
 
 	private Emoncms connection = null;
 
+	private final HashMap<String, ChannelInput> channelInputs = new HashMap<String, ChannelInput>();
+
+    @Activate
 	protected void activate(ComponentContext context) {
 		
 		logger.info("Activating Emoncms Logger");
@@ -78,11 +90,15 @@ public class EmonLogger implements DataLoggerService {
 		try {
 			connection.start();
 			
+			RootConfig configs = configService.getConfig(this);
+			configureLogging(configs);
+			
 		} catch (EmoncmsUnavailableException e) {
 			logger.warn("Unable to connect to \"{}\"", address);
 		}
 	}
 
+    @Deactivate
 	protected void deactivate(ComponentContext context) {
 		
 		logger.info("Deactivating Emoncms Logger");
@@ -92,6 +108,24 @@ public class EmonLogger implements DataLoggerService {
 		}
 	}
 
+    @Reference
+    protected void bindDataAccessService(DataAccessService dataAccessService) {
+        this.dataAccessService = dataAccessService;
+    }
+
+    protected void unbindDataAccessService(DataAccessService dataAccessService) {
+        this.dataAccessService = null;
+    }
+
+    @Reference
+    protected void setConfigService(ConfigService configService) {
+        this.configService = configService;
+    }
+
+    protected void unsetConfigService(ConfigService configService) {
+    	this.configService = null;
+    }
+
 	@Override
 	public String getId() {
 		return "emoncms";
@@ -100,22 +134,39 @@ public class EmonLogger implements DataLoggerService {
 	@Override
 	public void setChannelsToLog(List<LogChannel> channels) {
 		
-		// Will be called if OpenMUC starts the logger
+		// Will be called if OpenMUC receives new logging configurations
+		// Logging preparations will be done in configurationChanged()
+	}
+
+	@Override
+	public void configurationChanged() {
+
+		RootConfig configs = configService.getConfig();
+		configureLogging(configs);
+	}
+
+	private void configureLogging(RootConfig configs) {
+
 		if (connection == null) {
 			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
 			return;
 		}
-		channelInputsById.clear();
+		channelInputs.clear();
 		
-		for (LogChannel channel : channels) {
-			SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
+		for (String id : dataAccessService.getAllIds()) {
+			ChannelConfig channel = configs.getChannel(id);
 			
+			SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
 			if (settings.isValid()) {
 				try {
 					Input input = HttpInput.connect(connection, settings.getInputId(), settings.getNode(), channel.getId());					
 					ChannelInput container = new ChannelInput(input, settings.getAuthentication());
 					
-					channelInputsById.put(channel.getId(), container);
+					if (channel.isListening() != null && channel.isListening()) {
+						ChannelListener listener = new ChannelListener(container);
+						dataAccessService.getChannel(id).addListener(listener);
+					}
+					channelInputs.put(id, container);
 					
 				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
 					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
@@ -125,7 +176,9 @@ public class EmonLogger implements DataLoggerService {
 					logger.trace("Channel \"{}\" configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
 				}
 			}
-			else logger.warn("Unable to configure invalid syntax for logging Channel \"{}\"", channel.getId());
+			else if (!settings.hasAuthorization()) {
+				logger.warn("Unable to configure logging due to invalid syntax for Channel \"{}\": {}", channel.getId(), channel.getLoggingSettings());
+			}
 		}
 	}
 
@@ -142,7 +195,7 @@ public class EmonLogger implements DataLoggerService {
 			
 			LogRecordContainer container = containers.get(0);
 			if (isValid(container)) {
-				ChannelInput channel = channelInputsById.get(container.getChannelId());
+				ChannelInput channel = channelInputs.get(container.getChannelId());
 				try {
 					Record record = container.getRecord();
 					Long time = record.getTimestamp();
@@ -162,7 +215,7 @@ public class EmonLogger implements DataLoggerService {
 			List<DeviceDataList> devices = new ArrayList<DeviceDataList>();
 			for (LogRecordContainer container : containers) {
 				if (isValid(container)) {
-					ChannelInput channel = channelInputsById.get(container.getChannelId());
+					ChannelInput channel = channelInputs.get(container.getChannelId());
 					try {
 						Record record = container.getRecord();
 						Long time = record.getTimestamp();
@@ -216,7 +269,7 @@ public class EmonLogger implements DataLoggerService {
 
 	private boolean isValid(LogRecordContainer container) {
 		
-		if (channelInputsById.containsKey(container.getChannelId())) {
+		if (channelInputs.containsKey(container.getChannelId())) {
 		
 			if (container.getRecord() != null) {
 				if (container.getRecord().getFlag() == Flag.VALID && container.getRecord().getValue() != null) {

@@ -38,13 +38,15 @@ public class SettingsHelper {
     private final Map<String, String> settingsMap = new HashMap<>();
 
     public SettingsHelper(String settings) {
-        String[] settingsArray = settings.split(",");
-        for (String arg : settingsArray) {
-            int p = arg.indexOf(":");
-            if (p != -1) {
-                settingsMap.put(arg.substring(0, p).toLowerCase().trim(), arg.substring(p + 1).trim());
+    	if (settings != null) {
+            String[] settingsArray = settings.split(",");
+            for (String arg : settingsArray) {
+                int p = arg.indexOf(":");
+                if (p != -1) {
+                    settingsMap.put(arg.substring(0, p).toLowerCase().trim(), arg.substring(p + 1).trim());
+                }
             }
-        }
+    	}
     }
 
     public String getNode() {
@@ -79,6 +81,13 @@ public class SettingsHelper {
         	}
         }
         return Authorization.DEFAULT;
+    }
+
+    public boolean hasAuthorization() {
+        if (getAuthorization() != Authorization.NONE) {
+        	return true;
+        }
+        return false;
     }
 
     public String getKey() {
