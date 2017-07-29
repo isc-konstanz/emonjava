@@ -28,28 +28,28 @@ import org.emoncms.data.Timevalue;
 public class ChannelInput {
 
 	private final Input input;
-	private final Authentication authentication;
+	private final Authentication authenticator;
 
-	public ChannelInput(Input input, Authentication authentication) {
+	public ChannelInput(Input input, Authentication authenticator) {
 		this.input = input;
-		this.authentication = authentication;
+		this.authenticator = authenticator;
 	}
 
 	public Input getInput() {
 		return input;
 	}
 
-	public Authentication getAuthentication() {
-		return authentication;
+	public Authentication getAuthenticator() {
+		return authenticator;
 	}
 	
 	public void post(Timevalue timevalue) throws EmoncmsException {
 
-		if (authentication != null) {
-			input.post(timevalue, authentication);
+		if (authenticator.isDefault()) {
+			input.post(timevalue);
 		}
 		else {
-			input.post(timevalue);
+			input.post(timevalue, authenticator);
 		}
 	}
 }

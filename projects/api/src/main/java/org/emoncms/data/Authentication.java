@@ -37,6 +37,13 @@ public class Authentication {
 	public Authorization getAuthorization() {
 		return authorization;
 	}
+	
+	public boolean isDefault() {
+		if (authorization == Authorization.DEFAULT) {
+			return true;
+		}
+		return false;
+	}
 
 	public String getKey() {
 		return key;
@@ -56,6 +63,13 @@ public class Authentication {
 
 	@Override
 	public String toString() {
-		return authorization.getValue() + "=" + key;
+		switch (authorization) {
+		case NONE:
+			return "None";
+		case DEFAULT:
+			return "Default";
+		default:
+			return authorization.getValue() + "=" + key;
+		}
 	}
 }

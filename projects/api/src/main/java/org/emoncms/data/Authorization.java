@@ -20,20 +20,23 @@
  */
 package org.emoncms.data;
 
-
 public enum Authorization {
 
-	READ("apikey"), 
-	WRITE("apikey"), 
-	DEVICE("devicekey");
-
-	private final String value;
-
-	private Authorization(String value) {
-		this.value = value;
-	}
+	DEFAULT,
+	DEVICE,
+	WRITE,
+	READ,
+	NONE;
 
 	public String getValue() {
-		return value;
+		switch (this) {
+		case DEVICE:
+			return "devicekey";
+		case WRITE:
+		case READ:
+			return "apikey";
+		default:
+			throw new UnsupportedOperationException("No authorization value for type: " + this.name());
+		}
 	}
 }

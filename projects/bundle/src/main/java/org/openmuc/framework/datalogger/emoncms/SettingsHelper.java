@@ -23,6 +23,7 @@ package org.openmuc.framework.datalogger.emoncms;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.emoncms.com.EmoncmsSyntaxException;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Authorization;
 
@@ -31,7 +32,7 @@ public class SettingsHelper {
 	private final static String NODE_ID = "nodeid";
 	private final static String INPUT_ID = "inputid";
 	private final static String FEED_ID = "feedid";
-	private final static String AUTHORIZATION = "auth";
+	private final static String AUTHORIZATION = "authorization";
 	private final static String KEY = "key";
 
     private final Map<String, String> settingsMap = new HashMap<>();
@@ -48,40 +49,75 @@ public class SettingsHelper {
 
     public String getNode() {
         if (settingsMap.containsKey(NODE_ID)) {
-            return settingsMap.get(NODE_ID);
+            String node = settingsMap.get(NODE_ID).trim();
+            if (!node.isEmpty()) {
+            	return node;
+            }
         }
-        else return null;
+        return null;
     }
 
     public Integer getInputId() {
         if (settingsMap.containsKey(INPUT_ID)) {
             return Integer.parseInt(settingsMap.get(INPUT_ID).trim());
         }
-        else return null;
+        return null;
     }
 
     public Integer getFeedId() {
         if (settingsMap.containsKey(FEED_ID)) {
             return Integer.parseInt(settingsMap.get(FEED_ID).trim());
         }
-        else return null;
+        return null;
+    }
+
+    public Authorization getAuthorization() {
+        if (settingsMap.containsKey(AUTHORIZATION)) {
+        	String authorization = settingsMap.get(AUTHORIZATION).trim();
+        	if (!authorization.isEmpty()) {
+        		return Authorization.valueOf(authorization);
+        	}
+        }
+        return Authorization.DEFAULT;
+    }
+
+    public String getKey() {
+        if (settingsMap.containsKey(KEY)) {
+        	String key = settingsMap.get(KEY).trim();
+        	if (!key.isEmpty()) {
+        		return key;
+        	}
+        }
+        return null;
+    }
+
+    public Authentication getAuthentication() throws EmoncmsSyntaxException {
+    	Authorization authorization = getAuthorization();
+    	switch(authorization) {
+    	case NONE:
+    		throw new EmoncmsSyntaxException("Emoncms authorization unconfigured");
+    	case DEFAULT:
+    		return new Authentication(authorization, null);
+    	default:
+    		return new Authentication(authorization, getKey());
+    	}
     }
 
     public boolean isValid() {
-        if (settingsMap.containsKey(NODE_ID) && !settingsMap.get(NODE_ID).trim().isEmpty() &&
-        		settingsMap.containsKey(INPUT_ID) && !settingsMap.get(INPUT_ID).trim().isEmpty()) {
-        	return true;
+        if (getNode() != null && getAuthorization() != null) {
+        	switch(getAuthorization()) {
+        	case DEFAULT:
+        		return true;
+        	case DEVICE:
+        	case WRITE:
+        	case READ:
+        		if (getKey() != null) {
+            		return true;
+        		}
+        	default:
+        		return false;
+        	}
         }
-        else return false;
-    }
-    
-    public Authentication getAuthentication() {
-    	if (settingsMap.containsKey(AUTHORIZATION) &&
-    			settingsMap.containsKey(KEY)) {
-    		
-    		Authorization auth = Authorization.valueOf(settingsMap.get(AUTHORIZATION).trim());
-    		return new Authentication(auth, settingsMap.get(KEY).trim());
-    	}
-    	else return null;
+        return false;
     }
 }

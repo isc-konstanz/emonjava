@@ -28,9 +28,11 @@ import java.util.List;
 import org.emoncms.Emoncms;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.com.EmoncmsSyntaxException;
 import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.HttpEmoncmsFactory;
 import org.emoncms.com.http.HttpInput;
+import org.emoncms.data.Authentication;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 import org.openmuc.framework.data.Flag;
@@ -47,48 +49,46 @@ import org.slf4j.LoggerFactory;
 
 @Component
 public class EmonLogger implements DataLoggerService {
-
 	private final static Logger logger = LoggerFactory.getLogger(EmonLogger.class);
+
+	private final static String ADDRESS = "org.openmuc.framework.datalogger.emoncms.address";
+	private final static String AUTHORIZATION = "org.openmuc.framework.datalogger.emoncms.authorization";
+	private final static String AUTHENTICATION = "org.openmuc.framework.datalogger.emoncms.authentication";
+	private final static String MAX_THREADS = "org.openmuc.framework.datalogger.emoncms.maxThreads";
 
 	private final HashMap<String, ChannelInput> channelInputsById = new HashMap<String, ChannelInput>();
 
-	private Emoncms cms = null;
+	private Emoncms connection = null;
 
 	protected void activate(ComponentContext context) {
 		
 		logger.info("Activating Emoncms Logger");
 
-		String url = System.getProperty("org.openmuc.framework.datalogger.emoncms.url");
+		String address = System.getProperty(ADDRESS, null);
+		String authorization = System.getProperty(AUTHORIZATION, null);
+		String authentication = System.getProperty(AUTHENTICATION, null);
+		String maxThreadsProperty = System.getProperty(MAX_THREADS, null);
+		if (maxThreadsProperty != null) {
+			int maxThreads = Integer.parseInt(maxThreadsProperty);
+			connection = HttpEmoncmsFactory.newAuthenticatedConnection(address, authorization, authentication, maxThreads);
+		}
+		else {
+			connection = HttpEmoncmsFactory.newAuthenticatedConnection(address, authorization, authentication);
+		}
 		try {
-			if (url != null) {
-				String maxThreadsProperty = System.getProperty("org.openmuc.framework.datalogger.emoncms.maxThreads");
-				if (maxThreadsProperty != null) {
-					int maxThreads = Integer.parseInt(maxThreadsProperty);
-					cms = HttpEmoncmsFactory.newHttpEmoncmsConnection(url, maxThreads);
-					logger.debug("Connecting to emoncms web server at \"{}\" with a maximum amount of {} threads synchronously", url, maxThreads);
-				}
-				else {
-					cms = HttpEmoncmsFactory.newHttpEmoncmsConnection(url);
-					logger.debug("Connecting to emoncms web server at \"{}\"", url);
-				}
-			}
-			else {
-				cms = HttpEmoncmsFactory.newHttpEmoncmsConnection();
-				logger.debug("Connecting to emoncms web server running on localhost");
-			}
-			cms.start();
+			connection.start();
 			
 		} catch (EmoncmsUnavailableException e) {
-			logger.warn("Unable to connect to \"{}\"", url);
+			logger.warn("Unable to connect to \"{}\"", address);
 		}
 	}
 
 	protected void deactivate(ComponentContext context) {
 		
 		logger.info("Deactivating Emoncms Logger");
-		if (cms != null) {
-			cms.stop();
-			cms = null;
+		if (connection != null) {
+			connection.stop();
+			connection = null;
 		}
 	}
 
@@ -101,7 +101,7 @@ public class EmonLogger implements DataLoggerService {
 	public void setChannelsToLog(List<LogChannel> channels) {
 		
 		// Will be called if OpenMUC starts the logger
-		if (cms == null) {
+		if (connection == null) {
 			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
 			return;
 		}
@@ -112,12 +112,12 @@ public class EmonLogger implements DataLoggerService {
 			
 			if (settings.isValid()) {
 				try {
-					Input input = HttpInput.connect(cms, settings.getInputId(), settings.getNode(), channel.getId());
+					Input input = HttpInput.connect(connection, settings.getInputId(), settings.getNode(), channel.getId());					
 					ChannelInput container = new ChannelInput(input, settings.getAuthentication());
 					
 					channelInputsById.put(channel.getId(), container);
 					
-				} catch (EmoncmsUnavailableException e) {
+				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
 					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
 				}
 
@@ -132,7 +132,7 @@ public class EmonLogger implements DataLoggerService {
 	@Override
 	public synchronized void log(List<LogRecordContainer> containers, long timestamp) {
 
-		if (cms == null) {
+		if (connection == null) {
 			logger.error("Requested to log values for deactivated Emoncms logger");
 		}
 		else if (containers == null || containers.isEmpty()) {
@@ -171,10 +171,10 @@ public class EmonLogger implements DataLoggerService {
 						}
 						Namevalue value = new Namevalue(container.getChannelId(), record.getValue().asDouble());
 						
+						Authentication authenticator = channel.getAuthenticator();
 						DeviceDataList device = null;
 						for (DeviceDataList d : devices) {
-							if (d.getAuthenticator().equals(channel.getAuthentication())) {
-								
+							if (d.hasSameAuthentication(authenticator)) {
 								d.add(time, channel.getInput().getNode(), value);
 								device = d;
 								break;
@@ -182,7 +182,7 @@ public class EmonLogger implements DataLoggerService {
 						}
 						if (device == null) {
 							// No input collection for that device exists yet, so it needs to be created
-							device = new DeviceDataList(channel.getAuthentication());
+							device = new DeviceDataList(authenticator);
 							device.add(time, channel.getInput().getNode(), value);
 							
 							devices.add(device);
@@ -197,13 +197,18 @@ public class EmonLogger implements DataLoggerService {
 			for (DeviceDataList device : devices) {
 
 				if (logger.isTraceEnabled()) {
-					logger.trace("Attempting to log {} values for key \"{}\"", device.size(), device.getAuthenticator());
+					logger.trace("Attempting to log {} values with authentication \"{}\"", device.size(), device.getAuthenticator());
 				}
 				try {
-					cms.post(device, device.getAuthenticator());
-					
+					Authentication authenticator = device.getAuthenticator();
+					if (authenticator.isDefault()) {
+						connection.post(device);
+					}
+					else {
+						connection.post(device, device.getAuthenticator());
+					}
 				} catch (EmoncmsException e) {
-					logger.warn("Failed to log values for key \"{}\": {}", device.getAuthenticator(), e.getMessage());
+					logger.warn("Failed to log values with authentication \"{}\": {}", device.getAuthenticator(), e.getMessage());
 				}
 			}
 		}
@@ -221,10 +226,14 @@ public class EmonLogger implements DataLoggerService {
 					}
 					return true;
 				}
-				else logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
-						container.getChannelId(), container.getRecord().getFlag().toString());
+				else if (logger.isDebugEnabled()) {
+					logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
+							container.getChannelId(), container.getRecord().getFlag().toString());
+				}
 			}
-			else logger.debug("Failed to log an empty record for channel \"{}\"", container.getChannelId());
+			else if (logger.isTraceEnabled()) {
+				logger.trace("Failed to log an empty record for channel \"{}\"", container.getChannelId());
+			}
 		}
 		else logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());
 		

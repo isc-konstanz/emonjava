@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.emoncms.Emoncms;
+import org.emoncms.data.Authentication;
+import org.emoncms.data.Authorization;
 
 
 /**
@@ -42,68 +44,84 @@ public class HttpEmoncmsFactory {
 	private static final List<HttpEmoncms> httpSingletonList = new ArrayList<HttpEmoncms>();
 
 
-	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String address, String apiKey, int maxThreads) {
+	public static Emoncms newAuthenticatedConnection(String address, 
+			String authorization, String authentication, int maxThreads) {
 
-		String url = verifyAddress(address);
+		Authentication credentials = getCredentials(authorization, authentication);
+		
+		return getConnection(address, credentials, maxThreads);
+	}
+
+	public static Emoncms newAuthenticatedConnection(String address, 
+			String authorization, String authentication) {
+
+		Authentication credentials = getCredentials(authorization, authentication);
+		
+		return getConnection(address, credentials, null);
+	}
+
+	public static Emoncms newAuthenticatedConnection(String authorization, String authentication, int maxThreads) {
+
+		return newAuthenticatedConnection(null, authorization, authentication, maxThreads);
+	}
+
+	public static Emoncms newAuthenticatedConnection(String authorization, String authentication) {
+
+		return newAuthenticatedConnection(null, authorization, authentication);
+	}
+
+	public static Emoncms newConnection(String address, int maxThreads) {
+
+		return newAuthenticatedConnection(address, null, maxThreads);
+	}
+
+	public static Emoncms newConnection(String address) {
+
+		return newAuthenticatedConnection(address, null);
+	}
+
+	public static Emoncms newConnection() {
+
+		return newConnection(null);
+	}
+
+	private static Emoncms getConnection(String address, Authentication credentials, Integer maxThreads) {
+
+		if (address != null) {
+			address = verifyAddress(address);
+		}
+		else {
+			address = ADDRESS_DEFAULT;
+		}
 
 		for (HttpEmoncms emoncms : httpSingletonList) {
-			if (emoncms.getAddress().equals(url)) {
-				if (!emoncms.getApiKey().equals(apiKey)) {
-					emoncms.setApiKey(apiKey);
+			if (emoncms.getAddress().equals(address)) {
+				if (!emoncms.getAuthentication().equals(credentials)) {
+					emoncms.setAuthentication(credentials);
 				}
-				if (emoncms.getMaxThreads() != maxThreads) {
+				if (maxThreads != null && emoncms.getMaxThreads() != maxThreads) {
 					emoncms.setMaxThreads(maxThreads);
 				}
 				return emoncms;
 			}
 		}
-		HttpEmoncms emoncms = new HttpEmoncms(url, apiKey, maxThreads);
-		httpSingletonList.add(emoncms);
-
-		return emoncms;
-	}
-
-	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String address, String apiKey) {
-
-		String url = verifyAddress(address);
-
-		for (HttpEmoncms emoncms : httpSingletonList) {
-			if (emoncms.getAddress().equals(url)) {
-				if (!emoncms.getApiKey().equals(apiKey)) {
-					emoncms.setApiKey(apiKey);
-				}
-				return emoncms;
-			}
+		if (maxThreads == null) {
+			maxThreads = MAX_THREADS_DEFAULT;
 		}
-		HttpEmoncms emoncms = new HttpEmoncms(url, apiKey, MAX_THREADS_DEFAULT);
+		HttpEmoncms emoncms = new HttpEmoncms(address, credentials, maxThreads);
 		httpSingletonList.add(emoncms);
 
 		return emoncms;
 	}
 
-	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String apiKey, int maxThreads) {
-
-		return newAuthenticatedHttpEmoncmsConnection(ADDRESS_DEFAULT, apiKey, maxThreads);
-	}
-
-	public static Emoncms newAuthenticatedHttpEmoncmsConnection(String apiKey) {
-
-		return newAuthenticatedHttpEmoncmsConnection(ADDRESS_DEFAULT, apiKey);
-	}
-
-	public static Emoncms newHttpEmoncmsConnection(String address, int maxThreads) {
-
-		return newAuthenticatedHttpEmoncmsConnection(address, null, maxThreads);
-	}
-
-	public static Emoncms newHttpEmoncmsConnection(String address) {
-
-		return newAuthenticatedHttpEmoncmsConnection(address, null);
-	}
-
-	public static Emoncms newHttpEmoncmsConnection() {
-
-		return newAuthenticatedHttpEmoncmsConnection(null);
+	private static Authentication getCredentials(String type, String key) {
+		
+		Authentication authentication = null;
+		if (type != null && key != null) {
+			Authorization authorization = Authorization.valueOf(type);
+			authentication = new Authentication(authorization, key);
+		}
+		return authentication;
 	}
 
 	private static String verifyAddress(String address) {

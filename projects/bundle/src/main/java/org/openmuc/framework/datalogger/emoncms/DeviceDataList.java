@@ -21,18 +21,30 @@
 package org.openmuc.framework.datalogger.emoncms;
 
 import org.emoncms.data.Authentication;
+import org.emoncms.data.Authorization;
 import org.emoncms.data.DataList;
 
 public class DeviceDataList extends DataList {
 	private static final long serialVersionUID = 1720223912529518324L;
 
-	private final Authentication authentication;
+	private final Authentication authenticator;
 
-	public DeviceDataList(Authentication authentication) {
-		this.authentication = authentication;
+	public DeviceDataList(Authentication authenticator) {
+		this.authenticator = authenticator;
 	}
 
 	public Authentication getAuthenticator() {
-		return authentication;
+		return authenticator;
+	}
+
+	public boolean hasSameAuthentication(Authentication authenticator) {
+		if (this.authenticator.getAuthorization() == Authorization.DEFAULT && 
+				authenticator.getAuthorization() == Authorization.DEFAULT) {
+			return true;
+		}
+		else if (this.authenticator.equals(authenticator)) {
+			return true;
+		}
+		return false;
 	}
 }

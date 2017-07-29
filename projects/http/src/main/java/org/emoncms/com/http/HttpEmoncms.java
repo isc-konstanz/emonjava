@@ -55,7 +55,6 @@ import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
 import org.emoncms.data.Authentication;
-import org.emoncms.data.Authorization;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Datatype;
@@ -76,17 +75,17 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	private static final int TIMEOUT = 15000;
 
 	private final String address;
-	private String apiKey;
+	private Authentication authentication;
 
 	private int maxThreads;
 	private ThreadPoolExecutor executor = null;
 	private ScheduledExecutorService scheduler = null;
 
 
-	public HttpEmoncms(String address, String apiKey, int maxThreads) {
+	public HttpEmoncms(String address, Authentication authentication, int maxThreads) {
 		
 		this.address = address;
-		this.apiKey = apiKey;
+		this.authentication = authentication;
 		this.maxThreads = maxThreads;
 	}
 
@@ -94,12 +93,12 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		return address;
 	}
 
-	public String getApiKey() {
-		return apiKey;
+	public Authentication getAuthentication() {
+		return authentication;
 	}
 
-	public void setApiKey(String apiKey) {
-		this.apiKey = apiKey;
+	public void setAuthentication(Authentication authentication) {
+		this.authentication = authentication;
 	}
 
 	public int getMaxThreads() {
@@ -143,11 +142,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
-
-		Authentication authentication = null;
-		if (apiKey != null) {
-			authentication = new Authentication(Authorization.WRITE, apiKey);
-		}
+		
 		post(node, name, timevalue, authentication);
 	}
 
@@ -174,10 +169,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	@Override
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
 		
-		Authentication authentication = null;
-		if (apiKey != null) {
-			authentication = new Authentication(Authorization.WRITE, apiKey);
-		}
 		post(node, time, namevalues, authentication);
 	}
 
@@ -206,10 +197,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	@Override
 	public void post(DataList dataList) throws EmoncmsException {
 		
-		Authentication authentication = null;
-		if (apiKey != null) {
-			authentication = new Authentication(Authorization.WRITE, apiKey);
-		}
 		post(dataList, authentication);
 	}
 
@@ -479,10 +466,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 	
 	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		Authentication authentication = null;
-		if (apiKey != null) {
-			authentication = new Authentication(Authorization.WRITE, apiKey);
-		}
+		
 		return sendRequest(path, authentication, action, parameters, method);
 	}
 	
