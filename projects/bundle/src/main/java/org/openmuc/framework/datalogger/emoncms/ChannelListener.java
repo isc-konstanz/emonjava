@@ -40,8 +40,11 @@ public class ChannelListener implements RecordListener {
 	public void newRecord(Record record) {
 		try {
 			Long time = record.getTimestamp();
-			Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
+			if (time == null) {
+				time = System.currentTimeMillis();
+			}
 			
+			Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
 			channel.post(timevalue);
 			
 		} catch (EmoncmsException e) {
