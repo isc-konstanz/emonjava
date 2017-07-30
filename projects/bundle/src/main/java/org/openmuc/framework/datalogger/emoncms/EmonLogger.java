@@ -134,8 +134,9 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 	@Override
 	public void setChannelsToLog(List<LogChannel> channels) {
 		
-		// Will be called if OpenMUC receives new logging configurations
-		// Logging preparations will be done in configurationChanged()
+		// Will be called if OpenMUC receives new logging configurations.
+		// Logging preparations will be done on configurationChanged(), 
+		// to allow the immediate logging of listened values
 	}
 
 	@Override
@@ -160,13 +161,17 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 			if (settings.isValid()) {
 				try {
 					Input input = HttpInput.connect(connection, settings.getInputId(), settings.getNode(), channel.getId());					
-					ChannelInput container = new ChannelInput(input, settings.getAuthentication());
 					
 					if (channel.isListening() != null && channel.isListening()) {
-						ChannelListener listener = new ChannelListener(container);
-						dataAccessService.getChannel(id).addListener(listener);
+						ChannelListener channelListener = new ChannelListener(id, input, settings.getAuthentication());
+						dataAccessService.getChannel(id).addListener(channelListener);
+	
+						channelInputs.put(id, channelListener);
 					}
-					channelInputs.put(id, container);
+					else {
+						ChannelInput channelInput = new ChannelInput(id, input, settings.getAuthentication());
+						channelInputs.put(id, channelInput);
+					}
 					
 				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
 					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());

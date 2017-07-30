@@ -27,12 +27,18 @@ import org.emoncms.data.Timevalue;
 
 public class ChannelInput {
 
-	private final Input input;
-	private final Authentication authenticator;
+	protected final String id;
+	protected final Input input;
+	protected final Authentication authenticator;
 
-	public ChannelInput(Input input, Authentication authenticator) {
+	public ChannelInput(String id, Input input, Authentication authenticator) {
+		this.id = id;
 		this.input = input;
 		this.authenticator = authenticator;
+	}
+
+	public String getId() {
+		return id;
 	}
 
 	public Input getInput() {

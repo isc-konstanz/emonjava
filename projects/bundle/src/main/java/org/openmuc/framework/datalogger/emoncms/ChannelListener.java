@@ -20,35 +20,52 @@
  */
 package org.openmuc.framework.datalogger.emoncms;
 
+import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
+import org.emoncms.data.Authentication;
 import org.emoncms.data.Timevalue;
+import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.dataaccess.RecordListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelListener implements RecordListener {
+public class ChannelListener extends ChannelInput implements RecordListener {
 	private final static Logger logger = LoggerFactory.getLogger(ChannelListener.class);
 
-	private final ChannelInput channel;
-
-	public ChannelListener(ChannelInput channel) {
-		this.channel = channel;
+	public ChannelListener(String id, Input input, Authentication authenticator) {
+		super(id, input, authenticator);
 	}
+
 
 	@Override
 	public void newRecord(Record record) {
-		try {
-			Long time = record.getTimestamp();
-			if (time == null) {
-				time = System.currentTimeMillis();
+		if (record != null) {
+			if (record.getFlag() == Flag.VALID && record.getValue() != null) {
+				
+				if (logger.isTraceEnabled()) {
+					logger.trace("Listener received new record to log for channel \"{}\": {}", 
+							id, record.toString());
+				}
+				try {
+					Long time = record.getTimestamp();
+					if (time == null) {
+						time = System.currentTimeMillis();
+					}
+					Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
+					post(timevalue);
+					
+				} catch (EmoncmsException e) {
+					logger.warn("Failed to log record for channel \"{}\": {}", id, e.getMessage());
+				}
 			}
-			
-			Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
-			channel.post(timevalue);
-			
-		} catch (EmoncmsException e) {
-			logger.warn("Failed to log record for channel \"{}\": {}", channel.getInput().getName(), e.getMessage());
+			else if (logger.isDebugEnabled()) {
+				logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
+						id, record.getFlag().toString());
+			}
+		}
+		else if (logger.isTraceEnabled()) {
+			logger.trace("Failed to log an empty record for channel \"{}\"", id);
 		}
 	}
 }
