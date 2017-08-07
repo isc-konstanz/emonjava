@@ -38,7 +38,7 @@ public class HttpRequestAction extends LinkedHashMap<String, String>{
 	public HttpRequestAction(String action) {
 		super();
 
-		if (!action.endsWith(".json")) {
+		if (!action.endsWith(".json") && !action.endsWith(".fulljson")) {
 			action = action.concat(".json");
 		}
 		this.action = action;

@@ -37,7 +37,7 @@ public class DataList extends LinkedList<Data> {
 		}
 		
 		for (Data data : this) {
-			if (data.getNode() == node && data.getTime() == time) {
+			if (data.getNode().equals(node) && data.getTime().equals(time)) {
 				data.add(namevalue);
 				
 				result = true;
@@ -74,10 +74,10 @@ public class DataList extends LinkedList<Data> {
 				return 1;
 			}
 			if (d1.getTime() < d2.getTime()){
-				return -1; 
-			}
-			if (d1.getTime() > d2.getTime()){
 				return 1; 
+			}
+			else if (d1.getTime() > d2.getTime()){
+				return -1; 
 			}
 			return 0;
 		}

@@ -151,11 +151,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post");
+		HttpRequestAction action = new HttpRequestAction("post.fulljson");
 		action.addParameter(Const.NODE, node);
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, timevalue.getTime()/1000);
+			action.addParameter(Const.TIME, (int) Math.round(timevalue.getTime().doubleValue()/1000));
 		}
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -177,11 +177,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
-		HttpRequestAction action = new HttpRequestAction("bulk");
+		HttpRequestAction action = new HttpRequestAction("bulk.fulljson");
 		action.addParameter(Const.NODE, node);
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, time/1000);
+			action.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
 		}
 
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -205,12 +205,12 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
-		HttpRequestAction action = new HttpRequestAction("bulk");
+		HttpRequestAction action = new HttpRequestAction("bulk.fulljson");
 		
 		Long time = dataList.getTime();
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, time/1000);
+			action.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
 		}
 		else {
 			time = System.currentTimeMillis();

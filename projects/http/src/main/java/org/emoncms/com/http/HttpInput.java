@@ -79,11 +79,11 @@ public class HttpInput extends Input {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post");
+		HttpRequestAction action = new HttpRequestAction("post.fulljson");
 		action.addParameter(Const.NODE, node);
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, timevalue.getTime()/1000);
+			action.addParameter(Const.TIME, (int) Math.round(timevalue.getTime().doubleValue()/1000));
 		}
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -109,7 +109,7 @@ public class HttpInput extends Input {
 		
 		logger.debug("Requesting to bulk post {} data sets for input \"{}\" of node \"{}\"", timevalues.size(), name, node);
 		
-		HttpRequestAction action = new HttpRequestAction("bulk");
+		HttpRequestAction action = new HttpRequestAction("bulk.fulljson");
 		
 		DataList dataList = new DataList();
 		for (Timevalue timevalue : timevalues) {
@@ -119,7 +119,7 @@ public class HttpInput extends Input {
 		Long time = dataList.getTime();
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, time/1000);
+			action.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
 		}
 		else {
 			time = System.currentTimeMillis();
