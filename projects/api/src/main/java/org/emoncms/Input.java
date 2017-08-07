@@ -48,14 +48,14 @@ import org.emoncms.data.Timevalue;
  */
 public abstract class Input {
 
-	protected final int id;
-	protected final String node;
+	protected Integer id = null;
+	protected String node;
 	protected String name;
 	protected String description = null;
 	protected ProcessList processList = null;
 	protected Timevalue timevalue = null;
 
-	protected Input(int id, String node, String name, 
+	protected Input(Integer id, String node, String name, 
 			String description, ProcessList processList, Timevalue timevalue) {
 		this.id = id;
 		this.node = node;
@@ -65,8 +65,13 @@ public abstract class Input {
 		this.timevalue = timevalue;
 	}
 
-	protected Input(int id, String node, String name) {
+	protected Input(Integer id, String node, String name) {
 		this.id = id;
+		this.node = node;
+		this.name = name;
+	}
+
+	protected Input(String node, String name) {
 		this.node = node;
 		this.name = name;
 	}
@@ -81,12 +86,6 @@ public abstract class Input {
 
 	public String getName() {
 		return name;
-	}
-
-	public void setName(String name) throws EmoncmsException {
-
-		this.setField(Field.NAME, name);
-		this.name = name;
 	}
 
 	public String getDescription() {

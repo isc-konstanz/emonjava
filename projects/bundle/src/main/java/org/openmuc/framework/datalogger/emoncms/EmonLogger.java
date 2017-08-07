@@ -160,7 +160,8 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 			SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
 			if (settings.isValid()) {
 				try {
-					Input input = HttpInput.connect(connection, settings.getInputId(), settings.getNode(), channel.getId());					
+					// TODO: verify inputid to be unnecessary here
+					Input input = HttpInput.connect(connection, settings.getNode(), id);					
 					
 					if (channel.isListening() != null && channel.isListening()) {
 						ChannelListener channelListener = new ChannelListener(id, input, settings.getAuthentication());
@@ -177,11 +178,11 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
 				}
 
-				if (logger.isTraceEnabled()) {
+				if (logger.isTraceEnabled() && channel.getLoggingInterval() != null) {
 					logger.trace("Channel \"{}\" configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
 				}
 			}
-			else if (!settings.hasAuthorization()) {
+			else if (settings.hasAuthorization()) {
 				logger.warn("Unable to configure logging due to invalid syntax for Channel \"{}\": {}", channel.getId(), channel.getLoggingSettings());
 			}
 		}

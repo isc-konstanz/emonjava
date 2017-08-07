@@ -54,15 +54,19 @@ public class HttpInput extends Input {
 	private final HttpRequestCallbacks callbacks;
 	
 	
-	public HttpInput(HttpRequestCallbacks callbacks, int id, String node, String name, 
+	public HttpInput(HttpRequestCallbacks callbacks, Integer id, String node, String name, 
 			String description, ProcessList processList, Timevalue timevalue) {
 		super(id, node, name, description, processList, timevalue);
 		this.callbacks = callbacks;
 	}
 
-	public HttpInput(HttpRequestCallbacks callbacks, int id, String node, String name) {
+	public HttpInput(HttpRequestCallbacks callbacks, Integer id, String node, String name) {
 		super(id, node, name);
 		this.callbacks = callbacks;
+	}
+
+	public HttpInput(HttpRequestCallbacks callbacks, String node, String name) {
+		this(callbacks, null, node, name);
 	}
 
 	@Override
@@ -140,65 +144,90 @@ public class HttpInput extends Input {
 	@Override
 	protected void setFields(Map<String, String> fields) throws EmoncmsException {
 
-		logger.debug("Requesting to set {} fields for input \"{}\" of node \"{}\"", fields.size(), name, node);
+		if (id != null) {
+			logger.debug("Requesting to set {} fields for input \"{}\" of node \"{}\"", fields.size(), name, node);
 
-		HttpRequestAction action = new HttpRequestAction("set");
-		action.addParameter(Const.INPUTID, id);
-		ToJsonObject json = new ToJsonObject();
-		for (Map.Entry<String, String> field : fields.entrySet()) {
-			json.addString(field.getKey(), field.getValue());
+			HttpRequestAction action = new HttpRequestAction("set");
+			action.addParameter(Const.INPUTID, id);
+			ToJsonObject json = new ToJsonObject();
+			for (Map.Entry<String, String> field : fields.entrySet()) {
+				json.addString(field.getKey(), field.getValue());
+			}
+			action.addParameter(Const.FIELDS, json);
+			
+			HttpRequestParameters parameters = new HttpRequestParameters();
+			
+			callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
 		}
-		action.addParameter(Const.FIELDS, json);
-		
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		
-		callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		else {
+			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
+		}
 	}
 
 	@Override
 	public void setProcessList(String processList) throws EmoncmsException {
 
-		logger.debug("Requesting to set process list for input \"{}\" of node \"{}\": {}", name, node, processList);
-		
-		HttpRequestAction action = new HttpRequestAction("process/set");
-		action.addParameter(Const.INPUTID, id);
-		
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList);
-		
-		callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+		if (id != null) {
+			logger.debug("Requesting to set process list for input \"{}\" of node \"{}\": {}", name, node, processList);
+			
+			HttpRequestAction action = new HttpRequestAction("process/set");
+			action.addParameter(Const.INPUTID, id);
+			
+			HttpRequestParameters parameters = new HttpRequestParameters();
+			parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList);
+			
+			callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+		}
+		else {
+			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
+		}
 	}
 
 	@Override
 	public void resetProcessList() throws EmoncmsException {
 
-		logger.debug("Requesting to reset process list for input \"{}\" of node \"{}\"", name, node);
-		
-		HttpRequestAction action = new HttpRequestAction("process/reset");
-		action.addParameter(Const.INPUTID, id);
-		
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		
-		callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		if (id != null) {
+			logger.debug("Requesting to reset process list for input \"{}\" of node \"{}\"", name, node);
+			
+			HttpRequestAction action = new HttpRequestAction("process/reset");
+			action.addParameter(Const.INPUTID, id);
+			
+			HttpRequestParameters parameters = new HttpRequestParameters();
+			
+			callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		}
+		else {
+			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
+		}
 	}
 
 	@Override
 	public void delete() throws EmoncmsException {
 
-		logger.debug("Requesting to delete input \"{}\" of node \"{}\"", name, node);
-		
-		HttpRequestAction action = new HttpRequestAction("delete");
-		action.addParameter(Const.INPUTID, id);
-		
-		HttpRequestParameters parameters = new HttpRequestParameters();
-		
-		callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		if (id != null) {
+			logger.debug("Requesting to delete input \"{}\" of node \"{}\"", name, node);
+			
+			HttpRequestAction action = new HttpRequestAction("delete");
+			action.addParameter(Const.INPUTID, id);
+			
+			HttpRequestParameters parameters = new HttpRequestParameters();
+			
+			callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		}
+		else {
+			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
+		}
 	}
 
 	@Override
 	public void load() throws EmoncmsException {
 
-		logger.debug("Requesting input with id: {}", id);
+		if (id != null) {
+			logger.debug("Requesting input with id: {}", id);
+		}
+		else {
+			logger.debug("Requesting input \"{}\" of node \"{}\"", name, node);
+		}
 
 		HttpRequestAction action = new HttpRequestAction("list");
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -208,8 +237,17 @@ public class HttpInput extends Input {
 			List<JsonInput> jsonInputList = response.getInputList();
 
 			for (JsonInput jsonInput : jsonInputList) {
-				if (jsonInput.getId() == id) {
+				if (id != null && jsonInput.getId() == id) {
+					this.node = jsonInput.getNodeid();
 					this.name = jsonInput.getName();
+					this.description = jsonInput.getDescription();
+					this.processList = new ProcessList(jsonInput.getProcessList());
+					this.timevalue = new Timevalue(jsonInput.getTime(), jsonInput.getValue());
+					
+					break;
+				}
+				else if (jsonInput.getNodeid().equals(node) && jsonInput.getName().equals(name)) {
+					this.id = jsonInput.getId();
 					this.description = jsonInput.getDescription();
 					this.processList = new ProcessList(jsonInput.getProcessList());
 					this.timevalue = new Timevalue(jsonInput.getTime(), jsonInput.getValue());
@@ -222,11 +260,15 @@ public class HttpInput extends Input {
 			throw new EmoncmsException("Error parsing JSON response: " + e.getMessage());
 		}
 	}
-	
-	public static Input connect(Emoncms connection, int id, String name, String node) throws EmoncmsUnavailableException {
+
+	public static Input connect(Emoncms connection, Integer id, String name, String node) throws EmoncmsUnavailableException {
 		if (connection != null && connection instanceof HttpRequestCallbacks) {
 			return new HttpInput((HttpRequestCallbacks) connection, id, name, node);
 		}
 		else throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
+	}
+	
+	public static Input connect(Emoncms connection, String name, String node) throws EmoncmsUnavailableException {
+		return connect(connection, null, name, node);
 	}
 }

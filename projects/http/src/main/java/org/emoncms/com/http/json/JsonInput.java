@@ -39,7 +39,6 @@ public class JsonInput {
 		return nodeid;
 	}
 
-
 	public String getName() {
 		return name;
 	}
