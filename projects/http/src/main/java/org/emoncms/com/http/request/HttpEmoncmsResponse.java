@@ -36,6 +36,8 @@ import org.emoncms.com.http.json.JsonInputList;
 import org.emoncms.com.http.json.JsonTimevalue;
 import org.emoncms.data.Timevalue;
 
+import com.google.gson.JsonSyntaxException;
+
 
 public class HttpEmoncmsResponse {
 
@@ -73,25 +75,30 @@ public class HttpEmoncmsResponse {
 		}
 		else if (!response.toLowerCase().equals("false")) {
 			if (!response.startsWith("Error:")) {
-				if (json == null) {
-					json = new FromJson(response);
-				}
-				if (json.isValidArray()) {
-					return true;
-				}
-				else if (json.isValidObject()) {
-					if (!json.getJsonObject().has(Const.SUCCESS)) {
+				try {
+					if (json == null) {
+						json = new FromJson(response);
+					}
+					if (json.isValidArray()) {
 						return true;
 					}
-					else {
-						if (json.getJsonObject().get(Const.SUCCESS).getAsBoolean()) {
+					else if (json.isValidObject()) {
+						if (!json.getJsonObject().has(Const.SUCCESS)) {
 							return true;
 						}
 						else {
-							String message = json.getJsonObject().get(Const.MESSAGE).getAsString();
-							throw new EmoncmsSyntaxException(message);
+							if (json.getJsonObject().get(Const.SUCCESS).getAsBoolean()) {
+								return true;
+							}
+							else {
+								String message = json.getJsonObject().get(Const.MESSAGE).getAsString();
+								throw new EmoncmsSyntaxException(message);
+							}
 						}
 					}
+				}
+				catch (JsonSyntaxException e) {
+					throw new EmoncmsSyntaxException(response);
 				}
 			}
 			else throw new EmoncmsSyntaxException(response.substring(7));
