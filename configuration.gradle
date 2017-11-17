@@ -5,11 +5,9 @@ project.ext {
 
   cfgGroup = "org.emoncms"
 
-  cfgCopyDependencies = true
+  cfgCopyDependencies = false
 
-  cfgCopyArtefacts = true
-
-  cfgCopyToRoot = true
+  cfgCopyToRoot = false
 
   javaProjects = subprojects
 
@@ -37,7 +35,7 @@ tasks.withType(Tar) {
     from("./") {
       include "build.gradle"
       include "configuration.gradle"
-      include "license/**"
+      include "LICENSE**"
       include "gradle/wrapper/**"
       include "gradlew"
       include "gradlew.bat"
@@ -55,7 +53,6 @@ tasks.withType(Tar) {
       for (Project myproject: distributionProjects) {
         include myproject.getProjectDir().toString().substring((int)(getProjectDir().toString().size() + 1)) + "/**";
       }
-
     }
 
     if (name.equals("tar") ){
@@ -64,6 +61,27 @@ tasks.withType(Tar) {
 
     from("./build/") {
       include "settings.gradle"
+    }
+  }
+
+  into(project.name + "/doc/user-guide/") {
+    from("./build/asciidoc/html5/") {
+      include "**"
+    }
+    from("./build/asciidoc/pdf/") {
+      include "*.pdf"
+    }
+  }
+
+  into(project.name + "/framework/media/") {
+    from("./build/asciidoc/pdf/") {
+      include "*.pdf"
+    }
+  }
+
+  into(project.name + "/doc/") {
+    from("./build/docs/") {
+      include "javadoc/**"
     }
   }
 }
