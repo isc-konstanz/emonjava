@@ -1,22 +1,21 @@
-/*
+/* 
  * Copyright 2016-17 ISC Konstanz
- *
+ * 
  * This file is part of emonjava.
- * For more information visit https://bitbucket.org/isc-konstanz/emonjava
- *
+ * For more information visit https://github.com/isc-konstanz/emonjava
+ * 
  * Emonjava is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * 
  * Emonjava is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 package org.emoncms.com.http;
 
@@ -25,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.emoncms.Emoncms;
@@ -475,48 +476,44 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		if (!url.endsWith("/"))
 			url += "/";
 		
-		HttpEmoncmsRequest request = new HttpEmoncmsRequest(url, authentication, 
-				action, parameters, method);
-
-		try {
-			HttpEmoncmsResponse response = submitRequest(request);
-			if (response != null) {
-				if (response.isSuccess()) {
-					return response;
-				}
-				else {
-					throw new EmoncmsException("Emoncms request responsed \"false\"");
-				}
+		HttpEmoncmsRequest request = new HttpEmoncmsRequest(url, authentication, action, parameters, method);
+		HttpEmoncmsResponse response = submitRequest(request);
+		if (response != null) {
+			if (response.isSuccess()) {
+				return response;
 			}
-			else throw new EmoncmsException("Emoncms request failed");
-				
-		} catch (InterruptedException | ExecutionException | JsonSyntaxException e) {
-			throw new EmoncmsException("Error while requesting \"" + request.toString() + "\" :" + e);
+			throw new EmoncmsException("Emoncms request responsed \"false\"");
 		}
+		throw new EmoncmsException("Emoncms request failed");
 	}
 
-	private HttpEmoncmsResponse submitRequest(HttpEmoncmsRequest request) throws InterruptedException, ExecutionException {
+	private HttpEmoncmsResponse submitRequest(HttpEmoncmsRequest request) throws EmoncmsException {
+		
 		long start = System.currentTimeMillis();
-		
-		HttpCallable task = new HttpCallable(request);
-		if (logger.isTraceEnabled()) {
-			logger.trace("Requesting \"{}\"", request.toString());
-		}
-		
-		final Future<HttpEmoncmsResponse> submit = executor.submit(task);
-		final ScheduledFuture<?> timeout = scheduler.schedule(new ScheduledInterruptTask(submit), TIMEOUT, TimeUnit.MILLISECONDS);
-		
-		HttpEmoncmsResponse response = submit.get();
-		timeout.cancel(true);
-		
-		if (logger.isTraceEnabled()) {
-			String rsp = "Returned null";
-			if (response != null) {
-				rsp = response.getResponse();
+		try {
+			HttpCallable task = new HttpCallable(request);
+			if (logger.isTraceEnabled()) {
+				logger.trace("Requesting \"{}\"", request.toString());
 			}
-			logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
+			
+			final Future<HttpEmoncmsResponse> submit = executor.submit(task);
+			final ScheduledFuture<?> timeout = scheduler.schedule(new ScheduledInterruptTask(submit), TIMEOUT, TimeUnit.MILLISECONDS);
+			
+			HttpEmoncmsResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
+			timeout.cancel(true);
+			
+			if (logger.isTraceEnabled()) {
+				String rsp = "Returned null";
+				if (response != null) {
+					rsp = response.getResponse();
+				}
+				logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
+			}
+			return response;
+
+		} catch (CancellationException | InterruptedException | TimeoutException | ExecutionException | JsonSyntaxException e) {
+			throw new EmoncmsException("Failed request \"" + request.toString() + "\": " + e.getMessage());
 		}
-		return response;
 	}
 	
 	private class ScheduledInterruptTask implements Runnable {
