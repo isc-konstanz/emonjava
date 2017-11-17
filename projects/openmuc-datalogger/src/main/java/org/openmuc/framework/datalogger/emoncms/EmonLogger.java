@@ -254,10 +254,8 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 			}
 			
 			for (DeviceDataList device : devices) {
-
-				if (logger.isTraceEnabled()) {
-					logger.trace("Attempting to log {} values with authentication \"{}\"", device.size(), device.getAuthenticator());
-				}
+				
+				logger.debug("Logging {} values with authentication \"{}\"", device.size(), device.getAuthenticator());
 				try {
 					Authentication authenticator = device.getAuthenticator();
 					if (authenticator.isDefault()) {
@@ -267,7 +265,7 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 						connection.post(device, device.getAuthenticator());
 					}
 				} catch (EmoncmsException e) {
-					logger.warn("Failed to log values with authentication \"{}\": {}", device.getAuthenticator(), e.getMessage());
+					logger.warn("Error logging values: {}", e.getMessage());
 				}
 			}
 		}
