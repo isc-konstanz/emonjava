@@ -64,21 +64,6 @@ tasks.withType(Tar) {
     }
   }
 
-  into(project.name + "/doc/user-guide/") {
-    from("./build/asciidoc/html5/") {
-      include "**"
-    }
-    from("./build/asciidoc/pdf/") {
-      include "*.pdf"
-    }
-  }
-
-  into(project.name + "/framework/media/") {
-    from("./build/asciidoc/pdf/") {
-      include "*.pdf"
-    }
-  }
-
   into(project.name + "/doc/") {
     from("./build/docs/") {
       include "javadoc/**"
