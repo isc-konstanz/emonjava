@@ -47,4 +47,3 @@ build/
 /build/libs/*
 !/build/libs/emoncms*
 !/build/libs/openmuc*
-/build/libs/openmuc-core-*

@@ -1,7 +1,7 @@
 
 project.ext {
 
-  cfgVersion = "0.9.1"
+  cfgVersion = "1.0.0"
 
   cfgGroup = "org.emoncms"
 
