@@ -28,8 +28,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +78,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	private int maxThreads;
 	private ThreadPoolExecutor executor = null;
-	private ScheduledExecutorService scheduler = null;
 
 
 	public HttpEmoncms(String address, Authentication authentication, int maxThreads) {
@@ -109,7 +106,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public void setMaxThreads(int max) {
 		this.maxThreads = max;
 	}
-	
+
 	@Override
 	public void start() throws EmoncmsUnavailableException {
 		
@@ -124,13 +121,8 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		}
 		NamedThreadFactory namedThreadFactory = new NamedThreadFactory("EmonJava HTTP request pool - thread-");
 		executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(maxThreads, namedThreadFactory);
-
-		if (scheduler != null) {
-			scheduler.shutdown();
-		}
-		scheduler = Executors.newScheduledThreadPool(maxThreads);
 	}
-	
+
 	@Override
 	public void stop() {
 		
@@ -465,12 +457,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public HttpEmoncmsResponse onRequest(String parent, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
 		return sendRequest(parent, action, parameters, method);
 	}
-	
+
 	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		
 		return sendRequest(path, authentication, action, parameters, method);
 	}
-	
+
 	private HttpEmoncmsResponse sendRequest(String path, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
 		String url = address + path.toLowerCase();
 		if (!url.endsWith("/"))
@@ -496,11 +487,8 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 				logger.trace("Requesting \"{}\"", request.toString());
 			}
 			
-			final Future<HttpEmoncmsResponse> submit = executor.submit(task);
-			final ScheduledFuture<?> timeout = scheduler.schedule(new ScheduledInterruptTask(submit), TIMEOUT, TimeUnit.MILLISECONDS);
-			
+			final Future<HttpEmoncmsResponse> submit = executor.submit(task);			
 			HttpEmoncmsResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
-			timeout.cancel(true);
 			
 			if (logger.isTraceEnabled()) {
 				String rsp = "Returned null";
@@ -512,21 +500,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			return response;
 
 		} catch (CancellationException | InterruptedException | TimeoutException | ExecutionException | JsonSyntaxException e) {
-			throw new EmoncmsException("Failed request \"" + request.toString() + "\": " + e.getMessage());
-		}
-	}
-	
-	private class ScheduledInterruptTask implements Runnable {
-
-		private final Future<HttpEmoncmsResponse> task;
-		
-		public ScheduledInterruptTask(Future<HttpEmoncmsResponse> task) {
-			this.task = task;
-		}
-		
-		public void run() {
-			logger.warn("Interrupting running HTTP request after {} seconds", TIMEOUT/1000);
-			task.cancel(true);
+			throw new EmoncmsException("Failed request \"" + request.toString() + "\": " + e);
 		}
 	}
 
