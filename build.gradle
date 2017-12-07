@@ -128,7 +128,7 @@ task javadocAll(type: Javadoc) {
   exclude "**/java-gen/**"
   exclude "**/app/**"
 
-  destinationDir = new File(buildDir, "docs/javadoc-all")
+  destinationDir = new File(buildDir, "docs/javadoc")
 
   classpath = files(distributionProjects.collect { project ->
     project.sourceSets.main.compileClasspath })
