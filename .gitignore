@@ -40,7 +40,7 @@ local.properties
 *.gradletasknamecache
 *.gradle/
 build/
-!/build
+!/build/
 /build/*
 !/build/docs
 !/build/libs
