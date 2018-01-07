@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.emoncms;
+package org.openmuc.framework.datalogger.emoncms.data;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +26,7 @@ import org.emoncms.com.EmoncmsSyntaxException;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Authorization;
 
-public class SettingsHelper {
+public class ChannelLogSettings {
 
 	private final static String NODE_ID = "nodeid";
 	private final static String INPUT_ID = "inputid";
@@ -36,7 +36,7 @@ public class SettingsHelper {
 
     private final Map<String, String> settingsMap = new HashMap<>();
 
-    public SettingsHelper(String settings) {
+    public ChannelLogSettings(String settings) {
     	if (settings != null) {
             String[] settingsArray = settings.split(",");
             for (String arg : settingsArray) {

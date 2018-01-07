@@ -42,6 +42,10 @@ import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.dataaccess.DataAccessService;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelInput;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelListener;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelLogSettings;
+import org.openmuc.framework.datalogger.emoncms.data.DeviceDataList;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
 import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.openmuc.framework.datalogger.spi.LogRecordContainer;
@@ -53,15 +57,9 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 @Component
 public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 	private final static Logger logger = LoggerFactory.getLogger(EmonLogger.class);
-
-	private final static String ADDRESS = "org.openmuc.framework.datalogger.emoncms.address";
-	private final static String AUTHORIZATION = "org.openmuc.framework.datalogger.emoncms.authorization";
-	private final static String AUTHENTICATION = "org.openmuc.framework.datalogger.emoncms.authentication";
-	private final static String MAX_THREADS = "org.openmuc.framework.datalogger.emoncms.maxThreads";
 
 	private DataAccessService dataAccessService;
 	private ConfigService configService;
@@ -72,34 +70,38 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 
     @Activate
 	protected void activate(ComponentContext context) {
-		
 		logger.info("Activating Emoncms Logger");
-
-		String address = System.getProperty(ADDRESS, null);
-		String authorization = System.getProperty(AUTHORIZATION, null);
-		String authentication = System.getProperty(AUTHENTICATION, null);
-		String maxThreadsProperty = System.getProperty(MAX_THREADS, null);
-		if (maxThreadsProperty != null) {
-			int maxThreads = Integer.parseInt(maxThreadsProperty);
-			connection = HttpEmoncmsFactory.newAuthenticatedConnection(address, authorization, authentication, maxThreads);
-		}
-		else {
-			connection = HttpEmoncmsFactory.newAuthenticatedConnection(address, authorization, authentication);
-		}
 		try {
-			connection.start();
+			EmoncmsConfig configs = new EmoncmsConfig();
 			
-			RootConfig configs = configService.getConfig(this);
-			configureLogging(configs);
-			
-		} catch (EmoncmsUnavailableException e) {
-			logger.warn("Unable to connect to \"{}\"", address);
+			String address = configs.getAddress();
+			try {
+				int maxThreads = configs.getMaxThreads();
+				
+				if (configs.hasAuthentication()) {
+					String authorization = configs.getAuthorization();
+					String authentication = configs.getAuthentication();
+					
+					connection = HttpEmoncmsFactory.newAuthenticatedConnection(address, authorization, authentication, maxThreads);
+				}
+				else {
+					connection = HttpEmoncmsFactory.newConnection(address, maxThreads);
+				}
+				connection.start();
+				
+				RootConfig rootConfigs = configService.getConfig(this);
+				configureLogging(rootConfigs);
+				
+			} catch (EmoncmsUnavailableException e) {
+				logger.warn("Unable to connect to \"{}\"", address);
+			}
+		} catch (IOException e) {
+			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
 		}
 	}
 
     @Deactivate
 	protected void deactivate(ComponentContext context) {
-		
 		logger.info("Deactivating Emoncms Logger");
 		if (connection != null) {
 			connection.stop();
@@ -132,7 +134,6 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 
 	@Override
 	public void setChannelsToLog(List<LogChannel> channels) {
-		
 		// Will be called if OpenMUC receives new logging configurations.
 		// Logging preparations will be done on configurationChanged(), 
 		// to allow the immediate logging of listened values
@@ -140,13 +141,11 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 
 	@Override
 	public void configurationChanged() {
-
 		RootConfig configs = configService.getConfig();
 		configureLogging(configs);
 	}
 
 	private void configureLogging(RootConfig configs) {
-
 		if (connection == null) {
 			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
 			return;
@@ -156,7 +155,7 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 		for (String id : dataAccessService.getAllIds()) {
 			ChannelConfig channel = configs.getChannel(id);
 			
-			SettingsHelper settings = new SettingsHelper(channel.getLoggingSettings());
+			ChannelLogSettings settings = new ChannelLogSettings(channel.getLoggingSettings());
 			if (settings.isValid()) {
 				try {
 					// TODO: verify inputid to be unnecessary here
@@ -189,7 +188,6 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 
 	@Override
 	public synchronized void log(List<LogRecordContainer> containers, long timestamp) {
-
 		if (connection == null) {
 			logger.error("Requested to log values for deactivated Emoncms logger");
 		}
@@ -271,7 +269,6 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 	}
 
 	private boolean isValid(LogRecordContainer container) {
-		
 		if (channelInputs.containsKey(container.getChannelId())) {
 		
 			if (container.getRecord() != null) {
@@ -298,7 +295,6 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 
 	@Override
 	public List<Record> getRecords(String channelId, long startTime, long endTime) throws IOException {
-		
 		// TODO: fetch feed id and retrieve data from web server
 		throw new UnsupportedOperationException();
 	}
