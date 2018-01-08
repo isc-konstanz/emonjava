@@ -34,10 +34,6 @@ import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
-import org.openmuc.framework.config.ChannelConfig;
-import org.openmuc.framework.config.ConfigChangeListener;
-import org.openmuc.framework.config.ConfigService;
-import org.openmuc.framework.config.RootConfig;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
@@ -58,12 +54,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
-public class EmonLogger implements DataLoggerService, ConfigChangeListener {
+public class EmonLogger implements DataLoggerService {
 	private final static Logger logger = LoggerFactory.getLogger(EmonLogger.class);
 
 	private DataAccessService dataAccessService;
-	private ConfigService configService;
-
 	private Emoncms connection = null;
 
 	private final HashMap<String, ChannelInput> channelInputs = new HashMap<String, ChannelInput>();
@@ -88,9 +82,6 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 					connection = HttpEmoncmsFactory.newConnection(address, maxThreads);
 				}
 				connection.start();
-				
-				RootConfig rootConfigs = configService.getConfig(this);
-				configureLogging(rootConfigs);
 				
 			} catch (EmoncmsUnavailableException e) {
 				logger.warn("Unable to connect to \"{}\"", address);
@@ -118,15 +109,6 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
         this.dataAccessService = null;
     }
 
-    @Reference
-    protected void setConfigService(ConfigService configService) {
-        this.configService = configService;
-    }
-
-    protected void unsetConfigService(ConfigService configService) {
-    	this.configService = null;
-    }
-
 	@Override
 	public String getId() {
 		return "emoncms";
@@ -134,43 +116,35 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 
 	@Override
 	public void setChannelsToLog(List<LogChannel> channels) {
-		// Will be called if OpenMUC receives new logging configurations.
-		// Logging preparations will be done on configurationChanged(), 
-		// to allow the immediate logging of listened values
-	}
-
-	@Override
-	public void configurationChanged() {
-		RootConfig configs = configService.getConfig();
-		configureLogging(configs);
-	}
-
-	private void configureLogging(RootConfig configs) {
+		// Will be called if OpenMUC receives new logging configurations
 		if (connection == null) {
 			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
 			return;
 		}
+		for (ChannelInput channel : channelInputs.values()) {
+			if (channel instanceof ChannelListener) {
+				dataAccessService.getChannel(channel.getId()).removeListener((ChannelListener) channel);
+			}
+		}
 		channelInputs.clear();
-		
-		for (String id : dataAccessService.getAllIds()) {
-			ChannelConfig channel = configs.getChannel(id);
+
+		for (LogChannel channel : channels) {
+			String id = channel.getId();
 			
 			ChannelLogSettings settings = new ChannelLogSettings(channel.getLoggingSettings());
 			if (settings.isValid()) {
 				try {
-					// TODO: verify inputid to be unnecessary here
 					Input input = HttpInput.connect(connection, settings.getNode(), id);					
 					
-					if (channel.isListening() != null && channel.isListening()) {
-						ChannelListener channelListener = new ChannelListener(id, input, settings.getAuthentication());
-						dataAccessService.getChannel(id).addListener(channelListener);
-	
-						channelInputs.put(id, channelListener);
+					ChannelInput channelInput;
+					if (settings.isDynamic() || settings.isAveraged()) {
+						channelInput = new ChannelListener(id, input, settings);
+						dataAccessService.getChannel(id).addListener((ChannelListener) channelInput);
 					}
 					else {
-						ChannelInput channelInput = new ChannelInput(id, input, settings.getAuthentication());
-						channelInputs.put(id, channelInput);
+						channelInput = new ChannelInput(id, input, settings);
 					}
+					channelInputs.put(id, channelInput);
 					
 				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
 					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
@@ -205,10 +179,16 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 					if (time == null) {
 						time = timestamp;
 					}
-					Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
 					
-					channel.post(timevalue);
-					
+					if (channel.isListening()) {
+						ChannelListener listener = (ChannelListener) channel;
+						if (listener.isUpdated(timestamp)) {
+							channel.post(listener.getTimevalue());
+						}
+					}
+					else {
+						channel.post(new Timevalue(time, record.getValue().asDouble()));
+					}
 				} catch (EmoncmsException | TypeConversionException e) {
 					logger.warn("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
 				}
@@ -225,13 +205,25 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 						if (time == null) {
 							time = timestamp;
 						}
-						Namevalue value = new Namevalue(container.getChannelId(), record.getValue().asDouble());
+						
+						Double value;
+						if (channel.isListening()) {
+							ChannelListener listener = (ChannelListener) channel;
+							if (!listener.isUpdated(timestamp)) {
+								continue;
+							}
+							value = listener.getTimevalue().getValue();
+						}
+						else {
+							value = record.getValue().asDouble();
+						}
+						Namevalue namevalue = new Namevalue(container.getChannelId(), value);
 						
 						Authentication authenticator = channel.getAuthenticator();
 						DeviceDataList device = null;
 						for (DeviceDataList d : devices) {
 							if (d.hasSameAuthentication(authenticator)) {
-								d.add(time, channel.getInput().getNode(), value);
+								d.add(time, channel.getInput().getNode(), namevalue);
 								device = d;
 								break;
 							}
@@ -239,7 +231,7 @@ public class EmonLogger implements DataLoggerService, ConfigChangeListener {
 						if (device == null) {
 							// No input collection for that device exists yet, so it needs to be created
 							device = new DeviceDataList(authenticator);
-							device.add(time, channel.getInput().getNode(), value);
+							device.add(time, channel.getInput().getNode(), namevalue);
 							
 							devices.add(device);
 						}

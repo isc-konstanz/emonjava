@@ -28,8 +28,10 @@ import org.emoncms.data.Authorization;
 
 public class ChannelLogSettings {
 
+	private final static String MAX_INTERVAL = "loggingMaxInterval";
+	private final static String TOLERANCE = "loggingTolerance";
+	private final static String AVERAGE = "average";
 	private final static String NODE_ID = "nodeid";
-	private final static String INPUT_ID = "inputid";
 	private final static String FEED_ID = "feedid";
 	private final static String AUTHORIZATION = "authorization";
 	private final static String KEY = "key";
@@ -42,10 +44,38 @@ public class ChannelLogSettings {
             for (String arg : settingsArray) {
                 int p = arg.indexOf(":");
                 if (p != -1) {
-                    settingsMap.put(arg.substring(0, p).toLowerCase().trim(), arg.substring(p + 1).trim());
+                    settingsMap.put(arg.substring(0, p).trim(), arg.substring(p + 1).trim());
                 }
             }
     	}
+    }
+
+    public boolean isDynamic() {
+        if (settingsMap.containsKey(MAX_INTERVAL)) {
+        	return true;
+        }
+    	return false;
+    }
+
+    public Integer getMaxInterval() {
+        if (settingsMap.containsKey(MAX_INTERVAL)) {
+        	return Integer.parseInt(settingsMap.get(MAX_INTERVAL).trim());
+        }
+    	return null;
+    }
+
+    public Double getTolerance() {
+        if (settingsMap.containsKey(TOLERANCE)) {
+        	return Double.parseDouble(settingsMap.get(TOLERANCE).trim());
+        }
+    	return null;
+    }
+
+    public boolean isAveraged() {
+        if (settingsMap.containsKey(AVERAGE)) {
+        	return settingsMap.get(AVERAGE).toLowerCase().trim().equals("true");
+        }
+    	return false;
     }
 
     public String getNode() {
@@ -54,13 +84,6 @@ public class ChannelLogSettings {
             if (!node.isEmpty()) {
             	return node;
             }
-        }
-        return null;
-    }
-
-    public Integer getInputId() {
-        if (settingsMap.containsKey(INPUT_ID)) {
-            return Integer.parseInt(settingsMap.get(INPUT_ID).trim());
         }
         return null;
     }
