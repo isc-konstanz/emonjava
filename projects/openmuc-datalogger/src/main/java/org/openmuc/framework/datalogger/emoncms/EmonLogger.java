@@ -168,7 +168,7 @@ public class EmonLogger implements DataLoggerService {
 	}
 
 	@Override
-	public synchronized void log(List<LogRecordContainer> containers, long timestamp) {
+	public void log(List<LogRecordContainer> containers, long timestamp) {
 		if (connection == null) {
 			logger.error("Requested to log values for deactivated Emoncms logger");
 		}

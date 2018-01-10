@@ -71,7 +71,7 @@ import com.google.gson.JsonSyntaxException;
 public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	private static final Logger logger = LoggerFactory.getLogger(HttpEmoncms.class);
 
-	private static final int TIMEOUT = 15000;
+	private static final int TIMEOUT = 30000;
 
 	private final String address;
 	private Authentication authentication;
@@ -478,28 +478,32 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		throw new EmoncmsException("Emoncms request failed");
 	}
 
-	private HttpEmoncmsResponse submitRequest(HttpEmoncmsRequest request) throws EmoncmsException {
-		
+	private synchronized HttpEmoncmsResponse submitRequest(HttpEmoncmsRequest request) throws EmoncmsException {
+		if (logger.isTraceEnabled()) {
+			logger.trace("Requesting \"{}\"", request.toString());
+		}
 		long start = System.currentTimeMillis();
+		
 		try {
 			HttpCallable task = new HttpCallable(request);
-			if (logger.isTraceEnabled()) {
-				logger.trace("Requesting \"{}\"", request.toString());
-			}
-			
-			final Future<HttpEmoncmsResponse> submit = executor.submit(task);			
-			HttpEmoncmsResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
-			
-			if (logger.isTraceEnabled()) {
-				String rsp = "Returned null";
-				if (response != null) {
-					rsp = response.getResponse();
+			final Future<HttpEmoncmsResponse> submit = executor.submit(task);
+			try {
+				HttpEmoncmsResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
+				
+				if (logger.isTraceEnabled()) {
+					String rsp = "Returned null";
+					if (response != null) {
+						rsp = response.getResponse();
+					}
+					logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
 				}
-				logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
+				return response;
 			}
-			return response;
-
-		} catch (CancellationException | InterruptedException | TimeoutException | ExecutionException | JsonSyntaxException e) {
+			catch (CancellationException | TimeoutException | InterruptedException e) {
+				submit.cancel(true);
+				throw new EmoncmsException("Aborted request \"" + request.toString() + "\": " + e);
+			}
+		} catch (ExecutionException | JsonSyntaxException e) {
 			throw new EmoncmsException("Failed request \"" + request.toString() + "\": " + e);
 		}
 	}

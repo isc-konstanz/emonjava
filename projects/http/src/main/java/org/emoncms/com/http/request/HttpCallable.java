@@ -43,18 +43,15 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 
 
 	public HttpCallable(HttpEmoncmsRequest request) {
-		
 		this.request = request;
 	}
 
 	public HttpEmoncmsRequest getRequest() {
-		
 		return request;
 	}
 	
 	@Override
 	public HttpEmoncmsResponse call() throws Exception {
-		
     	HttpRequestMethod method = request.getMethod();
         switch (method) {
         case GET:
@@ -67,7 +64,6 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	}
 	
 	private HttpEmoncmsResponse get(HttpEmoncmsRequest request) throws IOException {
-		
 		HttpURLConnection connection = null;
         try {
 	        URL u = new URL(request.getRequest(CHARSET));
@@ -105,7 +101,6 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	}
 	
 	private HttpEmoncmsResponse post(HttpEmoncmsRequest request) throws IOException {
-		
 		HttpURLConnection connection = null;
         try {
 	        URL u = new URL(request.getRequest(CHARSET));
@@ -160,7 +155,6 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	}
 	
 	private HttpEmoncmsResponse read(HttpURLConnection connection) throws IOException {
-
 		BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET.name()));
         StringBuilder sb = new StringBuilder();
         
