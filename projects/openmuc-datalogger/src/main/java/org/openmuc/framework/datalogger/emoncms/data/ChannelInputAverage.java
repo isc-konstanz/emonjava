@@ -28,56 +28,41 @@ import org.openmuc.framework.dataaccess.RecordListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelListener extends ChannelInput implements RecordListener {
-	private final static Logger logger = LoggerFactory.getLogger(ChannelListener.class);
+public class ChannelInputAverage extends ChannelInputDynamic implements RecordListener {
+	private final static Logger logger = LoggerFactory.getLogger(ChannelInputAverage.class);
 
-	protected volatile Timevalue lastValue = null;
 	protected volatile Double valueSum = 0.0;
 	protected volatile int valueCount = 0;
-	protected volatile long lastTime = 0;
-	protected volatile boolean updated = true;
 
-	public ChannelListener(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
+	protected boolean listening = false;
+
+	public ChannelInputAverage(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
 		super(id, input, settings);
 	}
 
-	public Timevalue getTimevalue() {
-		if (settings.isAveraged()) {
+	public boolean isListening() {
+		return listening;
+	}
+
+	public void setListening(boolean listening) {
+		this.listening = listening;
+	}
+
+	public Double getAverage() {
+		if (valueCount > 1) {
 			Double average = valueSum/valueCount;
+			logger.trace("Average of {} values for channel \"{}\": {}", valueCount, id, average);
+			
 			valueSum = 0.0;
 			valueCount = 0;
-			
-			return new Timevalue(lastValue.getTime(), average);
+			return average;
 		}
 		return lastValue;
 	}
 
-	public boolean isUpdated(long timestamp) {
-		if (settings.isDynamic() && !updated && timestamp - lastTime < settings.getMaxInterval()) {
-			return false;
-		}
-		lastTime = lastValue.getTime();
-		return true;
-	}
-
 	public void onValueReceived(Timevalue timevalue) {
-		if (lastValue != null) {
-			Double tolerance = settings.getTolerance();
-			if (tolerance != null && tolerance > Math.abs(timevalue.getValue() - lastValue.getValue())) {
-				updated = false;
-			}
-			else if (timevalue.getValue() == lastValue.getValue()) {
-				updated = false;
-			}
-			else {
-				updated = true;
-			}
-		}
-		if (settings.isAveraged()) {
-			valueSum += timevalue.getValue();
-			valueCount++;
-		}
-		lastValue = timevalue;
+		valueSum += timevalue.getValue();
+		valueCount++;
 	}
 
 	@Override
@@ -104,10 +89,5 @@ public class ChannelListener extends ChannelInput implements RecordListener {
 		else if (logger.isTraceEnabled()) {
 			logger.trace("Failed to log an empty record for channel \"{}\"", id);
 		}
-	}
-
-	@Override
-	public boolean isListening() {
-		return true;
 	}
 }

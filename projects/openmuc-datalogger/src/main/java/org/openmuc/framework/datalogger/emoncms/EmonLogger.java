@@ -39,7 +39,8 @@ import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.dataaccess.DataAccessService;
 import org.openmuc.framework.datalogger.emoncms.data.ChannelInput;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelListener;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelInputAverage;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelInputDynamic;
 import org.openmuc.framework.datalogger.emoncms.data.ChannelLogSettings;
 import org.openmuc.framework.datalogger.emoncms.data.DeviceDataList;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
@@ -122,12 +123,12 @@ public class EmonLogger implements DataLoggerService {
 			return;
 		}
 		for (ChannelInput channel : channelInputs.values()) {
-			if (channel instanceof ChannelListener) {
-				dataAccessService.getChannel(channel.getId()).removeListener((ChannelListener) channel);
+			if (channel instanceof ChannelInputAverage && dataAccessService.getAllIds().contains(channel.getId())) {
+				dataAccessService.getChannel(channel.getId()).removeListener((ChannelInputAverage) channel);
 			}
 		}
 		channelInputs.clear();
-
+		
 		for (LogChannel channel : channels) {
 			String id = channel.getId();
 			
@@ -137,21 +138,27 @@ public class EmonLogger implements DataLoggerService {
 					Input input = HttpInput.connect(connection, settings.getNode(), id);					
 					
 					ChannelInput channelInput;
-					if (settings.isDynamic() || settings.isAveraged()) {
-						channelInput = new ChannelListener(id, input, settings);
-						dataAccessService.getChannel(id).addListener((ChannelListener) channelInput);
+					if (settings.isAveraging()) {
+						channelInput = new ChannelInputAverage(id, input, settings);
+						if (dataAccessService.getAllIds().contains(id)) {
+							dataAccessService.getChannel(id).addListener((ChannelInputAverage) channelInput);
+							((ChannelInputAverage) channelInput).setListening(true);
+						}
+					}
+					else if (settings.isDynamic()) {
+						channelInput = new ChannelInputDynamic(id, input, settings);
 					}
 					else {
 						channelInput = new ChannelInput(id, input, settings);
 					}
 					channelInputs.put(id, channelInput);
-					
+							
 				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
-					logger.warn("Unable to configure logging for Channel \"{}\": {}", channel.getId(), e.getMessage());
+					logger.warn("Unable to configure logging for Channel \"{}\": {}", id, e.getMessage());
 				}
-
+				
 				if (logger.isTraceEnabled() && channel.getLoggingInterval() != null) {
-					logger.trace("Channel \"{}\" configured to log every {}s", channel.getId(), channel.getLoggingInterval()/1000);
+					logger.trace("Channel \"{}\" configured to log every {}s", id, channel.getLoggingInterval()/1000);
 				}
 			}
 			else if (settings.hasAuthorization()) {
@@ -169,22 +176,26 @@ public class EmonLogger implements DataLoggerService {
 			logger.debug("Requested Emoncms logger to log an empty container list");
 		}
 		else if (containers.size() == 1) {
-			
 			LogRecordContainer container = containers.get(0);
+			
+			ChannelInput channel = getChannel(container.getChannelId());
 			if (isValid(container)) {
-				ChannelInput channel = channelInputs.get(container.getChannelId());
 				try {
 					Record record = container.getRecord();
 					Long time = record.getTimestamp();
 					if (time == null) {
 						time = timestamp;
 					}
-					
-					if (channel.isListening()) {
-						ChannelListener listener = (ChannelListener) channel;
-						if (listener.isUpdated(timestamp)) {
-							channel.post(listener.getTimevalue());
+
+					if (channel.isDynamic() && ((ChannelInputDynamic) channel).isUpdated(record)) {
+						Double value;
+						if (channel.isAveraging()) {
+							value = ((ChannelInputAverage) channel).getAverage();
 						}
+						else {
+							value = record.getValue().asDouble();
+						}
+						channel.post(new Timevalue(time, value));
 					}
 					else {
 						channel.post(new Timevalue(time, record.getValue().asDouble()));
@@ -197,8 +208,8 @@ public class EmonLogger implements DataLoggerService {
 		else {
 			List<DeviceDataList> devices = new ArrayList<DeviceDataList>();
 			for (LogRecordContainer container : containers) {
+				ChannelInput channel = getChannel(container.getChannelId());
 				if (isValid(container)) {
-					ChannelInput channel = channelInputs.get(container.getChannelId());
 					try {
 						Record record = container.getRecord();
 						Long time = record.getTimestamp();
@@ -206,16 +217,15 @@ public class EmonLogger implements DataLoggerService {
 							time = timestamp;
 						}
 						
-						Double value;
-						if (channel.isListening()) {
-							ChannelListener listener = (ChannelListener) channel;
-							if (!listener.isUpdated(timestamp)) {
+						Double value = record.getValue().asDouble();
+						if (channel.isDynamic()) {
+							if (!((ChannelInputDynamic) channel).isUpdated(record)) {
 								continue;
 							}
-							value = listener.getTimevalue().getValue();
-						}
-						else {
-							value = record.getValue().asDouble();
+							
+							if (channel.isAveraging()) {
+								value = ((ChannelInputAverage) channel).getAverage();
+							}
 						}
 						Namevalue namevalue = new Namevalue(container.getChannelId(), value);
 						
@@ -283,6 +293,18 @@ public class EmonLogger implements DataLoggerService {
 		else logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());
 		
 		return false;
+	}
+
+	private ChannelInput getChannel(String id) {
+		ChannelInput channel = channelInputs.get(id);
+		if (channel.isAveraging()) {
+			ChannelInputAverage listener = (ChannelInputAverage) channel;
+			if (!listener.isListening() && dataAccessService.getAllIds().contains(id)) {
+				dataAccessService.getChannel(id).addListener(listener);
+				listener.setListening(true);
+			}
+		}
+		return channel;
 	}
 
 	@Override

@@ -47,12 +47,20 @@ public class ChannelInput {
 		return input;
 	}
 
-	public Authentication getAuthenticator() {
-		return authenticator;
+	public ChannelLogSettings getSettings() {
+		return settings;
 	}
 
-	public boolean isListening() {
-		return false;
+	public boolean isDynamic() {
+		return settings.isDynamic();
+	}
+
+	public boolean isAveraging() {
+		return settings.isAveraging();
+	}
+
+	public Authentication getAuthenticator() {
+		return authenticator;
 	}
 
 	public void post(Timevalue timevalue) throws EmoncmsException {

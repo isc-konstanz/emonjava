@@ -71,7 +71,7 @@ public class ChannelLogSettings {
     	return null;
     }
 
-    public boolean isAveraged() {
+    public boolean isAveraging() {
         if (settingsMap.containsKey(AVERAGE)) {
         	return settingsMap.get(AVERAGE).toLowerCase().trim().equals("true");
         }
