@@ -32,7 +32,6 @@ public class Const {
 	public final static String CHANNELID = "channelid";
 	public final static String DRIVERID = "driverid";
 	public final static String DEVICEID = "deviceid";
-	public final static String MUCID = "mucid";
 	public final static String NODEID = "nodeid";
 	public final static String NODE = "node";
 	public final static String NAME = "name";
@@ -44,7 +43,6 @@ public class Const {
 	public final static String PROCESSLIST = "processList";
 	public final static String FIELD = "field";
 	public final static String FIELDS = "fields";
-	public final static String DATA = "data";
 	public final static String START = "start";
 	public final static String END = "end";
 	public final static String INTERVAL = "interval";
@@ -52,4 +50,6 @@ public class Const {
 	public final static String VALUE = "value";
 	public final static String ADDRESS = "address";
 	public final static String CONFIG = "config";
+	public final static String DATA = "data";
+	public final static String FULLJSON = "fulljson";
 }

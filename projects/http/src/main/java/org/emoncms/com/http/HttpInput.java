@@ -78,7 +78,7 @@ public class HttpInput extends Input {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post.fulljson");
+		HttpRequestAction action = new HttpRequestAction("post");
 		action.addParameter(Const.NODE, node);
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
@@ -88,7 +88,7 @@ public class HttpInput extends Input {
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		ToJsonObject json = new ToJsonObject();
 		json.addDouble(name, timevalue.getValue());
-		parameters.addParameter(Const.DATA, json);
+		parameters.addParameter(Const.FULLJSON, json);
 		
 		if (authentication != null) {
 			callbacks.onRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
@@ -108,7 +108,7 @@ public class HttpInput extends Input {
 		
 		logger.debug("Requesting to bulk post {} data sets for input \"{}\" of node \"{}\"", timevalues.size(), name, node);
 		
-		HttpRequestAction action = new HttpRequestAction("bulk.fulljson");
+		HttpRequestAction action = new HttpRequestAction("bulk");
 		
 		DataList dataList = new DataList();
 		for (Timevalue timevalue : timevalues) {

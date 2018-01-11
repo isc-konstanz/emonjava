@@ -68,7 +68,7 @@ public class HttpFeed extends Feed {
 
 		logger.debug("Requesting to get field \"{}\" for feed with id: {}", field, id);
 
-		HttpRequestAction action = new HttpRequestAction("get");
+		HttpRequestAction action = new HttpRequestAction("get.json");
 		action.addParameter(Const.ID, id);
 		action.addParameter(Const.FIELD, field);
 		
@@ -83,7 +83,7 @@ public class HttpFeed extends Feed {
 
 		logger.debug("Requesting to set {} fields for feed with id: {}", fields.size(), id);
 
-		HttpRequestAction action = new HttpRequestAction("set");
+		HttpRequestAction action = new HttpRequestAction("set.json");
 		action.addParameter(Const.ID, id);
 		ToJsonObject json = new ToJsonObject();
 		for (Map.Entry<String, String> field : fields.entrySet()) {
@@ -101,7 +101,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to get latest value for feed with id: {}", id);
 
-		HttpRequestAction action = new HttpRequestAction("value");
+		HttpRequestAction action = new HttpRequestAction("value.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -115,7 +115,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to get latest timevalue for feed with id: {}", id);
 
-		HttpRequestAction action = new HttpRequestAction("timevalue");
+		HttpRequestAction action = new HttpRequestAction("timevalue.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -137,7 +137,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to fetch data from {} to {} for feed with id: {}", start, end, id);
 
-		HttpRequestAction action = new HttpRequestAction("data");
+		HttpRequestAction action = new HttpRequestAction("data.json");
 		action.addParameter(Const.ID, id);
 		action.addParameter(Const.START, start);
 		action.addParameter(Const.END, end);
@@ -159,7 +159,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to insert value: {}, time: {} for feed with id: {}", value, time, id);
 
-		HttpRequestAction action = new HttpRequestAction("insert");
+		HttpRequestAction action = new HttpRequestAction("insert.json");
 		action.addParameter(Const.ID, id);
 		action.addParameter(Const.TIME, time);
 		action.addParameter(Const.VALUE, value);
@@ -174,7 +174,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to update value: {} at time: {} for feed with id: {}", value, time, id);
 
-		HttpRequestAction action = new HttpRequestAction("update");
+		HttpRequestAction action = new HttpRequestAction("update.json");
 		action.addParameter(Const.ID, id);
 		action.addParameter(Const.TIME, time);
 		action.addParameter(Const.VALUE, value);
@@ -189,7 +189,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to delete value at time: {} for feed with id: {}", time, id);
 
-		HttpRequestAction action = new HttpRequestAction("deletedatapoint");
+		HttpRequestAction action = new HttpRequestAction("deletedatapoint.json");
 		action.addParameter(Const.ID, id);
 		action.addParameter(Const.TIME, time);
 		
@@ -203,7 +203,7 @@ public class HttpFeed extends Feed {
 		
 		logger.debug("Requesting to delete values from {} to {} for feed with id: {}", start, end, id);
 
-		HttpRequestAction action = new HttpRequestAction("deletedatarange");
+		HttpRequestAction action = new HttpRequestAction("deletedatarange.json");
 		action.addParameter(Const.ID, id);
 		action.addParameter(Const.START, start);
 		action.addParameter(Const.END, end);
@@ -218,7 +218,7 @@ public class HttpFeed extends Feed {
 
 		logger.debug("Requesting to set process list for feed with id: {}", id, processList);
 		
-		HttpRequestAction action = new HttpRequestAction("process/set");
+		HttpRequestAction action = new HttpRequestAction("process/set.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -232,7 +232,7 @@ public class HttpFeed extends Feed {
 
 		logger.debug("Requesting to reset process list for feed with id: {}", id);
 		
-		HttpRequestAction action = new HttpRequestAction("process/reset");
+		HttpRequestAction action = new HttpRequestAction("process/reset.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -245,7 +245,7 @@ public class HttpFeed extends Feed {
 
 		logger.debug("Requesting to delete feed with id: {}", id);
 		
-		HttpRequestAction action = new HttpRequestAction("delete");
+		HttpRequestAction action = new HttpRequestAction("delete.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -258,7 +258,7 @@ public class HttpFeed extends Feed {
 
 		logger.debug("Requesting feed with id: {}", id);
 
-		HttpRequestAction action = new HttpRequestAction("aget");
+		HttpRequestAction action = new HttpRequestAction("aget.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();

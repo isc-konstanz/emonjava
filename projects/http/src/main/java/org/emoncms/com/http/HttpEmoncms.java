@@ -144,7 +144,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post.fulljson");
+		HttpRequestAction action = new HttpRequestAction("post");
 		action.addParameter(Const.NODE, node);
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
@@ -154,7 +154,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		ToJsonObject json = new ToJsonObject();
 		json.addDouble(name, timevalue.getValue());
-		parameters.addParameter(Const.DATA, json);
+		parameters.addParameter(Const.FULLJSON, json);
 		
 		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
 	}
@@ -170,7 +170,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
-		HttpRequestAction action = new HttpRequestAction("bulk.fulljson");
+		HttpRequestAction action = new HttpRequestAction("bulk");
 		action.addParameter(Const.NODE, node);
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
@@ -198,7 +198,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
-		HttpRequestAction action = new HttpRequestAction("bulk.fulljson");
+		HttpRequestAction action = new HttpRequestAction("bulk");
 		
 		Long time = dataList.getTime();
 		if (time != null && time > 0) {
@@ -331,7 +331,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		logger.debug("Requesting feed list");
 
-		HttpRequestAction action = new HttpRequestAction("list");
+		HttpRequestAction action = new HttpRequestAction("list.json");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
@@ -364,7 +364,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 		logger.debug("Requesting feed with id: {}", id);
 
-		HttpRequestAction action = new HttpRequestAction("aget");
+		HttpRequestAction action = new HttpRequestAction("aget.json");
 		action.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -407,7 +407,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			}
 		}
 		
-		HttpRequestAction action = new HttpRequestAction("fetch");
+		HttpRequestAction action = new HttpRequestAction("fetch.json");
 		action.addParameter(Const.IDS, idsBuilder.toString());
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
@@ -426,7 +426,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		logger.debug("Requesting to add feed \"{}\"", name);
 
-		HttpRequestAction action = new HttpRequestAction("create");
+		HttpRequestAction action = new HttpRequestAction("create.json");
 		action.addParameter(Const.NAME, name);
 		action.addParameter(Const.TAG, tag);
 		action.addParameter(Const.DATATYPE, type.getValue());
