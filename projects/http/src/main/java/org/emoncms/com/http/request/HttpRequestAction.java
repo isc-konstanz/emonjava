@@ -66,11 +66,11 @@ public class HttpRequestAction extends LinkedHashMap<String, String>{
 	
 	public String parseAction(Charset charset) throws UnsupportedEncodingException {
 		StringBuilder actionBuilder = new StringBuilder();
-		actionBuilder.append(URLEncoder.encode(action, charset.name()));
+		actionBuilder.append(action);
 		if (size() > 0) {
 			actionBuilder.append('?');
 		}
-
+		
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();

@@ -67,8 +67,8 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 
 	private HttpEmoncmsResponse get(HttpEmoncmsRequest request) throws IOException {
 		try {
-			URL u = new URL(request.getRequest(CHARSET));
-			connection = (HttpURLConnection) u.openConnection();
+			URL url = new URL(request.getRequest(CHARSET));
+			connection = (HttpURLConnection) url.openConnection();
 			
 			connection.setRequestMethod(HttpRequestMethod.GET.name());
 			connection.setRequestProperty("Charset", CHARSET.name());
@@ -111,9 +111,9 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 	
 	private HttpEmoncmsResponse post(HttpEmoncmsRequest request) throws IOException {
 		try {
-			URL u = new URL(request.getRequest(CHARSET));
+			URL url = new URL(request.getRequest(CHARSET));
 			
-			connection = (HttpURLConnection) u.openConnection();
+			connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestMethod(HttpRequestMethod.POST.name());
 			connection.setRequestProperty("Connection", "Close");
 			connection.setRequestProperty("Charset", CHARSET.name());

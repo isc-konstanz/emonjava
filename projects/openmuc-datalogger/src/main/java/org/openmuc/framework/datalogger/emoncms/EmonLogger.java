@@ -32,6 +32,7 @@ import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.HttpEmoncmsFactory;
 import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Authentication;
+import org.emoncms.data.Data;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 import org.openmuc.framework.data.Flag;
@@ -251,16 +252,26 @@ public class EmonLogger implements DataLoggerService {
 					}
 				}
 			}
-			
 			for (DeviceDataList device : devices) {
 				logger.debug("Logging {} values with authentication \"{}\"", device.size(), device.getAuthenticator());
 				try {
 					Authentication authenticator = device.getAuthenticator();
-					if (authenticator.isDefault()) {
-						connection.post(device);
+					if (device.size() == 1) {
+						Data data = device.get(0);
+						if (authenticator.isDefault()) {
+							connection.post(data.getNode(), data.getTime(), data.getNamevalues());
+						}
+						else {
+							connection.post(data.getNode(), data.getTime(), data.getNamevalues(), authenticator);
+						}
 					}
 					else {
-						connection.post(device, device.getAuthenticator());
+						if (authenticator.isDefault()) {
+							connection.post(device);
+						}
+						else {
+							connection.post(device, device.getAuthenticator());
+						}
 					}
 				} catch (EmoncmsException e) {
 					logger.warn("Error logging values: {}", e.getMessage());

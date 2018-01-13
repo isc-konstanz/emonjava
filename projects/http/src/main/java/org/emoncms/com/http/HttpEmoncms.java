@@ -143,14 +143,14 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException {
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post");
-		action.addParameter(Const.NODE, node);
+		HttpRequestAction action = new HttpRequestAction("post/"+node);
+		HttpRequestParameters parameters = new HttpRequestParameters();
+		
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, (int) Math.round(timevalue.getTime().doubleValue()/1000));
+			parameters.addParameter(Const.TIME, (int) Math.round(timevalue.getTime().doubleValue()/1000));
 		}
 		
-		HttpRequestParameters parameters = new HttpRequestParameters();
 		ToJsonObject json = new ToJsonObject();
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.FULLJSON, json);
@@ -165,23 +165,23 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public  void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
+	public void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
-		HttpRequestAction action = new HttpRequestAction("bulk");
-		action.addParameter(Const.NODE, node);
+		HttpRequestAction action = new HttpRequestAction("post/"+node);
+		HttpRequestParameters parameters = new HttpRequestParameters();
+		
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
+			parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
 		}
-
-		HttpRequestParameters parameters = new HttpRequestParameters();
+		
 		ToJsonObject json = new ToJsonObject();
 		for (Namevalue namevalue : namevalues) {
 			json.addDouble(namevalue.getName(), namevalue.getValue());
 		}
-		parameters.addParameter(Const.DATA, json);
-
+		parameters.addParameter(Const.FULLJSON, json);
+		
 		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
 	}
 
@@ -191,22 +191,22 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public  void post(DataList dataList, Authentication authentication) throws EmoncmsException {
+	public void post(DataList dataList, Authentication authentication) throws EmoncmsException {
 		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
 		HttpRequestAction action = new HttpRequestAction("bulk");
+		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		Long time = dataList.getTime();
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			action.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
+			parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
 		}
 		else {
 			time = System.currentTimeMillis();
 		}
 		dataList.sort();
 		
-		HttpRequestParameters parameters = new HttpRequestParameters();
 		ToJsonArray json = new ToJsonArray();
 		for (Data data : dataList) {
 			json.addData(time, data);

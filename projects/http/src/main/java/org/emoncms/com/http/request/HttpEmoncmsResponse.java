@@ -37,20 +37,16 @@ import org.emoncms.data.Timevalue;
 
 import com.google.gson.JsonSyntaxException;
 
-
 public class HttpEmoncmsResponse {
 
 	private final String response;
 	private FromJson json;
 
-
 	public HttpEmoncmsResponse(String response) {
-
 		this.response = response;
 	}
 	
 	public String getResponse() {
-		
 		return response;
 	}
 	
@@ -106,7 +102,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public String getString(String key) {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -118,7 +113,6 @@ public class HttpEmoncmsResponse {
 	
 	@SuppressWarnings("unchecked")
 	public List<JsonInput> getInputList() throws ClassCastException {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -129,7 +123,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public JsonInputList getInputConfigList(String node) {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -145,7 +138,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public JsonInputConfig getInputConfig(String node, String name) {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -168,7 +160,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public JsonFeed getFeed() throws ClassCastException {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -179,7 +170,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public Map<Feed, Double> getValues(LinkedList<Feed> feeds) {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -194,7 +184,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public JsonTimevalue getTimevalue() throws ClassCastException {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}
@@ -205,7 +194,6 @@ public class HttpEmoncmsResponse {
 	}
 	
 	public LinkedList<Timevalue> getTimevalues() {
-
 		if (json == null) {
 			json = new FromJson(response);
 		}

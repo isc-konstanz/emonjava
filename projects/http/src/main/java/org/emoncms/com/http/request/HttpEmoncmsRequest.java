@@ -51,8 +51,11 @@ public class HttpEmoncmsRequest {
 	}
 
 	public String getAuthentication(Charset charset) throws UnsupportedEncodingException {
-		return URLEncoder.encode(authentication.getAuthorization().getValue(), charset.name()) + 
-				'=' + URLEncoder.encode(authentication.getKey(), charset.name());
+		if (authentication != null) {
+			return URLEncoder.encode(authentication.getAuthorization().getValue(), charset.name()) + 
+					'=' + URLEncoder.encode(authentication.getKey(), charset.name());
+		}
+		return null;
 	}
 
 	public HttpRequestAction getAction() {
@@ -68,7 +71,21 @@ public class HttpEmoncmsRequest {
 	}
 
 	public String parseParameters(Charset charset) throws UnsupportedEncodingException {
-		return parameters.parseParameters(charset);
+		String content = parameters.parseParameters(charset);
+		if (authentication != null) {
+			switch (method) {
+			case POST:
+			case PUT:
+				if (parameters != null && parameters.size() > 0) {
+					content += '&';
+				}
+				content += getAuthentication(charset);
+				break;
+			default:
+				break;
+			}
+		}
+		return content;
 	}
 
 	public HttpRequestMethod getMethod() {
@@ -76,40 +93,43 @@ public class HttpEmoncmsRequest {
 	}
 
 	public String getRequest(Charset charset) throws UnsupportedEncodingException {
-		
 		String request = url;
 		if (action != null) {
 			request += action.parseAction(charset);
 		}
 		if (authentication != null) {
-			if (action != null && action.size() > 0) {
-				request += '&';
+			switch (method) {
+			case POST:
+			case PUT:
+				break;
+			default:
+				if (action != null && action.size() > 0) {
+					request += '&';
+				}
+				else {
+					request += '?';
+				}
+				request += getAuthentication(charset);
+				break;
 			}
-			request += getAuthentication(charset);
 		}
 		return request;
 	}
 
 	@Override
 	public String toString() {
-		
 		String request = url;
 		if (action != null) {
 			request += action.toString();
 		}
 		if (parameters != null) {
+			if (parameters.size() > 0 && action.size() == 0) {
+				request += '?';
+			}
 			if (action != null && action.size() > 0) {
 				request += '&';
 			}
 			request += parameters.toString();
-		}
-		if (authentication != null) {
-			if (parameters != null && parameters.size() > 0 &&
-					action != null && action.size() > 0) {
-				
-				request += '&';
-			}
-			request += authentication.toString();
 		}
 		return request;
 	}
