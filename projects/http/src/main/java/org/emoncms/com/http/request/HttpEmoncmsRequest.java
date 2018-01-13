@@ -51,8 +51,8 @@ public class HttpEmoncmsRequest {
 	}
 
 	public String getAuthentication(Charset charset) throws UnsupportedEncodingException {
-        return URLEncoder.encode(authentication.getAuthorization().getValue(), charset.name()) + 
-        		'=' + URLEncoder.encode(authentication.getKey(), charset.name());
+		return URLEncoder.encode(authentication.getAuthorization().getValue(), charset.name()) + 
+				'=' + URLEncoder.encode(authentication.getKey(), charset.name());
 	}
 
 	public HttpRequestAction getAction() {

@@ -62,41 +62,41 @@ public class HttpRequestParameters extends LinkedHashMap<String, String> {
 	}
 	
 	public String parseParameters(Charset charset) throws UnsupportedEncodingException {
-        StringBuilder parameterListBuilder = new StringBuilder();
+		StringBuilder parameterListBuilder = new StringBuilder();
 
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-        	parameterListBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
-        	parameterListBuilder.append('=');
-        	parameterListBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
+			parameterListBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
+			parameterListBuilder.append('=');
+			parameterListBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
 
-        	if (iteratorParameterList.hasNext()) {
-        		parameterListBuilder.append('&');
-        	}
+			if (iteratorParameterList.hasNext()) {
+				parameterListBuilder.append('&');
+			}
 		}
-        
-        return parameterListBuilder.toString();
+		
+		return parameterListBuilder.toString();
 	}
 
 	@Override
 	public String toString() {
-        StringBuilder parameterListBuilder = new StringBuilder();
+		StringBuilder parameterListBuilder = new StringBuilder();
 
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-        	parameterListBuilder.append(parameter.getKey());
-        	parameterListBuilder.append('=');
-        	parameterListBuilder.append(parameter.getValue());
+			parameterListBuilder.append(parameter.getKey());
+			parameterListBuilder.append('=');
+			parameterListBuilder.append(parameter.getValue());
 
-        	if (iteratorParameterList.hasNext()) {
-        		parameterListBuilder.append('&');
-        	}
+			if (iteratorParameterList.hasNext()) {
+				parameterListBuilder.append('&');
+			}
 		}
-        
-        return parameterListBuilder.toString();
+		
+		return parameterListBuilder.toString();
 	}
 }

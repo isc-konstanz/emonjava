@@ -63,7 +63,7 @@ public class EmonLogger implements DataLoggerService {
 
 	private final HashMap<String, ChannelInput> channelInputs = new HashMap<String, ChannelInput>();
 
-    @Activate
+	@Activate
 	protected void activate(ComponentContext context) {
 		logger.info("Activating Emoncms Logger");
 		try {
@@ -92,7 +92,7 @@ public class EmonLogger implements DataLoggerService {
 		}
 	}
 
-    @Deactivate
+	@Deactivate
 	protected void deactivate(ComponentContext context) {
 		logger.info("Deactivating Emoncms Logger");
 		if (connection != null) {
@@ -101,14 +101,14 @@ public class EmonLogger implements DataLoggerService {
 		}
 	}
 
-    @Reference
-    protected void bindDataAccessService(DataAccessService dataAccessService) {
-        this.dataAccessService = dataAccessService;
-    }
+	@Reference
+	protected void bindDataAccessService(DataAccessService dataAccessService) {
+		this.dataAccessService = dataAccessService;
+	}
 
-    protected void unbindDataAccessService(DataAccessService dataAccessService) {
-        this.dataAccessService = null;
-    }
+	protected void unbindDataAccessService(DataAccessService dataAccessService) {
+		this.dataAccessService = null;
+	}
 
 	@Override
 	public String getId() {
@@ -253,7 +253,6 @@ public class EmonLogger implements DataLoggerService {
 			}
 			
 			for (DeviceDataList device : devices) {
-				
 				logger.debug("Logging {} values with authentication \"{}\"", device.size(), device.getAuthenticator());
 				try {
 					Authentication authenticator = device.getAuthenticator();

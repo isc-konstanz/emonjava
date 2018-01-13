@@ -109,9 +109,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public void start() throws EmoncmsUnavailableException {
-		
-		logger.info("Registering Energy Monitoring Content Management System connection \"{}\"", address);
-		
+		logger.info("Initializing Energy Monitoring Content Management System communication \"{}\"", address);
+		initialize();
+	}
+
+	private void initialize() {
 		// The HttpURLConnection implementation is in older JREs somewhat buggy with keeping connections alive. 
 		// To avoid this, the http.keepAlive system property can be set to false. 
 		System.setProperty("http.keepAlive", "false");
@@ -125,7 +127,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public void stop() {
-		
 		logger.info("Shutting emoncms connection \"{}\" down", address);
 		
 		if (executor != null) {
@@ -135,13 +136,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
-		
 		post(node, name, timevalue, authentication);
 	}
 
 	@Override
 	public void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException {
-
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
 		HttpRequestAction action = new HttpRequestAction("post");
@@ -167,7 +166,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public  void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
-
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
 		HttpRequestAction action = new HttpRequestAction("bulk");
@@ -189,13 +187,11 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public void post(DataList dataList) throws EmoncmsException {
-		
 		post(dataList, authentication);
 	}
 
 	@Override
 	public  void post(DataList dataList, Authentication authentication) throws EmoncmsException {
-		
 		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
 		HttpRequestAction action = new HttpRequestAction("bulk");
@@ -249,7 +245,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public List<Input> getInputList() throws EmoncmsException {
-		
 		logger.debug("Requesting input list");
 
 		HttpRequestAction action = new HttpRequestAction("list");
@@ -279,7 +274,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public Input getInput(String node, String name) throws EmoncmsException {
-
 		logger.debug("Requesting input \"{}\" for node \"{}\"", name, node);
 
 		HttpRequestAction action = new HttpRequestAction("get_inputs");
@@ -300,7 +294,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public Input getInput(int id) throws EmoncmsException {
-
 		logger.debug("Requesting input with id: {}", id);
 
 		HttpRequestAction action = new HttpRequestAction("list");
@@ -328,7 +321,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public List<Feed> getFeedList() throws EmoncmsException {
-		
 		logger.debug("Requesting feed list");
 
 		HttpRequestAction action = new HttpRequestAction("list.json");
@@ -361,7 +353,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public Feed getFeed(int id) throws EmoncmsException {
-
 		logger.debug("Requesting feed with id: {}", id);
 
 		HttpRequestAction action = new HttpRequestAction("aget.json");
@@ -390,7 +381,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public Map<Feed, Double> getFeedValues(List<Feed> feeds) throws EmoncmsException {
-		
 		logger.debug("Requesting to get latest values for {} feeds", feeds.size());
 
 		LinkedList<Feed> feedList = new LinkedList<Feed>();
@@ -423,7 +413,6 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 
 	@Override
 	public int newFeed(String name, String tag, Datatype type, Engine engine, Options options) throws EmoncmsException {
-		
 		logger.debug("Requesting to add feed \"{}\"", name);
 
 		HttpRequestAction action = new HttpRequestAction("create.json");
@@ -499,12 +488,16 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 				}
 				return response;
 			}
-			catch (CancellationException | TimeoutException | InterruptedException e) {
+			catch (JsonSyntaxException e) {
+				throw new EmoncmsException("Received invalid JSON response: " + e);
+			}
+			catch (CancellationException | TimeoutException e) {
 				submit.cancel(true);
 				throw new EmoncmsException("Aborted request \"" + request.toString() + "\": " + e);
 			}
-		} catch (ExecutionException | JsonSyntaxException e) {
-			throw new EmoncmsException("Failed request \"" + request.toString() + "\": " + e);
+		} catch (InterruptedException | ExecutionException e) {
+			initialize();
+			throw new EmoncmsException("Energy Monitoring Content Management communication failed: " + e);
 		}
 	}
 

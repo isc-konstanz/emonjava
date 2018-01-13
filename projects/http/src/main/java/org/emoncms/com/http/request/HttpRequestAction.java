@@ -65,49 +65,49 @@ public class HttpRequestAction extends LinkedHashMap<String, String>{
 	}
 	
 	public String parseAction(Charset charset) throws UnsupportedEncodingException {
-        StringBuilder actionBuilder = new StringBuilder();
+		StringBuilder actionBuilder = new StringBuilder();
 		actionBuilder.append(URLEncoder.encode(action, charset.name()));
-        if (size() > 0) {
-    		actionBuilder.append('?');
-        }
+		if (size() > 0) {
+			actionBuilder.append('?');
+		}
 
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-        	actionBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
-        	actionBuilder.append('=');
-        	actionBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
+			actionBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
+			actionBuilder.append('=');
+			actionBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
 
-        	if (iteratorParameterList.hasNext()) {
-        		actionBuilder.append('&');
-        	}
+			if (iteratorParameterList.hasNext()) {
+				actionBuilder.append('&');
+			}
 		}
 		
-        return actionBuilder.toString();
+		return actionBuilder.toString();
 	}
 
 	@Override
 	public String toString() {
-        StringBuilder actionBuilder = new StringBuilder();
+		StringBuilder actionBuilder = new StringBuilder();
 		actionBuilder.append(action);
-        if (size() > 0) {
-    		actionBuilder.append('?');
-        }
+		if (size() > 0) {
+			actionBuilder.append('?');
+		}
 
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-        	actionBuilder.append(parameter.getKey());
-        	actionBuilder.append('=');
-        	actionBuilder.append(parameter.getValue());
+			actionBuilder.append(parameter.getKey());
+			actionBuilder.append('=');
+			actionBuilder.append(parameter.getValue());
 
-        	if (iteratorParameterList.hasNext()) {
-        		actionBuilder.append('&');
-        	}
+			if (iteratorParameterList.hasNext()) {
+				actionBuilder.append('&');
+			}
 		}
 		
-        return actionBuilder.toString();
+		return actionBuilder.toString();
 	}
 }
