@@ -198,13 +198,12 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		Long time = dataList.getTime();
-		if (time != null && time > 0) {
-			// Posted UNIX time values need to be sent in seconds
-			parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
-		}
-		else {
+		if (time == null || time.equals(0)) {
 			time = System.currentTimeMillis();
 		}
+		// Posted UNIX time values need to be sent in seconds
+		parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
+		
 		dataList.sort();
 		
 		ToJsonArray json = new ToJsonArray();
