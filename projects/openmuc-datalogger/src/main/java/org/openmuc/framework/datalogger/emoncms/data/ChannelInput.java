@@ -23,14 +23,18 @@ import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsSyntaxException;
 import org.emoncms.data.Authentication;
+import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 
 public class ChannelInput {
 
 	protected final String id;
 	protected final Input input;
-	protected final ChannelLogSettings settings;
 	protected final Authentication authenticator;
+	protected final ChannelLogSettings settings;
+
+	protected Long time = null;
+	protected Double value = null;
 
 	public ChannelInput(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
 		this.id = id;
@@ -47,28 +51,52 @@ public class ChannelInput {
 		return input;
 	}
 
-	public ChannelLogSettings getSettings() {
-		return settings;
+	public Authentication getAuthenticator() {
+		return authenticator;
 	}
 
-	public boolean isDynamic() {
-		return settings.isDynamic();
+	public ChannelLogSettings getSettings() {
+		return settings;
 	}
 
 	public boolean isAveraging() {
 		return settings.isAveraging();
 	}
 
-	public Authentication getAuthenticator() {
-		return authenticator;
+	public boolean update(long time, double value) {
+		boolean result = true;
+		
+		if (this.time != null && this.time >= time) {
+			result = false;
+		}
+		this.time = time;
+		this.value = value;
+		
+		return result;
 	}
 
-	public void post(Timevalue timevalue) throws EmoncmsException {
-		if (authenticator.isDefault()) {
-			input.post(timevalue);
-		}
-		else {
-			input.post(timevalue, authenticator);
+	public double getValue() {
+		return value;
+	}
+
+	public Namevalue getNamevalue() {
+		return new Namevalue(id, getValue());
+	}
+
+	public Timevalue getTimevalue() {
+		return new Timevalue(time, getValue());
+	}
+
+	public void post(long time, double value) throws EmoncmsException {
+		if (update(time, value)) {
+			Timevalue postValue = getTimevalue();
+			
+			if (authenticator.isDefault()) {
+				input.post(postValue);
+			}
+			else {
+				input.post(postValue, authenticator);
+			}
 		}
 	}
 }

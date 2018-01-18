@@ -64,11 +64,11 @@ public class ChannelLogSettings {
     	return null;
     }
 
-    public Double getTolerance() {
+    public double getTolerance() {
         if (settingsMap.containsKey(TOLERANCE)) {
         	return Double.parseDouble(settingsMap.get(TOLERANCE).trim());
         }
-    	return null;
+    	return 0;
     }
 
     public boolean isAveraging() {

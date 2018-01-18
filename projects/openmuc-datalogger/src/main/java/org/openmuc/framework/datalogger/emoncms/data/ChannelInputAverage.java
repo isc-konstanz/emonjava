@@ -21,7 +21,6 @@ package org.openmuc.framework.datalogger.emoncms.data;
 
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsSyntaxException;
-import org.emoncms.data.Timevalue;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.dataaccess.RecordListener;
@@ -48,21 +47,19 @@ public class ChannelInputAverage extends ChannelInputDynamic implements RecordLi
 		this.listening = listening;
 	}
 
-	public Double getAverage() {
+	@Override
+	public double getValue() {
 		if (valueCount > 1) {
-			Double average = valueSum/valueCount;
-			logger.trace("Average of {} values for channel \"{}\": {}", valueCount, id, average);
-			
-			valueSum = 0.0;
-			valueCount = 0;
-			return average;
+			synchronized (valueSum) {
+				double average = valueSum/valueCount;
+				logger.trace("Average of {} values for channel \"{}\": {}", valueCount, id, average);
+				
+				valueSum = 0.0;
+				valueCount = 0;
+				return average;
+			}
 		}
-		return lastValue;
-	}
-
-	public void onValueReceived(Timevalue timevalue) {
-		valueSum += timevalue.getValue();
-		valueCount++;
+		return value;
 	}
 
 	@Override
@@ -75,11 +72,12 @@ public class ChannelInputAverage extends ChannelInputDynamic implements RecordLi
 							id, record.toString());
 				}
 				Long time = record.getTimestamp();
-				if (time == null) {
-					time = System.currentTimeMillis();
+				if (this.time == null || this.time < time) {
+					synchronized (valueSum) {
+						valueSum += record.getValue().asDouble();
+						valueCount++;
+					}
 				}
-				Timevalue timevalue = new Timevalue(time, record.getValue().asDouble());
-				onValueReceived(timevalue);
 			}
 			else if (logger.isDebugEnabled()) {
 				logger.debug("Listener received invalid or empty value for channel \"{}\": {}",

@@ -21,40 +21,29 @@ package org.openmuc.framework.datalogger.emoncms.data;
 
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsSyntaxException;
-import org.openmuc.framework.data.Record;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ChannelInputDynamic extends ChannelInput {
-	private final static Logger logger = LoggerFactory.getLogger(ChannelInputDynamic.class);
-
-	protected volatile Long lastTime = null;
-	protected volatile Double lastValue = null;
 
 	public ChannelInputDynamic(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
 		super(id, input, settings);
 	}
 
-	public boolean isUpdated(Record record) {
-		Double value = record.getValue().asDouble();
-		if (lastTime != null) {
-			boolean updated = true;
-			
-			Double tolerance = settings.getTolerance();
-			if (tolerance != null && tolerance > Math.abs(value - lastValue)) {
-				updated = false;
-			}
-			else if (value.equals(lastValue)) {
-				updated = false;
-			}
-			if (!updated && record.getTimestamp() - lastTime < settings.getMaxInterval()) {
-				logger.trace("Channel \"{}\" not updated with value: {}", id, value);
-				return false;
+	@Override
+	public boolean update(long time, double value) {
+		boolean result = true;
+		
+		if (this.time != null && this.time >= time) {
+			if (this.value != null) {
+				double tolerance = settings.getTolerance();
+				double delta = Math.abs(value - this.value);
+				if (tolerance >= delta && time - this.time >= settings.getMaxInterval()) {
+					result = false;
+				}
 			}
 		}
+		this.time = time;
+		this.value = value;
 		
-		lastTime = record.getTimestamp();
-		lastValue = value;
-		return true;
+		return result;
 	}
 }

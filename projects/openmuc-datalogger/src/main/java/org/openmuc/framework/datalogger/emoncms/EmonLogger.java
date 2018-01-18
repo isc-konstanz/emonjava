@@ -34,7 +34,6 @@ import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Data;
 import org.emoncms.data.Namevalue;
-import org.emoncms.data.Timevalue;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
@@ -187,20 +186,9 @@ public class EmonLogger implements DataLoggerService {
 					if (time == null) {
 						time = timestamp;
 					}
-
-					if (channel.isDynamic() && ((ChannelInputDynamic) channel).isUpdated(record)) {
-						Double value;
-						if (channel.isAveraging()) {
-							value = ((ChannelInputAverage) channel).getAverage();
-						}
-						else {
-							value = record.getValue().asDouble();
-						}
-						channel.post(new Timevalue(time, value));
-					}
-					else {
-						channel.post(new Timevalue(time, record.getValue().asDouble()));
-					}
+					
+					channel.post(time, record.getValue().asDouble());
+					
 				} catch (EmoncmsException | TypeConversionException e) {
 					logger.warn("Failed to log record for channel \"{}\": {}", container.getChannelId(), e.getMessage());
 				}
@@ -218,33 +206,25 @@ public class EmonLogger implements DataLoggerService {
 							time = timestamp;
 						}
 						
-						Double value = record.getValue().asDouble();
-						if (channel.isDynamic()) {
-							if (!((ChannelInputDynamic) channel).isUpdated(record)) {
-								continue;
-							}
+						if (channel.update(time, record.getValue().asDouble())) {
+							Namevalue namevalue = channel.getNamevalue();
+							Authentication authenticator = channel.getAuthenticator();
 							
-							if (channel.isAveraging()) {
-								value = ((ChannelInputAverage) channel).getAverage();
+							DeviceDataList device = null;
+							for (DeviceDataList d : devices) {
+								if (d.hasSameAuthentication(authenticator)) {
+									d.add(time, channel.getInput().getNode(), namevalue);
+									device = d;
+									break;
+								}
 							}
-						}
-						Namevalue namevalue = new Namevalue(container.getChannelId(), value);
-						
-						Authentication authenticator = channel.getAuthenticator();
-						DeviceDataList device = null;
-						for (DeviceDataList d : devices) {
-							if (d.hasSameAuthentication(authenticator)) {
-								d.add(time, channel.getInput().getNode(), namevalue);
-								device = d;
-								break;
+							if (device == null) {
+								// No input collection for that device exists yet, so it needs to be created
+								device = new DeviceDataList(authenticator);
+								device.add(time, channel.getInput().getNode(), namevalue);
+								
+								devices.add(device);
 							}
-						}
-						if (device == null) {
-							// No input collection for that device exists yet, so it needs to be created
-							device = new DeviceDataList(authenticator);
-							device.add(time, channel.getInput().getNode(), namevalue);
-							
-							devices.add(device);
 						}
 						
 					} catch (TypeConversionException e) {
