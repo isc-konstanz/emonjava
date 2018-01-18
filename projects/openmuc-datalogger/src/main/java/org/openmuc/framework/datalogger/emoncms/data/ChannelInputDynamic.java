@@ -44,7 +44,7 @@ public class ChannelInputDynamic extends ChannelInput {
 			if (tolerance != null && tolerance > Math.abs(value - lastValue)) {
 				updated = false;
 			}
-			else if (value == lastValue) {
+			else if (value.equals(lastValue)) {
 				updated = false;
 			}
 			if (!updated && record.getTimestamp() - lastTime < settings.getMaxInterval()) {
