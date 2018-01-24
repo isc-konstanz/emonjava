@@ -78,7 +78,7 @@ public abstract class Feed {
 		return id;
 	}
 
-	public String getName() throws EmoncmsException {
+	public String getName() {
 		return name;
 	}
 
@@ -88,7 +88,7 @@ public abstract class Feed {
 		this.name = name;
 	}
 
-	public String getTag() throws EmoncmsException {
+	public String getTag() {
 		return tag;
 	}
 
@@ -98,7 +98,7 @@ public abstract class Feed {
 		this.tag = tag;
 	}
 
-	public boolean isPublic() throws EmoncmsException {
+	public boolean isPublic() {
 		return visible;
 	}
 
@@ -108,15 +108,15 @@ public abstract class Feed {
 		this.visible = visible;
 	}
 
-	public int getSize() throws EmoncmsException {
+	public int getSize() {
 		return size;
 	}
 
-	public Datatype getDatatype() throws EmoncmsException {
+	public Datatype getDatatype() {
 		return datatype;
 	}
 
-	public Engine getEngine() throws EmoncmsException {
+	public Engine getEngine() {
 		return engine;
 	}
 
@@ -154,7 +154,7 @@ public abstract class Feed {
 
 	protected abstract void setFields(Map<String, String> fields) throws EmoncmsException;
 
-	public Double getValue() throws EmoncmsException {
+	public Double getValue() {
 		if (timevalue != null) {
 			return timevalue.getValue();
 		}
@@ -163,7 +163,7 @@ public abstract class Feed {
 
 	public abstract Double getLatestValue() throws EmoncmsException;
 
-	public Timevalue getTimevalue() throws EmoncmsException {
+	public Timevalue getTimevalue() {
 		return timevalue;
 	}
 
