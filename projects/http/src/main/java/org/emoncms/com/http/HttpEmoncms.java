@@ -148,7 +148,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			long time = Math.round(timevalue.getTime().doubleValue()/1000);
+			Long time = TimeUnit.MILLISECONDS.toSeconds(timevalue.getTime().longValue());
 			parameters.addParameter(Const.TIME, time);
 		}
 		
@@ -174,7 +174,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			time = Math.round(time.doubleValue()/1000);
+			time = TimeUnit.MILLISECONDS.toSeconds(time);
 			parameters.addParameter(Const.TIME, time);
 		}
 		
@@ -200,7 +200,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		// Posted UNIX time values need to be sent in seconds
-		long time = Math.round(System.currentTimeMillis()/1000);
+		long time = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
 		parameters.addParameter(Const.TIME, time);
 		
 		dataList.sort();

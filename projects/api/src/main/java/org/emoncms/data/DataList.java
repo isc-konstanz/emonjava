@@ -21,6 +21,7 @@ package org.emoncms.data;
 
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 
 
 public class DataList extends LinkedList<Data> {
@@ -29,6 +30,8 @@ public class DataList extends LinkedList<Data> {
 	public boolean add(Long time, String node, Namevalue namevalue) {
 		boolean result = false;
 		
+		// Posted UNIX time values need to be sent in seconds
+		time = TimeUnit.MILLISECONDS.toSeconds(time);
 		for (Data data : this) {
 			if (data.getNode().equals(node) && data.getTime().equals(time)) {
 				data.add(namevalue);
@@ -62,10 +65,10 @@ public class DataList extends LinkedList<Data> {
 				}
 				return 1;
 			}
-			if (d1.getTime() < d2.getTime()){
+			if (d1.getTime() > d2.getTime()){
 				return 1; 
 			}
-			else if (d1.getTime() > d2.getTime()){
+			else if (d1.getTime() < d2.getTime()){
 				return -1; 
 			}
 			return 0;

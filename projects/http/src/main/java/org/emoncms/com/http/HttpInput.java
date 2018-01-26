@@ -21,6 +21,7 @@ package org.emoncms.com.http;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.emoncms.Emoncms;
 import org.emoncms.Input;
@@ -118,7 +119,7 @@ public class HttpInput extends Input {
 		dataList.sort();
 		
 		// Posted UNIX time values need to be sent in seconds
-		long time = Math.round(System.currentTimeMillis()/1000);
+		long time = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
 		parameters.addParameter(Const.TIME, time);
 		
 		ToJsonArray json = new ToJsonArray();
