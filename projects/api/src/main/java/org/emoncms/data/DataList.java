@@ -26,14 +26,8 @@ import java.util.LinkedList;
 public class DataList extends LinkedList<Data> {
 	private static final long serialVersionUID = 3972451487664220862L;
 
-	private Long referenceTime = null;
-
 	public boolean add(Long time, String node, Namevalue namevalue) {
 		boolean result = false;
-		
-		if (time != null && (referenceTime == null || referenceTime > time)) {
-			referenceTime = time;
-		}
 		
 		for (Data data : this) {
 			if (data.getNode().equals(node) && data.getTime().equals(time)) {
@@ -52,10 +46,6 @@ public class DataList extends LinkedList<Data> {
 
 	public boolean add(String node, String name, Timevalue timevalue) {
 		return add(timevalue.getTime(), node, new Namevalue(timevalue.getValue()));
-	}
-
-	public Long getTime() {
-		return referenceTime;
 	}
 
 	public void sort() {

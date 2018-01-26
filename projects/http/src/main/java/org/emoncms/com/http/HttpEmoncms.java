@@ -148,7 +148,8 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			parameters.addParameter(Const.TIME, (int) Math.round(timevalue.getTime().doubleValue()/1000));
+			long time = Math.round(timevalue.getTime().doubleValue()/1000);
+			parameters.addParameter(Const.TIME, time);
 		}
 		
 		ToJsonObject json = new ToJsonObject();
@@ -173,7 +174,8 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		
 		if (time != null && time > 0) {
 			// Posted UNIX time values need to be sent in seconds
-			parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
+			time = Math.round(time.doubleValue()/1000);
+			parameters.addParameter(Const.TIME, time);
 		}
 		
 		ToJsonObject json = new ToJsonObject();
@@ -197,12 +199,9 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		HttpRequestAction action = new HttpRequestAction("bulk");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		Long time = dataList.getTime();
-		if (time == null || time.equals(0)) {
-			time = System.currentTimeMillis();
-		}
 		// Posted UNIX time values need to be sent in seconds
-		parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
+		long time = Math.round(System.currentTimeMillis()/1000);
+		parameters.addParameter(Const.TIME, time);
 		
 		dataList.sort();
 		

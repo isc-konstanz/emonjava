@@ -50,12 +50,16 @@ public class ToJsonArray {
 		
 		JsonArray dataArray = new JsonArray();
 		
-		Long time = data.getTime();
-		if (time == null) {
-			time = System.currentTimeMillis();
+		long time;
+		if (data.getTime() != null) {
+			// Posted UNIX time values need to be sent in seconds
+			time = Math.round(data.getTime()/1000);
+			
+			dataArray.add(referenceTime - time);
 		}
-		// Posted UNIX time values need to be sent in seconds
-		dataArray.add((int) Math.round(((double) referenceTime - time)/1000));
+		else {
+			dataArray.add(0);
+		}
 		dataArray.add(data.getNode());
 		
 		for (Namevalue namevalue : data.getNamevalues()) {

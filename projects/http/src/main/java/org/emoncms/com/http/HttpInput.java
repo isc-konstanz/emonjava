@@ -115,15 +115,11 @@ public class HttpInput extends Input {
 		for (Timevalue timevalue : timevalues) {
 			dataList.add(node, name, timevalue);
 		}
-		Long time = dataList.getTime();
-		if (time != null && time > 0) {
-			// Posted UNIX time values need to be sent in seconds
-			parameters.addParameter(Const.TIME, (int) Math.round(time.doubleValue()/1000));
-		}
-		else {
-			time = System.currentTimeMillis();
-		}
 		dataList.sort();
+		
+		// Posted UNIX time values need to be sent in seconds
+		long time = Math.round(System.currentTimeMillis()/1000);
+		parameters.addParameter(Const.TIME, time);
 		
 		ToJsonArray json = new ToJsonArray();
 		for (Data data : dataList) {
