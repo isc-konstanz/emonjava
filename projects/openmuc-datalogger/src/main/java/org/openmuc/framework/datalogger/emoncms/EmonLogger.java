@@ -213,7 +213,6 @@ public class EmonLogger implements DataLoggerService {
 							DeviceDataList device = null;
 							for (DeviceDataList d : devices) {
 								if (d.hasSameAuthentication(authenticator)) {
-									d.add(time, channel.getInput().getNode(), namevalue);
 									device = d;
 									break;
 								}
@@ -221,10 +220,9 @@ public class EmonLogger implements DataLoggerService {
 							if (device == null) {
 								// No input collection for that device exists yet, so it needs to be created
 								device = new DeviceDataList(authenticator);
-								device.add(time, channel.getInput().getNode(), namevalue);
-								
 								devices.add(device);
 							}
+							device.add(time, channel.getInput().getNode(), namevalue);
 						}
 						
 					} catch (TypeConversionException e) {

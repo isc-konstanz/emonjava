@@ -36,7 +36,7 @@ public class ChannelInputDynamic extends ChannelInput {
 			if (this.value != null) {
 				double tolerance = settings.getTolerance();
 				double delta = Math.abs(value - this.value);
-				if (tolerance >= delta && time - this.time >= settings.getMaxInterval()) {
+				if (tolerance >= delta && (time - this.time) <= settings.getMaxInterval()) {
 					result = false;
 				}
 			}
