@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 public class ChannelInputAverage extends ChannelInputDynamic implements RecordListener {
 	private final static Logger logger = LoggerFactory.getLogger(ChannelInputAverage.class);
 
+	protected volatile Long lastTime = null;
 	protected volatile Double valueSum = 0.0;
 	protected volatile int valueCount = 0;
 
@@ -49,8 +50,8 @@ public class ChannelInputAverage extends ChannelInputDynamic implements RecordLi
 
 	@Override
 	public double getValue() {
-		if (valueCount > 1) {
-			synchronized (valueSum) {
+		synchronized (valueSum) {
+			if (valueCount > 1) {
 				double average = valueSum/valueCount;
 				logger.trace("Average of {} values for channel \"{}\": {}", valueCount, id, average);
 				
@@ -72,11 +73,12 @@ public class ChannelInputAverage extends ChannelInputDynamic implements RecordLi
 							id, record.toString());
 				}
 				Long time = record.getTimestamp();
-				if (this.time == null || this.time < time) {
+				if (this.lastTime == null || this.lastTime < time) {
 					synchronized (valueSum) {
 						valueSum += record.getValue().asDouble();
 						valueCount++;
 					}
+					lastTime = time;
 				}
 			}
 			else if (logger.isDebugEnabled()) {

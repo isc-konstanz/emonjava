@@ -30,20 +30,19 @@ public class ChannelInputDynamic extends ChannelInput {
 
 	@Override
 	public boolean update(long time, double value) {
-		boolean result = true;
-		
 		if (this.time != null && this.time >= time) {
-			if (this.value != null) {
-				double tolerance = settings.getTolerance();
-				double delta = Math.abs(value - this.value);
-				if (tolerance >= delta && (time - this.time) <= settings.getMaxInterval()) {
-					result = false;
-				}
+			return false;
+		}
+		else if (this.value != null) {
+			double tolerance = settings.getTolerance();
+			double delta = Math.abs(value - this.value);
+			if (tolerance >= delta && (time - this.time) <= settings.getMaxInterval()) {
+				return false;
 			}
 		}
 		this.time = time;
 		this.value = value;
 		
-		return result;
+		return true;
 	}
 }

@@ -64,15 +64,13 @@ public class ChannelInput {
 	}
 
 	public boolean update(long time, double value) {
-		boolean result = true;
-		
 		if (this.time != null && this.time >= time) {
-			result = false;
+			return false;
 		}
 		this.time = time;
 		this.value = value;
 		
-		return result;
+		return true;
 	}
 
 	public double getValue() {
