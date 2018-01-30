@@ -50,10 +50,9 @@ public class HttpFeed extends Feed {
 	 * The Feeds' current callback object, which is notified of request events
 	 */
 	private final HttpRequestCallbacks callbacks;
-	
 
 	public HttpFeed(HttpRequestCallbacks callbacks, int id, String name, String tag, 
-			boolean visible, int size, Datatype datatype, Engine engine, ProcessList pocessList, Timevalue value) {
+			boolean visible, Integer size, Datatype datatype, Engine engine, ProcessList pocessList, Timevalue value) {
 		super(id, name, tag, visible, size, datatype, engine, pocessList, value);
 		this.callbacks = callbacks;
 	}

@@ -58,7 +58,7 @@ public abstract class Feed {
 	protected Timevalue timevalue = null;
 
 	public Feed(int id, String name, String tag, 
-			boolean visible, int size, Datatype datatype, Engine engine, ProcessList processList, Timevalue value) {
+			boolean visible, Integer size, Datatype datatype, Engine engine, ProcessList processList, Timevalue value) {
 		this.id = id;
 		this.name = name;
 		this.tag = tag;

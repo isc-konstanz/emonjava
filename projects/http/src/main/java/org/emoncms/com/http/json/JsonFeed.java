@@ -29,7 +29,7 @@ public class JsonFeed {
 	String visible;
 	int datatype;
 	int engine;
-	int size;
+	String size;
 	String processList;
 	String time;
 	String value;
@@ -60,8 +60,11 @@ public class JsonFeed {
 		return engine;
 	}
 
-	public int getSize() {
-		return size;
+	public Integer getSize() {
+		if (size != null && !size.isEmpty()) {
+			return Integer.valueOf(size);
+		}
+		return null;
 	}
 
 	public String getProcessList() {

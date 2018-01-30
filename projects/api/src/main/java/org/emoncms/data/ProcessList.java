@@ -49,12 +49,14 @@ public class ProcessList extends LinkedHashMap<Process, String> {
 	public ProcessList(String value) {
 		super();
 		
-		String[] list = value.split(",");
-		for (String process: list) {
-			String[] arr = process.split(":");
-			
-			int id = Integer.valueOf(arr[0]);
-			put(Process.getEnum(id), arr[1]);
+		if (value != null && !value.isEmpty()) {
+			String[] list = value.split(",");
+			for (String process: list) {
+				String[] arr = process.split(":");
+				
+				int id = Integer.valueOf(arr[0]);
+				put(Process.getEnum(id), arr[1]);
+			}
 		}
 	}
 	

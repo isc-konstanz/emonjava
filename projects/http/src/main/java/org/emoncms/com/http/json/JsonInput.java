@@ -26,8 +26,8 @@ public class JsonInput {
 	String name;
 	String description;
 	String processList;
-	long time;
-	double value;
+	Long time;
+	Double value;
 
 
 	public int getId() {
@@ -50,11 +50,11 @@ public class JsonInput {
 		return processList;
 	}
 
-	public long getTime() {
+	public Long getTime() {
 		return time;
 	}
 
-	public double getValue() {
+	public Double getValue() {
 		return value;
 	}
 }
