@@ -236,11 +236,14 @@ public class EmonLogger implements DataLoggerService {
 					Authentication authenticator = device.getAuthenticator();
 					if (device.size() == 1) {
 						Data data = device.get(0);
+						
+						// Data time is already in seconds, but needs to be in milliseconds for post()
+						long time = data.getTime()*1000;
 						if (authenticator.isDefault()) {
-							connection.post(data.getNode(), data.getTime(), data.getNamevalues());
+							connection.post(data.getNode(), time, data.getNamevalues());
 						}
 						else {
-							connection.post(data.getNode(), data.getTime(), data.getNamevalues(), authenticator);
+							connection.post(data.getNode(), time, data.getNamevalues(), authenticator);
 						}
 					}
 					else {
