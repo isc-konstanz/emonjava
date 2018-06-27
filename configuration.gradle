@@ -10,6 +10,8 @@ project.ext {
 
   javaProjects = subprojects
 
+  jarDefaultImportPackageVersion = ";version=0"
+
   distributionProjects = subprojects.findAll {
     it.getPath() == ":emoncms-api" ||
     it.getPath() == ":emoncms-http" ||
