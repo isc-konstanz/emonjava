@@ -1,10 +1,13 @@
+
+def projectName = "Emoncms Java - API"
+
 dependencies {
   compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 }
 
 jar {
   manifest {
-    name = "Emoncms Java - API"
+    name = projectName
     instruction 'Export-Package', '*'
   }
 }
