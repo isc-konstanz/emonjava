@@ -32,7 +32,7 @@ tasks.withType(Tar) {
   into(project.name) {
 
     from("build") {
-      include "lib/s**"
+      include "libs/**"
     }
 
     from("./") {
