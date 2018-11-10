@@ -28,7 +28,7 @@ if [ ! -f "$ROOT_DIR/bundles/openmuc-datalogger-$ID-$VERSION.jar" ]; then
 
     tar -xzf "$TMP_DIR/$PROJECT-$VERSION.tar.gz" -C "$TMP_DIR/"
   fi
-  mv -f "$TMP_DIR/$PROJECT/lib/openmuc-datalogger-$ID-$VERSION.jar" "$ROOT_DIR/bundles/"
+  mv -f "$TMP_DIR/$PROJECT/libs/openmuc-datalogger-$ID-$VERSION.jar" "$ROOT_DIR/bundles/"
   mv -f "$TMP_DIR/$PROJECT/conf/emoncms.conf" "$ROOT_DIR/conf/emoncms.conf"
 
   rm -rf "$TMP_DIR/$PROJECT"*
