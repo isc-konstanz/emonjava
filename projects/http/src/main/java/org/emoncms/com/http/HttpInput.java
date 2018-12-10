@@ -32,13 +32,12 @@ import org.emoncms.com.http.json.JsonInput;
 import org.emoncms.com.http.json.ToJsonArray;
 import org.emoncms.com.http.json.ToJsonObject;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
-import org.emoncms.com.http.request.HttpRequestAction;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
-import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
+import org.emoncms.com.http.request.HttpRequestURI;
+import org.emoncms.data.Authentication;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
-import org.emoncms.data.Authentication;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
@@ -79,7 +78,7 @@ public class HttpInput extends Input {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post");
+		HttpRequestURI uri = new HttpRequestURI("post");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		parameters.addParameter(Const.NODE, node);
 		
@@ -93,10 +92,10 @@ public class HttpInput extends Input {
 		parameters.addParameter(Const.FULLJSON, json);
 		
 		if (authentication != null) {
-			callbacks.onRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+			callbacks.onPost("input", uri, parameters, authentication);
 		}
 		else {
-			callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+			callbacks.onPost("input", uri, parameters);
 		}
 	}
 
@@ -110,7 +109,7 @@ public class HttpInput extends Input {
 		
 		logger.debug("Requesting to bulk post {} data sets for input \"{}\" of node \"{}\"", timevalues.size(), name, node);
 		
-		HttpRequestAction action = new HttpRequestAction("bulk");
+		HttpRequestURI uri = new HttpRequestURI("bulk");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		DataList dataList = new DataList();
@@ -130,10 +129,10 @@ public class HttpInput extends Input {
 		parameters.addParameter(Const.DATA, json.toString());
 		
 		if (authentication != null) {
-			callbacks.onRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+			callbacks.onPost("input", uri, parameters, authentication);
 		}
 		else {
-			callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+			callbacks.onPost("input", uri, parameters);
 		}
 	}
 
@@ -143,17 +142,18 @@ public class HttpInput extends Input {
 		if (id != null) {
 			logger.debug("Requesting to set {} fields for input \"{}\" of node \"{}\"", fields.size(), name, node);
 
-			HttpRequestAction action = new HttpRequestAction("set");
-			action.addParameter(Const.INPUTID, id);
+			HttpRequestURI uri = new HttpRequestURI("set");
+			uri.addParameter(Const.INPUTID, id);
+			
 			ToJsonObject json = new ToJsonObject();
 			for (Map.Entry<String, String> field : fields.entrySet()) {
 				json.addString(field.getKey(), field.getValue());
 			}
-			action.addParameter(Const.FIELDS, json);
+			uri.addParameter(Const.FIELDS, json);
 			
 			HttpRequestParameters parameters = new HttpRequestParameters();
 			
-			callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+			callbacks.onGet("input", uri, parameters);
 		}
 		else {
 			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
@@ -166,13 +166,13 @@ public class HttpInput extends Input {
 		if (id != null) {
 			logger.debug("Requesting to set process list for input \"{}\" of node \"{}\": {}", name, node, processList);
 			
-			HttpRequestAction action = new HttpRequestAction("process/set");
-			action.addParameter(Const.INPUTID, id);
+			HttpRequestURI uri = new HttpRequestURI("process/set");
+			uri.addParameter(Const.INPUTID, id);
 			
 			HttpRequestParameters parameters = new HttpRequestParameters();
 			parameters.addParameter(Const.PROCESSLIST.toLowerCase(), processList);
 			
-			callbacks.onRequest("input", action, parameters, HttpRequestMethod.POST);
+			callbacks.onPost("input", uri, parameters);
 		}
 		else {
 			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
@@ -185,12 +185,12 @@ public class HttpInput extends Input {
 		if (id != null) {
 			logger.debug("Requesting to reset process list for input \"{}\" of node \"{}\"", name, node);
 			
-			HttpRequestAction action = new HttpRequestAction("process/reset");
-			action.addParameter(Const.INPUTID, id);
+			HttpRequestURI uri = new HttpRequestURI("process/reset");
+			uri.addParameter(Const.INPUTID, id);
 			
 			HttpRequestParameters parameters = new HttpRequestParameters();
 			
-			callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+			callbacks.onGet("input", uri, parameters);
 		}
 		else {
 			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
@@ -203,12 +203,12 @@ public class HttpInput extends Input {
 		if (id != null) {
 			logger.debug("Requesting to delete input \"{}\" of node \"{}\"", name, node);
 			
-			HttpRequestAction action = new HttpRequestAction("delete");
-			action.addParameter(Const.INPUTID, id);
+			HttpRequestURI uri = new HttpRequestURI("delete");
+			uri.addParameter(Const.INPUTID, id);
 			
 			HttpRequestParameters parameters = new HttpRequestParameters();
 			
-			callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+			callbacks.onGet("input", uri, parameters);
 		}
 		else {
 			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
@@ -225,10 +225,10 @@ public class HttpInput extends Input {
 			logger.debug("Requesting input \"{}\" of node \"{}\"", name, node);
 		}
 
-		HttpRequestAction action = new HttpRequestAction("list");
+		HttpRequestURI uri = new HttpRequestURI("list");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = callbacks.onRequest("input", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = callbacks.onGet("input", uri, parameters);
 		try {
 			List<JsonInput> jsonInputList = response.getInputList();
 

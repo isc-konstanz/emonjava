@@ -88,6 +88,10 @@ public class ChannelLogSettings {
         return null;
     }
 
+    public boolean hasFeedId() {
+    	return settingsMap.containsKey(FEED_ID);
+    }
+
     public Integer getFeedId() {
         if (settingsMap.containsKey(FEED_ID)) {
             return Integer.parseInt(settingsMap.get(FEED_ID).trim());

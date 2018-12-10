@@ -49,10 +49,10 @@ import org.emoncms.com.http.json.ToJsonObject;
 import org.emoncms.com.http.request.HttpCallable;
 import org.emoncms.com.http.request.HttpEmoncmsRequest;
 import org.emoncms.com.http.request.HttpEmoncmsResponse;
-import org.emoncms.com.http.request.HttpRequestAction;
 import org.emoncms.com.http.request.HttpRequestCallbacks;
 import org.emoncms.com.http.request.HttpRequestMethod;
 import org.emoncms.com.http.request.HttpRequestParameters;
+import org.emoncms.com.http.request.HttpRequestURI;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
@@ -143,7 +143,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException {
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post");
+		HttpRequestURI uri = new HttpRequestURI("post");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		parameters.addParameter(Const.NODE, node);
 		
@@ -157,7 +157,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.FULLJSON, json);
 		
-		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+		onPost("input", uri, parameters, authentication);
 	}
 
 	@Override
@@ -170,7 +170,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
 		logger.debug("Requesting to post values for {} inputs", namevalues.size());
 		
-		HttpRequestAction action = new HttpRequestAction("post");
+		HttpRequestURI uri = new HttpRequestURI("post");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		parameters.addParameter(Const.NODE, node);
 		
@@ -186,7 +186,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		}
 		parameters.addParameter(Const.FULLJSON, json);
 		
-		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+		onPost("input", uri, parameters, authentication);
 	}
 
 	@Override
@@ -198,7 +198,7 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public void post(DataList dataList, Authentication authentication) throws EmoncmsException {
 		logger.debug("Requesting to bulk post {} data sets", dataList.size());
 		
-		HttpRequestAction action = new HttpRequestAction("bulk");
+		HttpRequestURI uri = new HttpRequestURI("bulk");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
 		// Posted UNIX time values need to be sent in seconds
@@ -213,17 +213,17 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 		}
 		parameters.addParameter(Const.DATA, json.toString());
 		
-		sendRequest("input", authentication, action, parameters, HttpRequestMethod.POST);
+		onPost("input", uri, parameters, authentication);
 	}
 
 	@Override
 	public List<Input> getInputList(String node) throws EmoncmsException {
 		logger.debug("Requesting input list for node \"{}\"", node);
 
-		HttpRequestAction action = new HttpRequestAction("get_inputs");
+		HttpRequestURI uri = new HttpRequestURI("get_inputs");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("input", uri, parameters);
 		try {
 			JsonInputList jsonInputList = response.getInputConfigList(node);
 			
@@ -247,10 +247,10 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public List<Input> getInputList() throws EmoncmsException {
 		logger.debug("Requesting input list");
 
-		HttpRequestAction action = new HttpRequestAction("list");
+		HttpRequestURI uri = new HttpRequestURI("list");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("input", uri, parameters);
 		try {
 			List<JsonInput> jsonInputList = response.getInputList();
 
@@ -276,10 +276,10 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public Input getInput(String node, String name) throws EmoncmsException {
 		logger.debug("Requesting input \"{}\" for node \"{}\"", name, node);
 
-		HttpRequestAction action = new HttpRequestAction("get_inputs");
+		HttpRequestURI uri = new HttpRequestURI("get_inputs");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("input", uri, parameters);
 		try {
 			JsonInputConfig jsonInputConfig = response.getInputConfig(node, name);
 			
@@ -296,10 +296,10 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public Input getInput(int id) throws EmoncmsException {
 		logger.debug("Requesting input with id: {}", id);
 
-		HttpRequestAction action = new HttpRequestAction("list");
+		HttpRequestURI uri = new HttpRequestURI("list");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("input", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("input", uri, parameters);
 		try {
 			List<JsonInput> jsonInputList = response.getInputList();
 
@@ -323,10 +323,10 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public List<Feed> getFeedList() throws EmoncmsException {
 		logger.debug("Requesting feed list");
 
-		HttpRequestAction action = new HttpRequestAction("list.json");
+		HttpRequestURI uri = new HttpRequestURI("list.json");
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("feed", uri, parameters);
 		try {
 			List<JsonFeed> jsonFeedList = response.getFeedList();
 
@@ -355,12 +355,12 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public Feed getFeed(int id) throws EmoncmsException {
 		logger.debug("Requesting feed with id: {}", id);
 
-		HttpRequestAction action = new HttpRequestAction("aget.json");
-		action.addParameter(Const.ID, id);
+		HttpRequestURI uri = new HttpRequestURI("aget.json");
+		uri.addParameter(Const.ID, id);
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("feed", uri, parameters);
 		try {
 			JsonFeed jsonFeed = response.getFeed();
 			Timevalue timevalue = null;
@@ -397,12 +397,12 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			}
 		}
 		
-		HttpRequestAction action = new HttpRequestAction("fetch.json");
-		action.addParameter(Const.IDS, idsBuilder.toString());
+		HttpRequestURI uri = new HttpRequestURI("fetch.json");
+		uri.addParameter(Const.IDS, idsBuilder.toString());
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("feed", uri, parameters);
 		try {
 			return response.getValues(feedList);
 			
@@ -415,20 +415,20 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	public int newFeed(String name, String tag, Datatype type, Engine engine, Options options) throws EmoncmsException {
 		logger.debug("Requesting to add feed \"{}\"", name);
 
-		HttpRequestAction action = new HttpRequestAction("create.json");
-		action.addParameter(Const.NAME, name);
-		action.addParameter(Const.TAG, tag);
-		action.addParameter(Const.DATATYPE, type.getValue());
-		action.addParameter(Const.ENGINE, engine.getValue());
+		HttpRequestURI uri = new HttpRequestURI("create.json");
+		uri.addParameter(Const.NAME, name);
+		uri.addParameter(Const.TAG, tag);
+		uri.addParameter(Const.DATATYPE, type.getValue());
+		uri.addParameter(Const.ENGINE, engine.getValue());
 		if (options != null && !options.isEmpty()) {
 			ToJsonObject json = new ToJsonObject();
 			json.addOptions(options);
-			action.addParameter(Const.OPTIONS, json);
+			uri.addParameter(Const.OPTIONS, json);
 		}
 		
 		HttpRequestParameters parameters = new HttpRequestParameters();
 		
-		HttpEmoncmsResponse response = sendRequest("feed", action, parameters, HttpRequestMethod.GET);
+		HttpEmoncmsResponse response = onGet("feed", uri, parameters);
 		try {
 			return Integer.valueOf(response.getString(Const.FEEDID));
 			
@@ -438,25 +438,43 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 	}
 
 	@Override
-	public HttpEmoncmsResponse onRequest(String parent, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		return sendRequest(parent, authentication, action, parameters, method);
+	public HttpEmoncmsResponse onGet(String parent, HttpRequestURI uri, HttpRequestParameters parameters, 
+			Authentication authentication) throws EmoncmsException {
+		return sendRequest(HttpRequestMethod.GET, parent, uri, parameters, authentication);
 	}
 
 	@Override
-	public HttpEmoncmsResponse onRequest(String parent, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		return sendRequest(parent, action, parameters, method);
+	public HttpEmoncmsResponse onGet(String parent, HttpRequestURI uri, HttpRequestParameters parameters) 
+			throws EmoncmsException {
+		return sendRequest(HttpRequestMethod.GET, parent, uri, parameters);
 	}
 
-	private HttpEmoncmsResponse sendRequest(String path, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
-		return sendRequest(path, authentication, action, parameters, method);
+	@Override
+	public HttpEmoncmsResponse onPost(String parent, HttpRequestURI uri, HttpRequestParameters parameters, 
+			Authentication authentication) throws EmoncmsException {
+		return sendRequest(HttpRequestMethod.POST, parent, uri, parameters, authentication);
 	}
 
-	private HttpEmoncmsResponse sendRequest(String path, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) throws EmoncmsException {
+	@Override
+	public HttpEmoncmsResponse onPost(String parent, HttpRequestURI uri, HttpRequestParameters parameters) 
+			throws EmoncmsException {
+		return sendRequest(HttpRequestMethod.POST, parent, uri, parameters);
+	}
+
+	private HttpEmoncmsResponse sendRequest(HttpRequestMethod method, String path, 
+			HttpRequestURI uri, HttpRequestParameters parameters) throws EmoncmsException {
+		return sendRequest(method, path, uri, parameters, authentication);
+	}
+
+	private HttpEmoncmsResponse sendRequest(HttpRequestMethod method, String path, 
+			HttpRequestURI uri, HttpRequestParameters parameters, 
+			Authentication authentication) throws EmoncmsException {
+		
 		String url = address + path.toLowerCase();
 		if (!url.endsWith("/"))
 			url += "/";
 		
-		HttpEmoncmsRequest request = new HttpEmoncmsRequest(url, authentication, action, parameters, method);
+		HttpEmoncmsRequest request = new HttpEmoncmsRequest(method, url, uri, parameters, authentication);
 		HttpEmoncmsResponse response = submitRequest(request);
 		if (response != null) {
 			if (response.isSuccess()) {

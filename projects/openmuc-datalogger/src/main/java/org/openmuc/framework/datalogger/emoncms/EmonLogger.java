@@ -25,11 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.emoncms.Emoncms;
+import org.emoncms.Feed;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsSyntaxException;
 import org.emoncms.com.EmoncmsUnavailableException;
 import org.emoncms.com.http.HttpEmoncmsFactory;
+import org.emoncms.com.http.HttpFeed;
 import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Data;
@@ -38,9 +40,9 @@ import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.dataaccess.DataAccessService;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelInput;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelInputAverage;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelInputDynamic;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelAverage;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelDynamic;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelHandler;
 import org.openmuc.framework.datalogger.emoncms.data.ChannelLogSettings;
 import org.openmuc.framework.datalogger.emoncms.data.DeviceDataList;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
@@ -58,10 +60,11 @@ import org.slf4j.LoggerFactory;
 public class EmonLogger implements DataLoggerService {
 	private final static Logger logger = LoggerFactory.getLogger(EmonLogger.class);
 
-	private DataAccessService dataAccessService;
+    @Reference
+    private DataAccessService dataAccessService;
 	private Emoncms connection = null;
 
-	private final HashMap<String, ChannelInput> channelInputs = new HashMap<String, ChannelInput>();
+	private final HashMap<String, ChannelHandler> channelInputs = new HashMap<String, ChannelHandler>();
 
 	@Activate
 	protected void activate(ComponentContext context) {
@@ -101,15 +104,6 @@ public class EmonLogger implements DataLoggerService {
 		}
 	}
 
-	@Reference
-	protected void bindDataAccessService(DataAccessService dataAccessService) {
-		this.dataAccessService = dataAccessService;
-	}
-
-	protected void unbindDataAccessService(DataAccessService dataAccessService) {
-		this.dataAccessService = null;
-	}
-
 	@Override
 	public String getId() {
 		return "emoncms";
@@ -122,9 +116,9 @@ public class EmonLogger implements DataLoggerService {
 			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
 			return;
 		}
-		for (ChannelInput channel : channelInputs.values()) {
-			if (channel instanceof ChannelInputAverage && dataAccessService.getAllIds().contains(channel.getId())) {
-				dataAccessService.getChannel(channel.getId()).removeListener((ChannelInputAverage) channel);
+		for (ChannelHandler channel : channelInputs.values()) {
+			if (channel instanceof ChannelAverage && dataAccessService.getAllIds().contains(channel.getId())) {
+				dataAccessService.getChannel(channel.getId()).removeListener((ChannelAverage) channel);
 			}
 		}
 		channelInputs.clear();
@@ -137,19 +131,22 @@ public class EmonLogger implements DataLoggerService {
 				try {
 					Input input = HttpInput.connect(connection, settings.getNode(), id);					
 					
-					ChannelInput channelInput;
+					ChannelHandler channelInput;
 					if (settings.isAveraging()) {
-						channelInput = new ChannelInputAverage(id, input, settings);
+						channelInput = new ChannelAverage(id, input, settings);
 						if (dataAccessService.getAllIds().contains(id)) {
-							dataAccessService.getChannel(id).addListener((ChannelInputAverage) channelInput);
-							((ChannelInputAverage) channelInput).setListening(true);
+							dataAccessService.getChannel(id).addListener((ChannelAverage) channelInput);
+							((ChannelAverage) channelInput).setListening(true);
 						}
 					}
 					else if (settings.isDynamic()) {
-						channelInput = new ChannelInputDynamic(id, input, settings);
+						channelInput = new ChannelDynamic(id, input, settings);
 					}
 					else {
-						channelInput = new ChannelInput(id, input, settings);
+						channelInput = new ChannelHandler(id, input, settings);
+					}
+					if (settings.hasFeedId()) {
+						Feed feed = HttpFeed.connect(connection, settings.getFeedId());
 					}
 					channelInputs.put(id, channelInput);
 							
@@ -178,7 +175,7 @@ public class EmonLogger implements DataLoggerService {
 		else if (containers.size() == 1) {
 			LogRecordContainer container = containers.get(0);
 			
-			ChannelInput channel = getChannel(container.getChannelId());
+			ChannelHandler channel = getChannel(container.getChannelId());
 			if (isValid(container)) {
 				try {
 					Record record = container.getRecord();
@@ -197,7 +194,7 @@ public class EmonLogger implements DataLoggerService {
 		else {
 			List<DeviceDataList> devices = new ArrayList<DeviceDataList>();
 			for (LogRecordContainer container : containers) {
-				ChannelInput channel = getChannel(container.getChannelId());
+				ChannelHandler channel = getChannel(container.getChannelId());
 				if (isValid(container)) {
 					try {
 						Record record = container.getRecord();
@@ -286,10 +283,10 @@ public class EmonLogger implements DataLoggerService {
 		return false;
 	}
 
-	private ChannelInput getChannel(String id) {
-		ChannelInput channel = channelInputs.get(id);
+	private ChannelHandler getChannel(String id) {
+		ChannelHandler channel = channelInputs.get(id);
 		if (channel.isAveraging()) {
-			ChannelInputAverage listener = (ChannelInputAverage) channel;
+			ChannelAverage listener = (ChannelAverage) channel;
 			if (!listener.isListening() && dataAccessService.getAllIds().contains(id)) {
 				dataAccessService.getChannel(id).addListener(listener);
 				listener.setListening(true);
@@ -301,6 +298,6 @@ public class EmonLogger implements DataLoggerService {
 	@Override
 	public List<Record> getRecords(String channelId, long startTime, long endTime) throws IOException {
 		// TODO: fetch feed id and retrieve data from web server
-		throw new UnsupportedOperationException();
+		throw new IOException();
 	}
 }

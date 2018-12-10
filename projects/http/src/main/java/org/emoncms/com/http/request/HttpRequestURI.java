@@ -22,6 +22,7 @@ package org.emoncms.com.http.request;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,85 +30,70 @@ import java.util.Map;
 import org.emoncms.com.http.json.ToJsonObject;
 
 
-public class HttpRequestAction extends LinkedHashMap<String, String>{
+public class HttpRequestURI extends LinkedHashMap<String, String>{
 	private static final long serialVersionUID = 7622558815668412483L;
-	
-	private final String action;
-	
-	public HttpRequestAction(String action) {
+
+	private final String uri;
+
+	public HttpRequestURI(String uri) {
 		super();
 		
-		this.action = action;
+		this.uri = uri;
 	}
-	
+
 	public void addParameter(String key, ToJsonObject value) {
 		super.put(key, value.toString());
 	}
-	
+
 	public void addParameter(String key, String value) {
 		super.put(key, value);
 	}
-	
+
 	public void addParameter(String key, double value) {
 		super.put(key, String.valueOf(value));
 	}
-	
+
 	public void addParameter(String key, long value) {
 		super.put(key, String.valueOf(value));
 	}
-	
+
 	public void addParameter(String key, int value) {
 		super.put(key, String.valueOf(value));
 	}
-	
+
 	public void addParameter(String key, boolean value) {
 		super.put(key, String.valueOf(value));
 	}
-	
-	public String parseAction(Charset charset) throws UnsupportedEncodingException {
-		StringBuilder actionBuilder = new StringBuilder();
-		actionBuilder.append(action);
+
+	public String parse(Charset charset) throws UnsupportedEncodingException {
+		StringBuilder uriBuilder = new StringBuilder();
+		uriBuilder.append(uri);
 		if (size() > 0) {
-			actionBuilder.append('?');
+			uriBuilder.append('?');
 		}
 		
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
 			
-			actionBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
-			actionBuilder.append('=');
-			actionBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
+			uriBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
+			uriBuilder.append('=');
+			uriBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
 
 			if (iteratorParameterList.hasNext()) {
-				actionBuilder.append('&');
+				uriBuilder.append('&');
 			}
 		}
-		
-		return actionBuilder.toString();
+		return uriBuilder.toString();
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder actionBuilder = new StringBuilder();
-		actionBuilder.append(action);
-		if (size() > 0) {
-			actionBuilder.append('?');
-		}
-
-		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
-		while (iteratorParameterList.hasNext()) {
-			Map.Entry<String, String> parameter = iteratorParameterList.next();
+		try {
+			return parse(StandardCharsets.UTF_8);
 			
-			actionBuilder.append(parameter.getKey());
-			actionBuilder.append('=');
-			actionBuilder.append(parameter.getValue());
-
-			if (iteratorParameterList.hasNext()) {
-				actionBuilder.append('&');
-			}
+		} catch (UnsupportedEncodingException e) {
 		}
-		
-		return actionBuilder.toString();
+		return null;
 	}
 }

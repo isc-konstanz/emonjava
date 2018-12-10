@@ -30,10 +30,16 @@ import org.emoncms.data.Authentication;
  */
 public interface HttpRequestCallbacks {
 
-	HttpEmoncmsResponse onRequest(String parent, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method)
-		throws EmoncmsException;
-	
-	HttpEmoncmsResponse onRequest(String parent, Authentication authentication, HttpRequestAction action, HttpRequestParameters parameters, HttpRequestMethod method) 
+	HttpEmoncmsResponse onGet(String parent, HttpRequestURI uri, HttpRequestParameters parameters) 
 			throws EmoncmsException;
+
+	HttpEmoncmsResponse onGet(String parent, HttpRequestURI uri, HttpRequestParameters parameters, 
+			Authentication authentication) throws EmoncmsException;
+
+	HttpEmoncmsResponse onPost(String parent, HttpRequestURI uri, HttpRequestParameters parameters) 
+			throws EmoncmsException;
+
+	HttpEmoncmsResponse onPost(String parent, HttpRequestURI uri, HttpRequestParameters parameters, 
+			Authentication authentication) throws EmoncmsException;
 
 }

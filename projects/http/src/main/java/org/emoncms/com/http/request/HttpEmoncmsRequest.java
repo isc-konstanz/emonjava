@@ -22,32 +22,67 @@ package org.emoncms.com.http.request;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.emoncms.data.Authentication;
 
 
 public class HttpEmoncmsRequest {
 
-	private final String url;
-	private final Authentication authentication;
-	private final HttpRequestAction action;
-	private final HttpRequestParameters parameters;
 	private final HttpRequestMethod method;
+	private final String url;
+	private final HttpRequestURI uri;
+	private final HttpRequestParameters parameters;
+	private final Authentication authentication;
 
 
-	public HttpEmoncmsRequest(String url, Authentication authentication, 
-			HttpRequestAction action, HttpRequestParameters parameters, 
-			HttpRequestMethod method) {
-		
-		this.url = url;
-		this.authentication = authentication;
-		this.action = action;
-		this.parameters = parameters;
+	public HttpEmoncmsRequest(HttpRequestMethod method, String url, 
+			HttpRequestURI uri, HttpRequestParameters parameters, 
+			Authentication authentication) {
+
 		this.method = method;
+		this.url = url;
+		this.uri = uri;
+		this.parameters = parameters;
+		this.authentication = authentication;
+	}
+
+	public HttpRequestMethod getMethod() {
+		return method;
 	}
 
 	public String getUrl() {
 		return url;
+	}
+
+	public HttpRequestURI getUri() {
+		return uri;
+	}
+
+	public String parseUri(Charset charset) throws UnsupportedEncodingException {
+		return uri.parse(charset);
+	}
+
+	public HttpRequestParameters getParameters() {
+		return parameters;
+	}
+
+	public String parseParameters(Charset charset) throws UnsupportedEncodingException {
+		String content = parameters.parse(charset);
+		if (authentication != null) {
+			switch (method) {
+				case POST:
+				case PUT:
+					if (parameters != null && parameters.size() > 0) {
+						content += '&';
+					}
+					content += getAuthentication(charset);
+					break;
+				default:
+					break;
+			}
+		}
+		return content;
 	}
 
 	public String getAuthentication(Charset charset) throws UnsupportedEncodingException {
@@ -58,59 +93,25 @@ public class HttpEmoncmsRequest {
 		return null;
 	}
 
-	public HttpRequestAction getAction() {
-		return action;
-	}
-
-	public String parseAction(Charset charset) throws UnsupportedEncodingException {
-		return action.parseAction(charset);
-	}
-
-	public HttpRequestParameters getParameters() {
-		return parameters;
-	}
-
-	public String parseParameters(Charset charset) throws UnsupportedEncodingException {
-		String content = parameters.parseParameters(charset);
-		if (authentication != null) {
-			switch (method) {
-			case POST:
-			case PUT:
-				if (parameters != null && parameters.size() > 0) {
-					content += '&';
-				}
-				content += getAuthentication(charset);
-				break;
-			default:
-				break;
-			}
-		}
-		return content;
-	}
-
-	public HttpRequestMethod getMethod() {
-		return method;
-	}
-
-	public String getRequest(Charset charset) throws UnsupportedEncodingException {
+	public String parse(Charset charset) throws UnsupportedEncodingException {
 		String request = url;
-		if (action != null) {
-			request += action.parseAction(charset);
+		if (uri != null) {
+			request += uri.parse(charset);
 		}
 		if (authentication != null) {
 			switch (method) {
-			case POST:
-			case PUT:
-				break;
-			default:
-				if (action != null && action.size() > 0) {
-					request += '&';
-				}
-				else {
-					request += '?';
-				}
-				request += getAuthentication(charset);
-				break;
+				case POST:
+				case PUT:
+					break;
+				default:
+					if (uri != null && uri.size() > 0) {
+						request += '&';
+					}
+					else {
+						request += '?';
+					}
+					request += getAuthentication(charset);
+					break;
 			}
 		}
 		return request;
@@ -118,19 +119,21 @@ public class HttpEmoncmsRequest {
 
 	@Override
 	public String toString() {
-		String request = url;
-		if (action != null) {
-			request += action.toString();
-		}
-		if (parameters != null) {
-			if (parameters.size() > 0 && action.size() == 0) {
-				request += '?';
+		try {
+			String request = parse(StandardCharsets.UTF_8);
+			if (parameters != null) {
+				if (parameters.size() > 0 && uri.size() == 0) {
+					request += '?';
+				}
+				if (uri != null && uri.size() > 0) {
+					request += '&';
+				}
+				request += parseParameters(StandardCharsets.UTF_8);
 			}
-			if (action != null && action.size() > 0) {
-				request += '&';
-			}
-			request += parameters.toString();
+			return request;
+			
+		} catch (UnsupportedEncodingException e) {
 		}
-		return request;
+		return null;
 	}
 }

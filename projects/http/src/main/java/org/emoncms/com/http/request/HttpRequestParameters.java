@@ -22,6 +22,7 @@ package org.emoncms.com.http.request;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,9 +62,9 @@ public class HttpRequestParameters extends LinkedHashMap<String, String> {
 		super.put(key, String.valueOf(value));
 	}
 	
-	public String parseParameters(Charset charset) throws UnsupportedEncodingException {
+	public String parse(Charset charset) throws UnsupportedEncodingException {
 		StringBuilder parameterListBuilder = new StringBuilder();
-
+		
 		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
 		while (iteratorParameterList.hasNext()) {
 			Map.Entry<String, String> parameter = iteratorParameterList.next();
@@ -71,32 +72,21 @@ public class HttpRequestParameters extends LinkedHashMap<String, String> {
 			parameterListBuilder.append(URLEncoder.encode(parameter.getKey(), charset.name()));
 			parameterListBuilder.append('=');
 			parameterListBuilder.append(URLEncoder.encode(parameter.getValue(), charset.name()));
-
+			
 			if (iteratorParameterList.hasNext()) {
 				parameterListBuilder.append('&');
 			}
 		}
-		
 		return parameterListBuilder.toString();
 	}
-
+	
 	@Override
 	public String toString() {
-		StringBuilder parameterListBuilder = new StringBuilder();
-
-		Iterator<Map.Entry<String, String>> iteratorParameterList = super.entrySet().iterator();
-		while (iteratorParameterList.hasNext()) {
-			Map.Entry<String, String> parameter = iteratorParameterList.next();
+		try {
+			return parse(StandardCharsets.UTF_8);
 			
-			parameterListBuilder.append(parameter.getKey());
-			parameterListBuilder.append('=');
-			parameterListBuilder.append(parameter.getValue());
-
-			if (iteratorParameterList.hasNext()) {
-				parameterListBuilder.append('&');
-			}
+		} catch (UnsupportedEncodingException e) {
 		}
-		
-		return parameterListBuilder.toString();
+		return null;
 	}
 }
