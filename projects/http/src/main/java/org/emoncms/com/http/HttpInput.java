@@ -79,8 +79,9 @@ public class HttpInput extends Input {
 
 		logger.debug("Requesting to post {} for input \"{}\" of node \"{}\"", timevalue, name, node);
 
-		HttpRequestAction action = new HttpRequestAction("post/"+node);
+		HttpRequestAction action = new HttpRequestAction("post");
 		HttpRequestParameters parameters = new HttpRequestParameters();
+		parameters.addParameter(Const.NODE, node);
 		
 		if (timevalue.getTime() != null && timevalue.getTime() > 0) {
 			// Posted UNIX time values need to be sent in seconds
