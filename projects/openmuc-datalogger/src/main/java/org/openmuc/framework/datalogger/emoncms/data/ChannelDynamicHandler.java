@@ -22,9 +22,9 @@ package org.openmuc.framework.datalogger.emoncms.data;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsSyntaxException;
 
-public class ChannelInputDynamic extends ChannelInput {
+public class ChannelDynamicHandler extends ChannelLogHandler {
 
-	public ChannelInputDynamic(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
+	public ChannelDynamicHandler(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
 		super(id, input, settings);
 	}
 
@@ -33,7 +33,7 @@ public class ChannelInputDynamic extends ChannelInput {
 		if (this.time != null && this.time >= time) {
 			return false;
 		}
-		else if (this.value != null) {
+		else if (this.value != null && settings.getMaxInterval() != null) {
 			double tolerance = settings.getTolerance();
 			double delta = Math.abs(value - this.value);
 			if (tolerance >= delta && (time - this.time) <= settings.getMaxInterval()) {

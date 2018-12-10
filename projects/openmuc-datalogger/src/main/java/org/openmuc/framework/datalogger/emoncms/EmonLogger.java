@@ -22,6 +22,7 @@ package org.openmuc.framework.datalogger.emoncms;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.emoncms.Emoncms;
@@ -36,13 +37,15 @@ import org.emoncms.com.http.HttpInput;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Data;
 import org.emoncms.data.Namevalue;
+import org.emoncms.data.Timevalue;
+import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.dataaccess.DataAccessService;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelAverage;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelDynamic;
-import org.openmuc.framework.datalogger.emoncms.data.ChannelHandler;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelAverageHandler;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelDynamicHandler;
+import org.openmuc.framework.datalogger.emoncms.data.ChannelLogHandler;
 import org.openmuc.framework.datalogger.emoncms.data.ChannelLogSettings;
 import org.openmuc.framework.datalogger.emoncms.data.DeviceDataList;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
@@ -64,7 +67,7 @@ public class EmonLogger implements DataLoggerService {
     private DataAccessService dataAccessService;
 	private Emoncms connection = null;
 
-	private final HashMap<String, ChannelHandler> channelInputs = new HashMap<String, ChannelHandler>();
+	private final HashMap<String, ChannelLogHandler> channelHandlers = new HashMap<String, ChannelLogHandler>();
 
 	@Activate
 	protected void activate(ComponentContext context) {
@@ -116,12 +119,12 @@ public class EmonLogger implements DataLoggerService {
 			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
 			return;
 		}
-		for (ChannelHandler channel : channelInputs.values()) {
-			if (channel instanceof ChannelAverage && dataAccessService.getAllIds().contains(channel.getId())) {
-				dataAccessService.getChannel(channel.getId()).removeListener((ChannelAverage) channel);
+		for (ChannelLogHandler channel : channelHandlers.values()) {
+			if (channel instanceof ChannelAverageHandler) {
+				dataAccessService.getChannel(channel.getId()).removeListener((ChannelAverageHandler) channel);
 			}
 		}
-		channelInputs.clear();
+		channelHandlers.clear();
 		
 		for (LogChannel channel : channels) {
 			String id = channel.getId();
@@ -131,24 +134,24 @@ public class EmonLogger implements DataLoggerService {
 				try {
 					Input input = HttpInput.connect(connection, settings.getNode(), id);					
 					
-					ChannelHandler channelInput;
+					ChannelLogHandler handler;
 					if (settings.isAveraging()) {
-						channelInput = new ChannelAverage(id, input, settings);
-						if (dataAccessService.getAllIds().contains(id)) {
-							dataAccessService.getChannel(id).addListener((ChannelAverage) channelInput);
-							((ChannelAverage) channelInput).setListening(true);
-						}
+						handler = new ChannelAverageHandler(id, input, settings);
+						dataAccessService.getChannel(id).addListener((ChannelAverageHandler) handler);
+						((ChannelAverageHandler) handler).setListening(true);
 					}
 					else if (settings.isDynamic()) {
-						channelInput = new ChannelDynamic(id, input, settings);
+						handler = new ChannelDynamicHandler(id, input, settings);
 					}
 					else {
-						channelInput = new ChannelHandler(id, input, settings);
+						handler = new ChannelLogHandler(id, input, settings);
 					}
 					if (settings.hasFeedId()) {
 						Feed feed = HttpFeed.connect(connection, settings.getFeedId());
+						handler.setFeed(feed);
+						handler.setInterval(dataAccessService.getChannel(id).getLoggingInterval()/1000);
 					}
-					channelInputs.put(id, channelInput);
+					channelHandlers.put(id, handler);
 							
 				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
 					logger.warn("Unable to configure logging for Channel \"{}\": {}", id, e.getMessage());
@@ -175,7 +178,7 @@ public class EmonLogger implements DataLoggerService {
 		else if (containers.size() == 1) {
 			LogRecordContainer container = containers.get(0);
 			
-			ChannelHandler channel = getChannel(container.getChannelId());
+			ChannelLogHandler channel = getChannel(container.getChannelId());
 			if (isValid(container)) {
 				try {
 					Record record = container.getRecord();
@@ -194,7 +197,7 @@ public class EmonLogger implements DataLoggerService {
 		else {
 			List<DeviceDataList> devices = new ArrayList<DeviceDataList>();
 			for (LogRecordContainer container : containers) {
-				ChannelHandler channel = getChannel(container.getChannelId());
+				ChannelLogHandler channel = getChannel(container.getChannelId());
 				if (isValid(container)) {
 					try {
 						Record record = container.getRecord();
@@ -259,7 +262,7 @@ public class EmonLogger implements DataLoggerService {
 	}
 
 	private boolean isValid(LogRecordContainer container) {
-		if (channelInputs.containsKey(container.getChannelId())) {
+		if (channelHandlers.containsKey(container.getChannelId())) {
 		
 			if (container.getRecord() != null) {
 				if (container.getRecord().getFlag() == Flag.VALID && container.getRecord().getValue() != null) {
@@ -283,10 +286,10 @@ public class EmonLogger implements DataLoggerService {
 		return false;
 	}
 
-	private ChannelHandler getChannel(String id) {
-		ChannelHandler channel = channelInputs.get(id);
+	private ChannelLogHandler getChannel(String id) {
+		ChannelLogHandler channel = channelHandlers.get(id);
 		if (channel.isAveraging()) {
-			ChannelAverage listener = (ChannelAverage) channel;
+			ChannelAverageHandler listener = (ChannelAverageHandler) channel;
 			if (!listener.isListening() && dataAccessService.getAllIds().contains(id)) {
 				dataAccessService.getChannel(id).addListener(listener);
 				listener.setListening(true);
@@ -296,8 +299,23 @@ public class EmonLogger implements DataLoggerService {
 	}
 
 	@Override
-	public List<Record> getRecords(String channelId, long startTime, long endTime) throws IOException {
-		// TODO: fetch feed id and retrieve data from web server
-		throw new IOException();
+	public List<Record> getRecords(String id, long startTime, long endTime) throws IOException {
+		ChannelLogHandler channel = channelHandlers.get(id);
+		
+		Feed feed = channel.getFeed();
+		if (feed == null) {
+			throw new IOException("Unable to retrieve values for channel without configured feed: " + id);
+		}
+		try {
+			List<Record> records = new LinkedList<Record>();
+			List<Timevalue> data = feed.getData(startTime, endTime, channel.getSettings().getMaxInterval());
+			for (Timevalue timevalue : data) {
+				records.add(new Record(new DoubleValue(timevalue.getValue()), timevalue.getTime()));
+			}
+			return records;
+			
+		} catch (EmoncmsException e) {
+			throw new IOException("Unable to retrieve values for channel " + id + ": " + e.getMessage());
+		}
 	}
 }

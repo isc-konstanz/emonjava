@@ -19,6 +19,7 @@
  */
 package org.openmuc.framework.datalogger.emoncms.data;
 
+import org.emoncms.Feed;
 import org.emoncms.Input;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsSyntaxException;
@@ -26,17 +27,20 @@ import org.emoncms.data.Authentication;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 
-public class ChannelInput {
+public class ChannelLogHandler {
 
 	protected final String id;
 	protected final Input input;
 	protected final Authentication authenticator;
 	protected final ChannelLogSettings settings;
 
+	protected Feed feed = null;
+	protected int interval = 1;
+
 	protected Long time = null;
 	protected Double value = null;
 
-	public ChannelInput(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
+	public ChannelLogHandler(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
 		this.id = id;
 		this.input = input;
 		this.settings = settings;
@@ -49,6 +53,22 @@ public class ChannelInput {
 
 	public Input getInput() {
 		return input;
+	}
+
+	public Feed getFeed() {
+		return feed;
+	}
+
+	public void setFeed(Feed feed) {
+		this.feed = feed;
+	}
+
+	public int getInterval() {
+		return interval;
+	}
+
+	public void setInterval(int interval) {
+		this.interval = interval;
 	}
 
 	public Authentication getAuthenticator() {

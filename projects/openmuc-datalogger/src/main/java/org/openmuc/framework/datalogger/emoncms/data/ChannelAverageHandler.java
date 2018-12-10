@@ -27,8 +27,8 @@ import org.openmuc.framework.dataaccess.RecordListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelInputAverage extends ChannelInputDynamic implements RecordListener {
-	private final static Logger logger = LoggerFactory.getLogger(ChannelInputAverage.class);
+public class ChannelAverageHandler extends ChannelDynamicHandler implements RecordListener {
+	private final static Logger logger = LoggerFactory.getLogger(ChannelAverageHandler.class);
 
 	protected volatile Long lastTime = null;
 	protected volatile Double valueSum = 0.0;
@@ -36,7 +36,7 @@ public class ChannelInputAverage extends ChannelInputDynamic implements RecordLi
 
 	protected boolean listening = false;
 
-	public ChannelInputAverage(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
+	public ChannelAverageHandler(String id, Input input, ChannelLogSettings settings) throws EmoncmsSyntaxException {
 		super(id, input, settings);
 	}
 
