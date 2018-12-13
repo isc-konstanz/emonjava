@@ -137,8 +137,10 @@ public class EmonLogger implements DataLoggerService {
 					ChannelLogHandler handler;
 					if (settings.isAveraging()) {
 						handler = new ChannelAverageHandler(id, input, settings);
-						dataAccessService.getChannel(id).addListener((ChannelAverageHandler) handler);
-						((ChannelAverageHandler) handler).setListening(true);
+                        if (dataAccessService.getAllIds().contains(id)) {
+                            dataAccessService.getChannel(id).addListener((ChannelAverageHandler) handler);
+                            ((ChannelAverageHandler) handler).setListening(true);
+                        }
 					}
 					else if (settings.isDynamic()) {
 						handler = new ChannelDynamicHandler(id, input, settings);
@@ -148,8 +150,14 @@ public class EmonLogger implements DataLoggerService {
 					}
 					if (settings.hasFeedId()) {
 						Feed feed = HttpFeed.connect(connection, settings.getFeedId());
+						Integer interval = settings.getInterval();
+						if (interval == null && dataAccessService.getAllIds().contains(id)) {
+							interval = dataAccessService.getChannel(id).getLoggingInterval()/1000;
+                        }
+						if (interval != null && interval > 0) {
+    						handler.setInterval(interval);
+						}
 						handler.setFeed(feed);
-						handler.setInterval(dataAccessService.getChannel(id).getLoggingInterval()/1000);
 					}
 					channelHandlers.put(id, handler);
 							

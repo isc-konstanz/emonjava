@@ -37,8 +37,6 @@ import org.emoncms.com.http.HttpException;
 public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 
 	private final static Charset CHARSET = StandardCharsets.UTF_8;
-	private final static int CONNECTION_TIMEOUT = 5000;
-	private final static int READ_TIMEOUT = 10000;
 
 	private final HttpEmoncmsRequest request;
 	private HttpURLConnection connection = null;
@@ -82,8 +80,6 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 			connection.setUseCaches(false);
 			connection.setDoOutput(true);
 			connection.setDoInput(true);
-			connection.setConnectTimeout(CONNECTION_TIMEOUT);
-			connection.setReadTimeout(READ_TIMEOUT);
 			connection.connect();
 			
 			if (verifyResponse(connection.getResponseCode())) {
@@ -134,8 +130,6 @@ public class HttpCallable implements Callable<HttpEmoncmsResponse> {
 			connection.setUseCaches(false);
 			connection.setDoOutput(true);
 			connection.setDoInput(true);
-			connection.setConnectTimeout(CONNECTION_TIMEOUT);
-			connection.setReadTimeout(READ_TIMEOUT);
 			
 			if (content != null) {
 				DataOutputStream wr = new DataOutputStream(connection.getOutputStream());

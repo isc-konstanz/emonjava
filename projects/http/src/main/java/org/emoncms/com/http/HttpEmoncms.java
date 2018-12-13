@@ -508,12 +508,12 @@ public class HttpEmoncms implements Emoncms, HttpRequestCallbacks {
 			}
 			catch (JsonSyntaxException e) {
 				throw new EmoncmsException("Received invalid JSON response: " + e);
-			}
-			catch (CancellationException | TimeoutException e) {
+			} catch (InterruptedException | ExecutionException | 
+					TimeoutException | CancellationException e) {
 				submit.cancel(true);
-				throw new EmoncmsException("Aborted request \"" + request.toString() + "\": " + e);
+				throw new EmoncmsException("Request \"" + request.toString() + "\" failed: " + e);
 			}
-		} catch (InterruptedException | ExecutionException e) {
+		} catch (Exception e) {
 			initialize();
 			throw new EmoncmsException("Energy Monitoring Content Management communication failed: " + e);
 		}

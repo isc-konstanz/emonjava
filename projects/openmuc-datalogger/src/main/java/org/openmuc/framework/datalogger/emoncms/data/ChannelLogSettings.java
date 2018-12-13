@@ -33,6 +33,7 @@ public class ChannelLogSettings {
 	private final static String AVERAGE = "average";
 	private final static String NODE_ID = "nodeid";
 	private final static String FEED_ID = "feedid";
+	private final static String INTERVAL = "interval";
 	private final static String AUTHORIZATION = "authorization";
 	private final static String KEY = "key";
 
@@ -97,6 +98,13 @@ public class ChannelLogSettings {
             return Integer.parseInt(settingsMap.get(FEED_ID).trim());
         }
         return null;
+    }
+
+    public Integer getInterval() {
+        if (settingsMap.containsKey(INTERVAL)) {
+        	return Integer.parseInt(settingsMap.get(INTERVAL).trim());
+        }
+    	return null;
     }
 
     public Authorization getAuthorization() {
