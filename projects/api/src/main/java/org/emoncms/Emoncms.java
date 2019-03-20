@@ -74,7 +74,9 @@ public interface Emoncms {
 	 * @param timevalue the timevalue to post.
 	 * @param authentication the specific API Key, to authenticate the request.
 	 */
-	public void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException;
+	public default void post(String node, String name, Timevalue timevalue, Authentication authentication) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Post a {@link Timevalue} to a defined {@link Input}, identified by its node and name.
@@ -87,7 +89,9 @@ public interface Emoncms {
 	 * @param name the Name of the input, a timevalue should be posted to.
 	 * @param timevalue the timevalue to post.
 	 */
-	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException;
+	public default void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node and name and authenticated by a device API key.
@@ -103,7 +107,9 @@ public interface Emoncms {
 	 * @param namevalues the list of namevalues that will be posted.
 	 * @param authentication the specific API Key, to authenticate the request.
 	 */
-	public void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException;
+	public default void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Post a list of {@link Namevalue}s to a defined {@link Input}, identified by their node.
@@ -116,7 +122,9 @@ public interface Emoncms {
 	 * @param time the timestamp, the posted values should be processed with.
 	 * @param namevalues the list of namevalues that will be posted.
 	 */
-	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException;
+	public default void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 
 	/**
@@ -126,7 +134,9 @@ public interface Emoncms {
 	 * 
 	 * @param data the data to post to the CMS.
 	 */
-	public void post(DataList data) throws EmoncmsException;
+	public default void post(DataList data) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 
 	/**
@@ -140,7 +150,9 @@ public interface Emoncms {
 	 * @param data the data to post to the CMS.
 	 * @param authentication the specific API Key, to authenticate the request.
 	 */
-	public void post(DataList data, Authentication authentication) throws EmoncmsException;
+	public default void post(DataList data, Authentication authentication) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user and the specified node ID. 
@@ -156,7 +168,9 @@ public interface Emoncms {
 	 * 
 	 * @return the list of inputs.
 	 */
-	public List<Input> getInputList(String node) throws EmoncmsException;
+	public default List<Input> getInputList(String node) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the list of all {@link Input} objects of the authenticated user. 
@@ -170,7 +184,9 @@ public interface Emoncms {
 	 * 
 	 * @return the list of inputs.
 	 */
-	public List<Input> getInputList() throws EmoncmsException;
+	public default List<Input> getInputList() throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the {@link Input} object for the specified node and name. An input allows to configure processes 
@@ -187,7 +203,9 @@ public interface Emoncms {
 	 * 
 	 * @return the input object.
 	 */
-	public Input getInput(String node, String name) throws EmoncmsException;
+	public default Input getInput(String node, String name) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the {@link Input} object for the specified input ID. An input allows to configure processes 
@@ -203,7 +221,9 @@ public interface Emoncms {
 	 * 
 	 * @return the input object.
 	 */
-	public Input getInput(int id) throws EmoncmsException;
+	public default Input getInput(int id) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the list of all {@link Feed} objects of the authenticated user. A feed allows to retrieve 
@@ -216,7 +236,9 @@ public interface Emoncms {
 	 * 
 	 * @return the list of feeds.
 	 */
-	public List<Feed> getFeedList() throws EmoncmsException;
+	public default List<Feed> getFeedList() throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the {@link Feed} object for the specified feed ID. A feed allows to retrieve the latest data 
@@ -231,7 +253,9 @@ public interface Emoncms {
 	 * 
 	 * @return the feed object.
 	 */
-	public Feed getFeed(int id) throws EmoncmsException;
+	public default Feed getFeed(int id) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Returns the latest values of a list of {@link Feed} objects.
@@ -242,7 +266,9 @@ public interface Emoncms {
 	 * 
 	 * @return a map of corresponding feed values.
 	 */
-	public Map<Feed, Double> getFeedValues(List<Feed> feeds) throws EmoncmsException;
+	public default Map<Feed, Double> getFeedValues(List<Feed> feeds) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Creates a new {@link Feed} for the emoncms server. A feed allows to retrieve the latest data 
@@ -258,6 +284,8 @@ public interface Emoncms {
 	 * 
 	 * @return the ID of the newly created feed.
 	 */
-	public int newFeed(String name, String tag, Datatype type, Engine engine, Options options) throws EmoncmsException;
+	public default int newFeed(String name, String tag, Datatype type, Engine engine, Options options) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
 }

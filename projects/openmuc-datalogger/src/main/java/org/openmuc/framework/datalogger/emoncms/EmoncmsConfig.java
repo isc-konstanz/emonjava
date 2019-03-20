@@ -30,16 +30,26 @@ import org.ini4j.InvalidFileFormatException;
 public class EmoncmsConfig {
 
 	private final static String CONFIG = "org.openmuc.framework.datalogger.emoncms.config";
-	private final static String SECTION = "Emoncms";
+	private final static String GENERAL_SECTION = "General";
+	private final static String HTTP_SECTION = "HTTP";
+	private final static String MQTT_SECTION = "MQTT";
 
 	private final static String ADDRESS_KEY = "address";
-	private final static String ADDRESS_DEFAULT = "http://localhost/emoncms/";
+	private final static String HTTP_ADDRESS_DEFAULT = "http://localhost/emoncms/";
+	private final static String MQTT_ADDRESS_DEFAULT = "tcp://localhost:1883";
 	private final static String AUTHORIZATION_KEY = "authorization";
 	private final static String AUTHENTICATION_KEY = "authentication";
 	private final static String MAX_THREADS_KEY = "maxThreads";
-	private final static int MAX_THREADS_DEFAULT = 1;
-
-	private final Preferences configs;
+	private final static int    MAX_THREADS_DEFAULT = 1;
+	private final static String CON_TYPE_KEY = "ConnectionType";
+	public final static String MQTT_CON_TYPE = "MQTT";
+	public final static String HTTP_CON_TYPE = "HTTP";
+	private final static String USER_NAME_KEY = "userName";
+	private final static String PASSWORD_KEY = "password";
+	
+	private final Preferences generalConfigs;
+	private final Preferences httpConfigs;
+	private final Preferences mqttConfigs;
 
 	public EmoncmsConfig() throws InvalidFileFormatException, IOException {
 		String fileName = System.getProperty(CONFIG);
@@ -47,28 +57,65 @@ public class EmoncmsConfig {
 			fileName = "conf" + File.separator + "emoncms.conf";
 		}
 		Ini ini = new Ini(new File(fileName));
-		configs = new IniPreferences(ini).node(SECTION);
+		generalConfigs = new IniPreferences(ini).node(GENERAL_SECTION);
+		httpConfigs = new IniPreferences(ini).node(HTTP_SECTION);
+		mqttConfigs = new IniPreferences(ini).node(MQTT_SECTION);
 	}
+	
+	// General
 
-	public String getAddress() {
-		return configs.get(ADDRESS_KEY, ADDRESS_DEFAULT);
+	public boolean isMqttConnectionType() {
+		
+		return generalConfigs.get(CON_TYPE_KEY, MQTT_CON_TYPE).equals(MQTT_CON_TYPE);
+	}
+	
+	// HTTP
+	
+	public String getHttpAddress() {
+		return httpConfigs.get(ADDRESS_KEY, HTTP_ADDRESS_DEFAULT);
 	}
 
 	public String getAuthorization() {
-		return configs.get(AUTHORIZATION_KEY, null);
+		return httpConfigs.get(AUTHORIZATION_KEY, null);
 	}
 
 	public String getAuthentication() {
-		return configs.get(AUTHENTICATION_KEY, null);
+		return httpConfigs.get(AUTHENTICATION_KEY, null);
 	}
 
-	public int getMaxThreads() {
-		return configs.getInt(MAX_THREADS_KEY, MAX_THREADS_DEFAULT);
+	public int getHttpMaxThreads() {
+		return httpConfigs.getInt(MAX_THREADS_KEY, MAX_THREADS_DEFAULT);
 	}
 
 	public boolean hasAuthentication() {
-		if (configs.get(AUTHENTICATION_KEY, null) != null && 
-				configs.get(AUTHORIZATION_KEY, null) != null) {
+		if (httpConfigs.get(AUTHENTICATION_KEY, null) != null && 
+				httpConfigs.get(AUTHORIZATION_KEY, null) != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	//MQTT
+	
+	public String getMqttAddress() {
+		return mqttConfigs.get(ADDRESS_KEY, MQTT_ADDRESS_DEFAULT);
+	}
+
+	public int getMqttMaxThreads() {
+		return mqttConfigs.getInt(MAX_THREADS_KEY, MAX_THREADS_DEFAULT);
+	}
+
+	public String getUserName() {
+		return mqttConfigs.get(USER_NAME_KEY, null);
+	}
+
+	public String getPassword() {
+		return mqttConfigs.get(PASSWORD_KEY, null);
+	}
+
+	public boolean hasUserName() {
+		if (mqttConfigs.get(USER_NAME_KEY, null) != null && 
+				mqttConfigs.get(PASSWORD_KEY, null) != null) {
 			return true;
 		}
 		return false;

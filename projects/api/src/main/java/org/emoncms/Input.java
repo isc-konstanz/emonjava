@@ -1,22 +1,3 @@
-/* 
- * Copyright 2016-18 ISC Konstanz
- * 
- * This file is part of emonjava.
- * For more information visit https://github.com/isc-konstanz/emonjava
- * 
- * Emonjava is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * Emonjava is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
- */
 package org.emoncms;
 
 import java.util.List;
@@ -29,9 +10,8 @@ import org.emoncms.data.FieldList;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 
-
 /**
- * The <code>Input</code> class is used to communicate with an emoncms webserver and handle input specific actions.
+ * The <code>Input</code> interface is used to communicate with an emoncms webserver and handle input specific actions.
  * An input instance can be used to
  * <ul>
  * <li>Post data to the instanced input.</li>
@@ -45,105 +25,86 @@ import org.emoncms.data.Timevalue;
  * and other resources may be released to save memory. 
  * Current values for all fields can be retrieved by calling {@link Input#load()}.
  */
-public abstract class Input {
 
-	protected Integer id = null;
-	protected String node;
-	protected String name;
-	protected String description = null;
-	protected ProcessList processList = null;
-	protected Timevalue timevalue = null;
+public interface Input {
 
-	protected Input(Integer id, String node, String name, 
-			String description, ProcessList processList, Timevalue timevalue) {
-		this.id = id;
-		this.node = node;
-		this.name = name;
-		this.description = description;
-		this.processList = processList;
-		this.timevalue = timevalue;
+	public default int getId() {
+		throw new UnsupportedOperationException();
 	}
 
-	protected Input(Integer id, String node, String name) {
-		this.id = id;
-		this.node = node;
-		this.name = name;
+	public default String getNode() {
+		throw new UnsupportedOperationException();
 	}
 
-	protected Input(String node, String name) {
-		this.node = node;
-		this.name = name;
+	public default String getName() {
+		throw new UnsupportedOperationException();
 	}
 
-	public int getId() {
-		return id;
+	public default String getDescription() {
+		throw new UnsupportedOperationException();
 	}
 
-	public String getNode() {
-		return node;
+	public default void setDescription(String description) throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	public String getName() {
-		return name;
+	public default ProcessList getProcessList() {
+		throw new UnsupportedOperationException();
 	}
 
-	public String getDescription() {
-		return description;
+	public default void setProcessList(ProcessList processes) throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	public void setDescription(String description) throws EmoncmsException {
-
-		this.setField(Field.DESCRIPTION, description);
-		this.description = description;
+	public default void setProcessList(String processList) throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	public ProcessList getProcessList() {
-		return processList;
+	public default void setFields(Map<String, String> fields) throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	public void setProcessList(ProcessList processes) throws EmoncmsException {
-		
-		this.setProcessList(processes.toString());
-		this.processList = processes;
+	public default void resetProcessList() throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	protected abstract void setProcessList(String processList) throws EmoncmsException;
-
-	public abstract void resetProcessList() throws EmoncmsException;
-
-	public Timevalue getTimevalue() {
-
-		return timevalue;
+	public default Timevalue getTimevalue() {
+		throw new UnsupportedOperationException();
 	}
 
-	public abstract void post(Timevalue timevalue) throws EmoncmsException;
-
-	public abstract void post(Timevalue timevalue, Authentication authentication) throws EmoncmsException;
-
-	public abstract void post(List<Timevalue> timevalues) throws EmoncmsException;
-
-	public abstract void post(List<Timevalue> timevalues, Authentication authentication) throws EmoncmsException;
-
-	public void setField(Field field, String value) throws EmoncmsException {
-
-		FieldList fields = new FieldList(field, value);
-		this.setFields(fields);
+	public default void post(Timevalue timevalue) throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	public void setFields(FieldList fields) throws EmoncmsException {
-
-		this.setFields(fields.getValues());
+	public default void post(Timevalue timevalue, Authentication authentication) throws EmoncmsException {
+		throw new UnsupportedOperationException();
 	}
 
-	protected abstract void setFields(Map<String, String> fields) throws EmoncmsException;
+	public default void post(List<Timevalue> timevalues) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
-	public abstract void delete() throws EmoncmsException;
+	public default void post(List<Timevalue> timevalues, Authentication authentication) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
-	public abstract void load() throws EmoncmsException;
+	public default void setField(Field field, String value) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
 
-	public void clear() {
-		this.description = null;
-		this.processList = null;
-		this.timevalue = null;
+	public default void setFields(FieldList fields) throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
+
+	public default void delete() throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
+
+	public default void load() throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
+
+	public default void clear() {
+		throw new UnsupportedOperationException();
 	}
 }

@@ -13,6 +13,7 @@ project.ext {
   distributionProjects = subprojects.findAll {
     it.getPath() == ":emoncms-api" ||
     it.getPath() == ":emoncms-http" ||
+    it.getPath() == ":emoncms-mqtt" ||
     it.getPath() == ":openmuc-datalogger-emoncms"
   }
 

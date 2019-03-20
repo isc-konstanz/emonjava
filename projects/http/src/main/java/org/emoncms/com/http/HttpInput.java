@@ -38,34 +38,85 @@ import org.emoncms.com.http.request.HttpRequestURI;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
+import org.emoncms.data.Field;
+import org.emoncms.data.FieldList;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class HttpInput extends Input {
+public class HttpInput implements Input {
 	private static final Logger logger = LoggerFactory.getLogger(HttpInput.class);
 
 	/**
 	 * The Inputs' current callback object, which is notified of request events
 	 */
 	private final HttpRequestCallbacks callbacks;
+	protected Integer id = null;
+	protected String node;
+	protected String name;
+	protected String description = null;
+	protected ProcessList processList = null;
+	protected Timevalue timevalue = null;
 	
 	
 	public HttpInput(HttpRequestCallbacks callbacks, Integer id, String node, String name, 
 			String description, ProcessList processList, Timevalue timevalue) {
-		super(id, node, name, description, processList, timevalue);
+		this.id = id;
+		this.node = node;
+		this.name = name;
 		this.callbacks = callbacks;
+		this.description = description;
+		this.processList = processList;
+		this.timevalue = timevalue;
 	}
 
 	public HttpInput(HttpRequestCallbacks callbacks, Integer id, String node, String name) {
-		super(id, node, name);
-		this.callbacks = callbacks;
+		this(callbacks, id, node, name, null, null, null);
 	}
 
 	public HttpInput(HttpRequestCallbacks callbacks, String node, String name) {
 		this(callbacks, null, node, name);
+	}
+
+	@Override
+	public int getId() {
+		return id;
+	}
+
+	@Override
+	public String getNode() {
+		return node;
+	}
+
+	@Override
+	public String getName() {
+		return name;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
+	}
+
+	@Override
+	public void setDescription(String description) throws EmoncmsException {
+
+		this.setField(Field.DESCRIPTION, description);
+		this.description = description;
+	}
+
+	@Override
+	public ProcessList getProcessList() {
+		return processList;
+	}
+
+	@Override
+	public void setProcessList(ProcessList processes) throws EmoncmsException {
+		
+		this.setProcessList(processes.toString());
+		this.processList = processes;
 	}
 
 	@Override
@@ -137,7 +188,7 @@ public class HttpInput extends Input {
 	}
 
 	@Override
-	protected void setFields(Map<String, String> fields) throws EmoncmsException {
+	public void setFields(Map<String, String> fields) throws EmoncmsException {
 
 		if (id != null) {
 			logger.debug("Requesting to set {} fields for input \"{}\" of node \"{}\"", fields.size(), name, node);
@@ -177,6 +228,32 @@ public class HttpInput extends Input {
 		else {
 			throw new EmoncmsException("Input \""+ name + "\" of node \"" + node + "\" has no ID configured");
 		}
+	}
+
+	@Override
+	public Timevalue getTimevalue() {
+
+		return timevalue;
+	}
+
+	@Override
+	public void setField(Field field, String value) throws EmoncmsException {
+
+		FieldList fields = new FieldList(field, value);
+		this.setFields(fields);
+	}
+
+	@Override
+	public void setFields(FieldList fields) throws EmoncmsException {
+
+		this.setFields(fields.getValues());
+	}
+
+	@Override
+	public void clear() {
+		this.description = null;
+		this.processList = null;
+		this.timevalue = null;
 	}
 
 	@Override
