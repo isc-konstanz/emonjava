@@ -178,20 +178,6 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 				mqttClient.disconnect();
 				mqttClient = null;
 			}
-//			else if (mqttClient == null) {
-//				mqttClient = new MqttClient(address, publisherId, 
-//						new MemoryPersistence());
-//				MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
-//				mqttConnectOptions.setUserName(userName);
-//				mqttConnectOptions.setPassword(password);
-//				
-////				mqttConnectOptions.setWill(lastWillTopic, lastWillMsg.getBytes("UTF-8"),
-////						1, //QoS
-////						true);
-//				mqttClient.connect(mqttConnectOptions);
-//			}
-//			int qos = 1;
-//			mqttClient.publish(topic, json.toString().getBytes(), qos, true);
 						
 			MqttCallable task;
 			if (mqttClient == null) {
