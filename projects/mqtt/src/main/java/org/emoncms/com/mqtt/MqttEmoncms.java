@@ -20,18 +20,17 @@
 package org.emoncms.com.mqtt;
 
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.emoncms.Emoncms;
 import org.emoncms.com.EmoncmsException;
 import org.emoncms.com.EmoncmsUnavailableException;
-import org.emoncms.com.mqtt.request.MqttCallable;
 import org.emoncms.com.mqtt.request.MqttRequestCallbacks;
 import org.emoncms.data.Data;
 import org.emoncms.data.DataList;
@@ -52,12 +51,9 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 	private final char[] password;
 	private String publisherId;
 	
-	private MqttClient mqttClient = null;
+	private MqttAsyncClient mqttClient = null;
 
-	private int maxThreads;
-	private ThreadPoolExecutor executor = null;
-
-	public MqttEmoncms(String address, String publisherId, String userName, char[] password, int maxThreads) {
+	public MqttEmoncms(String address, String publisherId, String userName, char[] password) {
 		this.address = address;
 		if (publisherId == null) {
 			this.publisherId = MqttClient.generateClientId();
@@ -67,19 +63,10 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 		}
 		this.userName = userName;
 		this.password = password;
-		this.maxThreads = maxThreads;
 	}
 
 	public String getAddress() {
 		return address;
-	}
-
-	public int getMaxThreads() {
-		return maxThreads;
-	}
-
-	public void setMaxThreads(int max) {
-		this.maxThreads = max;
 	}
 
 	@Override
@@ -88,25 +75,28 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 		initialize();
 	}
 
-	private void initialize() {
-		// The HttpURLConnection implementation is in older JREs somewhat buggy with keeping connections alive. 
-		// To avoid this, the mqtt.keepAlive system property can be set to false. 
-		System.setProperty("mqtt.keepAlive", "false");
-		
-		if (executor != null) {
-			executor.shutdown();
+	private void initialize() throws EmoncmsUnavailableException  {
+		try {
+			mqttClient = new MqttAsyncClient(address, publisherId, 
+					new MemoryPersistence());
+			MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
+			mqttConnectOptions.setUserName(userName);
+			mqttConnectOptions.setPassword(password);
+			
+//			mqttConnectOptions.setWill(lastWillTopic, lastWillMsg.getBytes("UTF-8"),
+//					1, //QoS
+//					true);
+			IMqttToken token = mqttClient.connect(mqttConnectOptions);
+			token.waitForCompletion();
+		} catch (MqttException e) {
+			throw new EmoncmsUnavailableException(e.getMessage());
 		}
-		NamedThreadFactory namedThreadFactory = new NamedThreadFactory("EmonJava HTTP request pool - thread-");
-		executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(maxThreads, namedThreadFactory);
+	
 	}
 
 	@Override
 	public void stop() {
 		logger.info("Shutting emoncms connection \"{}\" down", address);
-		
-		if (executor != null) {
-			executor.shutdown();
-		}
 		
 		if (mqttClient != null) {
 			try {
@@ -115,7 +105,14 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 			}
 			mqttClient = null;
 		}
-			
+	}
+
+	@Override
+	public boolean isConnected() throws EmoncmsException {
+		if (mqttClient != null && mqttClient.isConnected()) {
+			return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -131,9 +128,7 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 	}
 
 	@Override
-	public void post(String topic, Long time, List<Namevalue> namevalues) throws EmoncmsException {
-		logger.debug("Sending values for {} inputs to topic \\\"{}\\\"", namevalues.size(), topic);
-		
+	public void post(String topic, Long time, List<Namevalue> namevalues) throws EmoncmsException {		
 		JsonObject json = new JsonObject();
 		time =  getTimeInSeconds(time);
 		json.addProperty(TIME, time);
@@ -141,6 +136,7 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 			json.addProperty(namevalue.getName(), namevalue.getValue());
 		}
 		
+		logger.debug("Sending values for {} inputs {} to topic \\\"{}\\\"", namevalues.size(), json.toString(), topic);
 		submitRequest(topic, json);
 	}
 
@@ -168,7 +164,7 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 		submitRequest(topic, json);
 	}
 
-	private synchronized void submitRequest(String topic, JsonObject json) throws EmoncmsException {
+	private void submitRequest(String topic, JsonObject json) throws EmoncmsException {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Requesting \"{}\" for Topic \"{}\"", json.toString(), topic);
 		}
@@ -177,37 +173,14 @@ public class MqttEmoncms implements Emoncms, MqttRequestCallbacks {
 			if (mqttClient != null && !mqttClient.isConnected()) {
 				mqttClient.disconnect();
 				mqttClient = null;
+				initialize();
 			}
 						
-			MqttCallable task;
-			if (mqttClient == null) {
-				task = new MqttCallable(topic, json, address, publisherId, userName, password);
-			}
-			else {
-				task = new MqttCallable(topic, json, mqttClient);
-			}
-			
-			executor.submit(task);
-			mqttClient = task.getMqttClient();
+			int qos = 1;
+			mqttClient.publish(topic, json.toString().getBytes(), qos, true);
 		} catch (Exception e) {
 			initialize();
 			throw new EmoncmsException("Energy Monitoring Content Management communication failed: " + e);
-		}
-	}
-
-	private class NamedThreadFactory implements ThreadFactory {
-
-		private final String name;
-		private final AtomicInteger counter = new AtomicInteger(0);
-
-		public NamedThreadFactory(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public Thread newThread(Runnable r) {
-			String threadName = name + counter.incrementAndGet();
-			return new Thread(r, threadName);
 		}
 	}
 }

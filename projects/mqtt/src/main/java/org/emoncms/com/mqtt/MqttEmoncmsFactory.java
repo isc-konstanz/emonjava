@@ -42,32 +42,14 @@ public class MqttEmoncmsFactory {
 
 
 	public static Emoncms newAuthenticatedConnection(String address, 
-			String userName, char[] password, int maxThreads) {
-
-		return getConnection(address, null, userName, password, maxThreads);
-	}
-	
-	public static Emoncms newAuthenticatedConnection(String address, 
 			String userName, char[] password) {
 		
-		return getConnection(address, null, userName, password, null);
-	}
-
-	public static Emoncms newAuthenticatedConnection(String userName, char[] password, int maxThreads) {
-
-		return newAuthenticatedConnection(null, userName, password, maxThreads);
+		return getConnection(address, null, userName, password);
 	}
 
 	public static Emoncms newAuthenticatedConnection(String userName, char[] password) {
 
 		return newAuthenticatedConnection(null, userName, password);
-	}
-
-	public static Emoncms newConnection(String address, int maxThreads) {
-
-		String userName = null;
-		char[] password = null;
-		return newAuthenticatedConnection(address, userName, password, maxThreads);
 	}
 
 	public static Emoncms newConnection(String address) {
@@ -83,7 +65,7 @@ public class MqttEmoncmsFactory {
 	}
 
 	private static Emoncms getConnection(String address, String publisherId, 
-			final String userName, final char[]password, Integer maxThreads) {
+			final String userName, final char[]password) {
 
 		if (address != null) {
 			address = verifyAddress(address);
@@ -94,16 +76,10 @@ public class MqttEmoncmsFactory {
 
 		for (MqttEmoncms emoncms : mqttSingletonList) {
 			if (emoncms.getAddress().equals(address)) {
-				if (maxThreads != null && emoncms.getMaxThreads() != maxThreads) {
-					emoncms.setMaxThreads(maxThreads);
-				}
 				return emoncms;
 			}
 		}
-		if (maxThreads == null) {
-			maxThreads = MAX_THREADS_DEFAULT;
-		}
-		MqttEmoncms emoncms = new MqttEmoncms(address, publisherId, userName, password, maxThreads);
+		MqttEmoncms emoncms = new MqttEmoncms(address, publisherId, userName, password);
 		mqttSingletonList.add(emoncms);
 
 		return emoncms;
