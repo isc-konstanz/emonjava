@@ -70,20 +70,18 @@ public class EmonLogger implements DataLoggerService {
 	private Emoncms httpConnection = null;
 	private Emoncms mqttConnection = null;
 	private EmoncmsConfig configs = null;
+	private boolean isMqttConnectionType = false;
 	
 	private final HashMap<String, ChannelLogHandler> httpChannelHandlers = new HashMap<String, ChannelLogHandler>();
 	private final HashMap<String, ChannelLogHandler> mqttChannelHandlers = new HashMap<String, ChannelLogHandler>();
 
-	@Activate
-	protected void activate(ComponentContext context) {
-		logger.info("Activating Emoncms Logger");
+	protected void activateHttp() {
+		logger.info("Activating Emoncms Logger Http Connection");
 		try {
-			configs = new EmoncmsConfig();
-			String address = null;
+			String address = configs.getHttpAddress();
 			
 			// Start Http Connection
 			try {
-				address = configs.getHttpAddress();
 				int maxThreads = configs.getHttpMaxThreads();
 				if (configs.hasAuthentication()) {
 					String authorization = configs.getAuthorization();
@@ -98,25 +96,52 @@ public class EmonLogger implements DataLoggerService {
 			} catch (EmoncmsUnavailableException e) {
 				logger.warn("Unable to connect to \"{}\"", address);
 			}
-				
+		} catch (Exception e) {
+			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
+		}		
+	}
+	
+	protected void activateMqtt() {
+		logger.info("Activating Emoncms Logger Mqtt Connection");
+		try {
+			String address = configs.getMqttAddress();
+			
 			// Start Mqtt Connection
 			try {
-				address = configs.getMqttAddress();
-				int maxThreads = configs.getMqttMaxThreads();
 				if (configs.hasUserName()) {
 					String userName = configs.getUserName();
 					String password = configs.getPassword();
 					
-					mqttConnection = MqttEmoncmsFactory.newAuthenticatedConnection(address, userName, password.toCharArray(), maxThreads);
+					mqttConnection = MqttEmoncmsFactory.newAuthenticatedConnection(address, userName, password.toCharArray());
 				}
 				else {
-					mqttConnection = MqttEmoncmsFactory.newConnection(address, maxThreads);
+					mqttConnection = MqttEmoncmsFactory.newConnection(address);
 				}
 				mqttConnection.start();
+				if (!mqttConnection.isConnected()) {
+					mqttConnection.stop();
+					mqttConnection = null;
+				}
 				
 			} catch (EmoncmsUnavailableException e) {
 				logger.warn("Unable to connect to \"{}\"", address);
 			}
+		} catch (Exception e) {
+			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
+		}
+		
+	}
+	
+	@Activate
+	protected void activate(ComponentContext context) {
+		logger.info("Activating Emoncms Logger");
+		try {
+			configs = new EmoncmsConfig();
+			activateMqtt();
+			if (mqttConnection != null) {
+				isMqttConnectionType = true;
+			}
+			
 		} catch (IOException e) {
 			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
 		}
@@ -142,18 +167,13 @@ public class EmonLogger implements DataLoggerService {
 
 	@Override
 	public void setChannelsToLog(List<LogChannel> channels) {
+		setChannelsToLogForMqtt(channels);
+
 		setChannelsToLogForHttp(channels);
-		if (configs.isMqttConnectionType()) {
-			setChannelsToLogForMqtt(channels);
-		}
 	}
 
 	public void setChannelsToLogForHttp(List<LogChannel> channels) {
 		// Will be called if OpenMUC receives new logging configurations
-		if (httpConnection == null) {
-			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
-			return;
-		}
 		for (ChannelLogHandler channel : httpChannelHandlers.values()) {
 			if (channel instanceof ChannelAverageHandler) {
 				dataAccessService.getChannel(channel.getId()).removeListener((ChannelAverageHandler) channel);
@@ -165,7 +185,14 @@ public class EmonLogger implements DataLoggerService {
 			String id = channel.getId();
 			
 			ChannelLogSettings settings = new ChannelLogSettings(channel.getLoggingSettings());
-			if (settings.isValid()) {
+			if (settings.isValid() && (!isMqttConnectionType || settings.hasFeedId())) {
+				if (httpConnection == null) {
+					activateHttp();
+				}
+				if (httpConnection == null) {
+					logger.error("Requested to configure log Channels for deactivated Emoncms logger");
+					return;
+				}
 				try {
 					Input input = getHttpInput(settings.getNode(), id);
 					if (input == null) {
@@ -215,10 +242,6 @@ public class EmonLogger implements DataLoggerService {
 
 	public void setChannelsToLogForMqtt(List<LogChannel> channels) {
 		// Will be called if OpenMUC receives new logging configurations
-		if (mqttConnection == null) {
-			logger.error("Requested to configure log Channels for deactivated Emoncms logger");
-			return;
-		}
 		for (ChannelLogHandler channel : mqttChannelHandlers.values()) {
 			if (channel instanceof ChannelAverageHandler) {
 				dataAccessService.getChannel(channel.getId()).removeListener((ChannelAverageHandler) channel);
@@ -231,6 +254,10 @@ public class EmonLogger implements DataLoggerService {
 			
 			ChannelLogSettings settings = new ChannelLogSettings(channel.getLoggingSettings());
 			if (settings.isValid()) {
+				if (mqttConnection == null) {
+					logger.error("Requested to configure log Channels for deactivated Emoncms logger");
+					return;
+				}
 				try {
 					Input input = getMqttInput(settings.getNode(), id);
 					if (input == null) {
@@ -251,17 +278,6 @@ public class EmonLogger implements DataLoggerService {
 					else {
 						handler = new ChannelLogHandler(id, input, settings);
 					}
-					if (settings.hasFeedId()) {
-						Feed feed = HttpFeed.connect(httpConnection, settings.getFeedId());
-						Integer interval = settings.getInterval();
-						if (interval == null && dataAccessService.getAllIds().contains(id)) {
-							interval = dataAccessService.getChannel(id).getLoggingInterval()/1000;
-                        }
-						if (interval != null && interval > 0) {
-    						handler.setInterval(interval);
-						}
-						handler.setFeed(feed);
-					}
 					mqttChannelHandlers.put(id, handler);
 							
 				} catch (EmoncmsUnavailableException | EmoncmsSyntaxException e) {
@@ -281,7 +297,7 @@ public class EmonLogger implements DataLoggerService {
 	@Override
 	public void log(List<LogRecordContainer> containers, long timestamp) {
 		Emoncms connection = getConnection();
-		String type = configs.isMqttConnectionType()==true?EmoncmsConfig.MQTT_CON_TYPE:EmoncmsConfig.HTTP_CON_TYPE;
+		String type = isMqttConnectionType==true?EmoncmsConfig.MQTT_CON_TYPE:EmoncmsConfig.HTTP_CON_TYPE;
 		logger.info("Emoncms Logger Log with " + type);
 		if (connection == null) {
 			logger.error("Requested to log values for deactivated Emoncms logger");
@@ -293,7 +309,7 @@ public class EmonLogger implements DataLoggerService {
 			LogRecordContainer container = containers.get(0);
 			
 			ChannelLogHandler channel = getChannel(container.getChannelId());
-			if (isValid(container, configs.isMqttConnectionType())) {
+			if (isValid(container, isMqttConnectionType)) {
 				try {
 					Record record = container.getRecord();
 					Long time = record.getTimestamp();
@@ -312,7 +328,7 @@ public class EmonLogger implements DataLoggerService {
 			List<DeviceDataList> devices = new ArrayList<DeviceDataList>();
 			for (LogRecordContainer container : containers) {
 				ChannelLogHandler channel = getChannel(container.getChannelId());
-				if (isValid(container, configs.isMqttConnectionType())) {
+				if (isValid(container, isMqttConnectionType)) {
 					try {
 						Record record = container.getRecord();
 						Long time = record.getTimestamp();
@@ -386,7 +402,7 @@ public class EmonLogger implements DataLoggerService {
 	}
 	
 	private Emoncms getConnection() {
-		if (configs.isMqttConnectionType()) {
+		if (isMqttConnectionType) {
 			return mqttConnection;
 		}
 		else {
@@ -422,7 +438,7 @@ public class EmonLogger implements DataLoggerService {
 
 	private ChannelLogHandler getChannel(String id) {
 		ChannelLogHandler channel;
-		if (configs.isMqttConnectionType()) {
+		if (isMqttConnectionType) {
 			channel = mqttChannelHandlers.get(id);
 		}
 		else {

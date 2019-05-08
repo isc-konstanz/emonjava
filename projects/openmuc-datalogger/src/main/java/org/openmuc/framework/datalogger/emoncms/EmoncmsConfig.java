@@ -30,7 +30,6 @@ import org.ini4j.InvalidFileFormatException;
 public class EmoncmsConfig {
 
 	private final static String CONFIG = "org.openmuc.framework.datalogger.emoncms.config";
-	private final static String GENERAL_SECTION = "General";
 	private final static String HTTP_SECTION = "HTTP";
 	private final static String MQTT_SECTION = "MQTT";
 
@@ -41,13 +40,11 @@ public class EmoncmsConfig {
 	private final static String AUTHENTICATION_KEY = "authentication";
 	private final static String MAX_THREADS_KEY = "maxThreads";
 	private final static int    MAX_THREADS_DEFAULT = 1;
-	private final static String CON_TYPE_KEY = "ConnectionType";
 	public final static String MQTT_CON_TYPE = "MQTT";
 	public final static String HTTP_CON_TYPE = "HTTP";
 	private final static String USER_NAME_KEY = "userName";
 	private final static String PASSWORD_KEY = "password";
 	
-	private final Preferences generalConfigs;
 	private final Preferences httpConfigs;
 	private final Preferences mqttConfigs;
 
@@ -57,16 +54,8 @@ public class EmoncmsConfig {
 			fileName = "conf" + File.separator + "emoncms.conf";
 		}
 		Ini ini = new Ini(new File(fileName));
-		generalConfigs = new IniPreferences(ini).node(GENERAL_SECTION);
 		httpConfigs = new IniPreferences(ini).node(HTTP_SECTION);
 		mqttConfigs = new IniPreferences(ini).node(MQTT_SECTION);
-	}
-	
-	// General
-
-	public boolean isMqttConnectionType() {
-		
-		return generalConfigs.get(CON_TYPE_KEY, MQTT_CON_TYPE).equals(MQTT_CON_TYPE);
 	}
 	
 	// HTTP
