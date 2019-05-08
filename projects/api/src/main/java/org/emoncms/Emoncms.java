@@ -61,6 +61,13 @@ public interface Emoncms {
 	public void stop();
 
 	/**
+	 * Checks whether the Emoncms holds an open and valid connection
+	 */
+	public default boolean isConnected() throws EmoncmsException {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
 	 * Post a {@link Timevalue} to a defined {@link Input}, identified by its node and name and authenticated by a device API key.
 	 * <p>
 	 * If the timevalues timestamp equals null, the CMS will use the current timestamp, to further process the input. 
