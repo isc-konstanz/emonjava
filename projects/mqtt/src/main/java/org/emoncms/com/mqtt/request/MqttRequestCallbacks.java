@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-18 ISC Konstanz
+ * Copyright 2016-19 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit mqtts://github.com/isc-konstanz/emonjava
