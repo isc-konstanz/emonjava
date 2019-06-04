@@ -17,11 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+package org.emoncms.http.request;
 
-include 'api', 'http', 'mqtt', 'bundle'
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
-
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+public enum HttpMethod {
+	GET, POST, PUT, DELETE;
+}

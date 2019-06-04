@@ -17,11 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+package org.emoncms;
 
-include 'api', 'http', 'mqtt', 'bundle'
+public enum EmoncmsType {
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
-
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+	DEFAULT,
+	HTTP,
+	MQTT;
+}

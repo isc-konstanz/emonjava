@@ -17,11 +17,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+package org.emoncms;
 
-include 'api', 'http', 'mqtt', 'bundle'
+import java.io.IOException;
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
+public class EmoncmsException extends IOException {
+	private static final long serialVersionUID = -2164874910467411443L;
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+	public EmoncmsException() {
+		super();
+	}
+
+	public EmoncmsException(String s) {
+		super(s);
+	}
+
+	public EmoncmsException(Throwable cause) {
+		super(cause);
+	}
+
+	public EmoncmsException(String s, Throwable cause) {
+		super(s, cause);
+	}
+}

@@ -17,11 +17,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+package org.emoncms.http;
 
-include 'api', 'http', 'mqtt', 'bundle'
+import java.io.IOException;
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+public class HttpException extends IOException {
+	private static final long serialVersionUID = -2024942377965269078L;
+
+	private String message = "Unknown HTTP error";
+
+	public HttpException() {
+	}
+
+	public HttpException(String message) {
+		this.message = message;
+	}
+
+	public HttpException(int httpCode) {
+		this.message = "HTTP status code: " + httpCode;
+	}
+
+	@Override
+	public String getMessage() {
+		return message;
+	}
+}

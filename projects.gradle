@@ -17,11 +17,28 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+ project.ext {
 
-include 'api', 'http', 'mqtt', 'bundle'
+  projectVersion = '1.3.0'
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
+  projectGroup = 'org.emoncms'
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+  projectVendor = 'ISC Konstanz e.V.'
+  projectSite = 'https://github.com/isc-konstanz/emonjava'
+
+  copyDependencies = false
+
+  distributionProjects = subprojects.findAll {
+    it.getPath() == ':api' ||
+    it.getPath() == ':http' ||
+    it.getPath() == ':mqtt' ||
+    it.getPath() == ':bundle'
+  }
+
+  javadocProjects = distributionProjects.findAll {
+    it.getPath() == ':api' ||
+    it.getPath() == ':http' ||
+    it.getPath() == ':mqtt'
+  }
+
+}

@@ -17,11 +17,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+archivesBaseName = 'emoncms-api'
+def projectName = 'EmoncmsAPI'
+def projectFullName = 'Emoncms Java - API'
+def projectDescription = 'The core API of the emoncms web application'
 
-include 'api', 'http', 'mqtt', 'bundle'
+dependencies {
+  api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+}
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
+eclipse {
+  project {
+    name = projectName
+  }
+}
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+jar {
+  manifest {
+    attributes('Bundle-Name':        projectFullName,
+               'Bundle-Description': projectDescription,
+	           'Export-Package':     '*')
+  }
+}

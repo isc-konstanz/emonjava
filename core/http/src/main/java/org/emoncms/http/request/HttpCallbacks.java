@@ -17,11 +17,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+package org.emoncms.http.request;
 
-include 'api', 'http', 'mqtt', 'bundle'
+import org.emoncms.EmoncmsException;
+import org.emoncms.data.Authentication;
+import org.emoncms.http.HttpConnection;
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+/**
+ * Interface used to notify the {@link HttpConnection} 
+ * implementation about request events
+ */
+public interface HttpCallbacks {
+
+	HttpResponse onGet(HttpQuery uri, HttpParameters parameters) throws EmoncmsException;
+
+	HttpResponse onPost(HttpQuery uri, HttpParameters parameters) throws EmoncmsException;
+
+	HttpResponse onGet(HttpQuery uri, HttpParameters parameters, Authentication authentication) throws EmoncmsException;
+
+	HttpResponse onPost(HttpQuery uri, HttpParameters parameters, Authentication authentication) throws EmoncmsException;
+
+}

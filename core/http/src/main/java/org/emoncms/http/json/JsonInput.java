@@ -17,11 +17,44 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-rootProject.name = 'emonjava'
+package org.emoncms.http.json;
 
-include 'api', 'http', 'mqtt', 'bundle'
 
-project(':http').projectDir = file('core/http')
-project(':mqtt').projectDir = file('core/mqtt')
+public class JsonInput {
+	int id;
+	String nodeid;
+	String name;
+	String description;
+	String processList;
+	Long time;
+	Double value;
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+
+	public int getId() {
+		return id;
+	}
+
+	public String getNodeid() {
+		return nodeid;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public String getProcessList() {
+		return processList;
+	}
+
+	public Long getTime() {
+		return time;
+	}
+
+	public Double getValue() {
+		return value;
+	}
+}
