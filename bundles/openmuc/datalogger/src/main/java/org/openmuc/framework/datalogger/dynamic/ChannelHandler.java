@@ -23,22 +23,23 @@ import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.Value;
 import org.openmuc.framework.data.ValueType;
+import org.openmuc.framework.datalogger.data.Channel;
+import org.openmuc.framework.datalogger.data.Settings;
+import org.openmuc.framework.datalogger.spi.LogChannel;
 
-public class LogChannel implements org.openmuc.framework.datalogger.spi.LogChannel {
+public class ChannelHandler implements Channel {
 
 	protected final String id;
-	protected final String desc;
 	protected final String unit;
 	protected final ValueType type;
 	protected final Integer length;
 
-	protected final LogSettings settings;
+	protected final Settings settings;
 
 	protected Record record = null;
 
-	protected LogChannel(org.openmuc.framework.datalogger.spi.LogChannel channel, LogSettings settings) {
+	protected ChannelHandler(LogChannel channel, Settings settings) {
 		this.id = channel.getId();
-		this.desc = channel.getDescription();
 		this.unit = channel.getUnit();
 		this.type = channel.getValueType();
 		this.length = channel.getValueTypeLength();
@@ -52,7 +53,7 @@ public class LogChannel implements org.openmuc.framework.datalogger.spi.LogChann
 
 	@Override
 	public String getDescription() {
-		return desc;
+		return null;
 	}
 
 	@Override
@@ -70,49 +71,75 @@ public class LogChannel implements org.openmuc.framework.datalogger.spi.LogChann
 		return length;
 	}
 
-    public boolean isAveraging() {
-    	return settings.isAveraging();
-    }
-
-    protected boolean isDynamic() {
-    	return settings.isDynamic();
-    }
-
-    protected double getLoggingTolerance() {
-    	return settings.getTolerance();
-    }
-
-    protected Integer getLoggingMaxInterval() {
-    	return settings.getMaxInterval();
-    }
-
 	@Override
-	public Integer getLoggingInterval() {
-		return settings.geInterval();
-	}
+    public String getLogger() {
+		return settings.getLogger();
+    }
 
-	@Override
+    @Deprecated
+    @Override
 	public Integer getLoggingTimeOffset() {
 		return settings.getIntervalOffset();
 	}
 
-	@Override
+    @Override
+	public Integer getIntervalOffset() {
+		return settings.getIntervalOffset();
+	}
+
+    @Deprecated
+    @Override
+	public Integer getLoggingInterval() {
+		return settings.geInterval();
+	}
+
+    @Override
+	public Integer getInterval() {
+		return settings.geInterval();
+	}
+
+    @Override
+    public Integer getIntervalMax() {
+    	return settings.getIntervalMax();
+    }
+
+    @Override
+    public double getTolerance() {
+    	return settings.getTolerance();
+    }
+
+    @Override
+    public boolean isDynamic() {
+    	return settings.isDynamic();
+    }
+
+    @Override
+    public boolean isAveraging() {
+    	return settings.isAveraging();
+    }
+
+    @Deprecated
+    @Override
 	public String getLoggingSettings() {
 		return settings.toString();
 	}
 
-	public LogSettings getSettings() {
+    @Override
+	public Settings getSettings() {
 		return settings;
 	}
 
+    @Override
 	public boolean hasSetting(String key) {
 		return settings.contains(key);
 	}
 
+    @Override
 	public Value getSetting(String key) {
 		return settings.get(key);
 	}
 
+    @Override
 	public Value getValue() {
 		if (record == null) {
 			return null;
@@ -120,6 +147,7 @@ public class LogChannel implements org.openmuc.framework.datalogger.spi.LogChann
 		return record.getValue();
 	}
 
+    @Override
 	public Long getTime() {
 		if (record == null) {
 			return null;
@@ -127,6 +155,7 @@ public class LogChannel implements org.openmuc.framework.datalogger.spi.LogChann
 		return record.getTimestamp();
 	}
 
+    @Override
 	public Flag getFlag() {
 		if (record == null) {
 			return null;
@@ -134,15 +163,45 @@ public class LogChannel implements org.openmuc.framework.datalogger.spi.LogChann
 		return record.getFlag();
 	}
 
-	public Record getRecord() {
+	protected Record getRecord() {
 		return record;
 	}
 
+    @Override
 	public boolean isValid() {
 		if (record != null && record.getFlag() == Flag.VALID && record.getValue() != null) {
 			return true;
 		}
 		return false;
+	}
+
+	protected boolean isUpdate(Record update) {
+		if (record == null) {
+			return true;
+		}
+		if (record.getFlag() != update.getFlag()) {
+			return true;
+		}
+		else if (Flag.VALID != update.getFlag()) {
+			return false;
+		}
+		if (record.getTimestamp() <= update.getTimestamp()) {
+			return false;
+		}
+		return true;
+	}
+
+	public boolean update(Record update) {
+		if (isUpdate(update)) {
+			record = update;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return id+" ("+type.toString()+"): "+record.toString();
 	}
 
 }

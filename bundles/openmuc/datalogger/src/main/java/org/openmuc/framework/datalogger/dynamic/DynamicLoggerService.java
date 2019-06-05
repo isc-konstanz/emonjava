@@ -17,20 +17,39 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.emoncms;
+package org.openmuc.framework.datalogger.dynamic;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.emoncms.EmoncmsException;
 import org.openmuc.framework.data.Record;
-import org.openmuc.framework.datalogger.emoncms.data.Channel;
+import org.openmuc.framework.datalogger.data.Channel;
+import org.openmuc.framework.datalogger.data.Configuration;
 
-public interface EmoncmsLogger extends org.emoncms.Emoncms {
+public interface DynamicLoggerService {
 
-	public void log(Channel channel, long timestamp) throws EmoncmsException;
+	public String getId();
 
-	public void log(List<Channel> channels, long timestamp) throws EmoncmsException;
+	default boolean isActive() {
+		return true;
+	}
 
-	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws EmoncmsException;
+	default void onActivate(Configuration config) throws IOException {
+		// Optional method
+	}
+
+	default void onConfigure(List<Channel> channels) throws IOException {
+		// Optional method
+	}
+
+	default void onDeactivate() {
+		// Optional method
+	}
+
+	public void doLog(Channel channel, long timestamp) throws IOException;
+
+	public void doLog(List<Channel> channels, long timestamp) throws IOException;
+
+	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException;
 
 }

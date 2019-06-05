@@ -19,65 +19,195 @@
  */
 package org.openmuc.framework.datalogger.dynamic;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.emoncms.EmoncmsException;
+import org.emoncms.EmoncmsType;
+import org.emoncms.EmoncmsUnavailableException;
+import org.ini4j.Ini;
+import org.ini4j.Profile.Section;
+import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.TypeConversionException;
-import org.openmuc.framework.dataaccess.Channel;
 import org.openmuc.framework.dataaccess.DataAccessService;
+import org.openmuc.framework.datalogger.data.Channel;
+import org.openmuc.framework.datalogger.data.Configuration;
+import org.openmuc.framework.datalogger.data.Settings;
+import org.openmuc.framework.datalogger.dynamic.DynamicLoggerContainer.ChannelCollection;
+import org.openmuc.framework.datalogger.emoncms.HttpLogger;
+import org.openmuc.framework.datalogger.emoncms.MqttLogger;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
+import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.openmuc.framework.datalogger.spi.LogRecordContainer;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DynamicLogger implements DataLoggerService {
+@Component
+public class DynamicLogger implements DataLoggerService {
 	private final static Logger logger = LoggerFactory.getLogger(DynamicLogger.class);
 
-	protected final Map<String, LogHandler> handlers = new HashMap<String, LogHandler>();
+    private static final String CONFIG = System.getProperty(DynamicLogger.class.
+    		getPackage().getName().toLowerCase() + ".config", "conf" + File.separator + "emoncms.conf");
 
-	@Reference
-	private DataAccessService dataAccess;
+    private static final String DEFAULT = System.getProperty(DynamicLogger.class.
+    		getPackage().getName().toLowerCase() + ".default", "HTTP");
+
+	protected final Map<String, DynamicLoggerService> services = new LinkedHashMap<String, DynamicLoggerService>();
+
+	private final Map<String, ChannelHandler> handlers = new HashMap<String, ChannelHandler>();
+
+	private DataAccessService dataAccess = null;
+
+	@Override
+	public String getId() {
+		return "emoncms";
+	}
+
+	@Activate
+	protected void activate(ComponentContext context) {
+		try {
+			Ini config = new Ini(new File(CONFIG));
+			activate(config, EmoncmsType.MQTT);
+			activate(config, EmoncmsType.HTTP);
+			
+		} catch (IOException e) {
+			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
+		}
+	}
+
+	protected void activate(Ini config, EmoncmsType type) {
+		try {
+			Section section;
+			if (config.containsKey(type.name())) {
+				section = config.get(type.name());
+			}
+			else if (config.keySet().size() == 1) {
+	    		section = config.get("Emoncms");
+			}
+			else {
+				logger.debug("Skipping {} Logger activation", type.name());
+				return;
+			}
+			try {
+				DynamicLoggerService service;
+				switch(type) {
+				case MQTT:
+					service = new MqttLogger();
+					break;
+				case HTTP:
+					service = new HttpLogger();
+					break;
+				default:
+					return;
+				}
+				service.onActivate(new Configuration(section));
+				services.put(service.getId(), service);
+				
+			} catch (EmoncmsUnavailableException e) {
+				logger.warn("Unable to establish {} connection. "
+						+ "Please remove or disable the configuration section if this is intentional.", type.name());
+			}
+		} catch (Exception e) {
+			logger.error("Error while activating logger \"{}: {}", type.name(), e.getMessage());
+		}
+	}
+
+	@Deactivate
+	protected void deactivate(ComponentContext context) {
+		logger.info("Deactivating Emoncms Logger");
+		for (DynamicLoggerService service : services.values()) {
+			try {
+				if (service.isActive()) {
+					service.onDeactivate();
+				}
+			} catch (Exception e) {
+				logger.warn("Error while deactivating logger: {}", e);
+			}
+		}
+	}
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC)
+    protected void bindDataAccessService(DataAccessService service) {
+    	this.dataAccess = service;
+    	for (ChannelHandler handler : handlers.values()) {
+    		if (handler.isAveraging()) {
+    			AverageHandler listener = (AverageHandler) handler;
+    			if (!listener.isListening() && service.getAllIds().contains(handler.getId())) {
+    				listener.setListening(true);
+    				service.getChannel(handler.getId()).addListener(listener);
+    			}
+    		}
+		}
+    }
+
+    protected void unbindDataAccessService(DataAccessService service) {
+    	for (ChannelHandler handler : handlers.values()) {
+    		if (handler.isAveraging()) {
+    			AverageHandler listener = (AverageHandler) handler;
+    			if (!listener.isListening() && service.getAllIds().contains(handler.getId())) {
+    				listener.setListening(false);
+    				service.getChannel(handler.getId()).removeListener(listener);
+    			}
+    		}
+		}
+    	this.dataAccess = null;
+    }
 
 	@Override
 	public void setChannelsToLog(List<org.openmuc.framework.datalogger.spi.LogChannel> channels) {
-		// Will be called if OpenMUC receives new logging configurations
-		for (LogHandler handler : handlers.values()) {
-			if (handler instanceof AverageHandler) {
-				Channel channel = dataAccess.getChannel(handler.getId());
-				if (channel != null) {
-					channel.removeListener((AverageHandler) channel);
+		try {
+			// Will be called if OpenMUC receives new logging configurations
+			for (ChannelHandler handler : handlers.values()) {
+				if (handler instanceof AverageHandler && 
+						dataAccess != null && dataAccess.getAllIds().contains(handler.getId())) {
+					dataAccess.getChannel(handler.getId()).removeListener((AverageHandler) handler);
 				}
 			}
-		}
-		handlers.clear();
-		
-		for (org.openmuc.framework.datalogger.spi.LogChannel channel : channels) {
-			String id = channel.getId();
+			handlers.clear();
 			
-			LogSettings settings = new LogSettings(channel);
-			LogHandler handler;
-			if (settings.isAveraging()) {
-				handler = new AverageHandler(channel, settings);
-				if (dataAccess.getAllIds().contains(id)) {
-					dataAccess.getChannel(id).addListener((AverageHandler) handler);
-					((AverageHandler) handler).setListening(true);
+			for (LogChannel channel : channels) {
+				String id = channel.getId();
+				
+				logger.debug("Configuring channel \"{}\" for settings: {}", id, channel.getLoggingSettings());
+				Settings settings = new Settings(channel);
+				ChannelHandler handler;
+				if (settings.isAveraging()) {
+					handler = new AverageHandler(channel, settings);
+					if (dataAccess != null && dataAccess.getAllIds().contains(id)) {
+						dataAccess.getChannel(id).addListener((AverageHandler) handler);
+						((AverageHandler) handler).setListening(true);
+					}
+				}
+				else if (settings.isDynamic()) {
+					handler = new DynamicHandler(channel, settings);
+				}
+				else {
+					handler = new ChannelHandler(channel, settings);
+				}
+				this.handlers.put(id, handler);
+				
+				if (logger.isTraceEnabled() && channel.getLoggingInterval() != null) {
+					logger.trace("Channel \"{}\" configured to log every {}s", id, channel.getLoggingInterval()/1000);
 				}
 			}
-			else if (settings.isDynamic()) {
-				handler = new DynamicHandler(channel, settings);
+			for (DynamicLoggerService service : services.values()) {
+				if (service.isActive()) {
+					service.onConfigure(new ArrayList<Channel>(handlers.values()));
+				}
 			}
-			else {
-				handler = new LogHandler(channel, settings);
-			}
-			this.handlers.put(id, handler);
-			
-			if (logger.isTraceEnabled() && channel.getLoggingInterval() != null) {
-				logger.trace("Channel \"{}\" configured to log every {}s", id, channel.getLoggingInterval()/1000);
-			}
+		} catch (Exception e) {
+			logger.warn("Error while configuring channels:", e);
 		}
 	}
 
@@ -87,44 +217,57 @@ public abstract class DynamicLogger implements DataLoggerService {
 			logger.debug("Requested Emoncms logger to log an empty container list");
 			return;
 		}
-		List<LogChannel> channels = new ArrayList<LogChannel>();
+		DynamicLoggerContainer loggers = new DynamicLoggerContainer(this);
 		for (LogRecordContainer container : containers) {
 			if (!handlers.containsKey(container.getChannelId())) {
 				logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());
 				continue;
 			}
 			try {
-				LogHandler handler = getHandler(container.getChannelId());
-				if (handler.update(container.getRecord())) {
-					channels.add(handler);
+				ChannelHandler channel = handlers.get(container.getChannelId());
+				if (channel.update(container.getRecord())) {
+					loggers.add(channel);
 				}
-			} catch (TypeConversionException e) {
-				logger.warn("Failed to prepare record to log to Channel \"{}\": {}", container.getChannelId(), e.getMessage());
+			} catch (IOException | TypeConversionException e) {
+				logger.warn("Failed to prepare record to log to channel \"{}\": {}", container.getChannelId(), e.getMessage());
 			}
 		}
-		try {
-			logChannels(channels, timestamp);
-			
-		} catch(EmoncmsException e) {
-			logger.warn("Failed to log values: {}", e.getMessage());
-			
-		} catch(Exception e) {
-			logger.warn("Error while logging values :{}", e);
+		for (ChannelCollection channels : loggers) {
+			try {
+				channels.log(timestamp);
+				
+			} catch(IOException e) {
+				logger.warn("Failed to log channels: {}", e.getMessage());
+				
+			} catch(Exception e) {
+				logger.warn("Error while logging channels:", e);
+			}
 		}
 	}
 
-	protected abstract void logChannels(List<LogChannel> channels, long timestamp) throws EmoncmsException;
-
-	private LogHandler getHandler(String id) {
-		LogHandler handler = handlers.get(id);	
-		if (handler.isAveraging()) {
-			AverageHandler listener = (AverageHandler) handler;
-			if (!listener.isListening() && dataAccess.getAllIds().contains(id)) {
-				listener.setListening(true);
-				dataAccess.getChannel(id).addListener(listener);
-			}
+	@Override
+	public List<Record> getRecords(String id, long startTime, long endTime) throws IOException {
+		if (!handlers.containsKey(id)) {
+			logger.warn("Failed to retrieve records for unconfigured channel \"{}\"", id);
+			return null;
 		}
-		return handler;
+		Channel channel = handlers.get(id);
+		
+		return getLogger(channel).getRecords(channel, startTime, endTime);
+	}
+
+	protected DynamicLoggerService getLogger(Channel channel) throws IOException {
+		String id = channel.getLogger();
+		if (id == null) {
+			id = DEFAULT;
+		}
+		if (services.containsKey(id)) {
+			return services.get(id);
+		}
+		else if (services.size() > 0) {
+			return services.values().iterator().next();
+		}
+		throw new IOException("DataLogger unavailable: "+id);
 	}
 
 }

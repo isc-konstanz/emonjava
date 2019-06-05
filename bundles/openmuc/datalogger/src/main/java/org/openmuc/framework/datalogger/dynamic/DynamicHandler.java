@@ -21,11 +21,12 @@ package org.openmuc.framework.datalogger.dynamic;
 
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
+import org.openmuc.framework.datalogger.data.Settings;
 import org.openmuc.framework.datalogger.spi.LogChannel;
 
-public class DynamicHandler extends LogHandler {
+public class DynamicHandler extends ChannelHandler {
 
-	protected DynamicHandler(LogChannel channel, LogSettings settings) {
+	protected DynamicHandler(LogChannel channel, Settings settings) {
 		super(channel, settings);
 	}
 
@@ -52,7 +53,7 @@ public class DynamicHandler extends LogHandler {
 			case DOUBLE:
 				double tolerance = settings.getTolerance();
 				double delta = Math.abs(update.getValue().asDouble() - record.getValue().asDouble());
-				if (tolerance >= delta && (update.getTimestamp() - record.getTimestamp()) < settings.getMaxInterval()) {
+				if (tolerance >= delta && (update.getTimestamp() - record.getTimestamp()) < settings.getIntervalMax()) {
 					return false;
 				}
 			default:

@@ -19,56 +19,96 @@
  */
 package org.openmuc.framework.datalogger.emoncms;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsSyntaxException;
-import org.emoncms.EmoncmsUnavailableException;
+import org.emoncms.EmoncmsType;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 import org.emoncms.mqtt.MqttBuilder;
 import org.emoncms.mqtt.MqttClient;
-import org.ini4j.Profile.Section;
 import org.openmuc.framework.data.Record;
-import org.openmuc.framework.datalogger.emoncms.GeneralConfig.Configuration;
-import org.openmuc.framework.datalogger.emoncms.data.Channel;
+import org.openmuc.framework.datalogger.data.Channel;
+import org.openmuc.framework.datalogger.data.Configuration;
+import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MqttLogger extends MqttClient implements EmoncmsLogger {
+public class MqttLogger implements DynamicLoggerService {
 	private final static Logger logger = LoggerFactory.getLogger(MqttLogger.class);
 
-	protected MqttLogger(MqttBuilder builder) throws EmoncmsUnavailableException {
-		super(builder);
-		open();
+	private final static String ADDRESS = "address";
+	private final static String ADDRESS_DEFAULT = "tcp://localhost";
+	private final static String PORT = "port";
+
+	private final static String USER = "user";
+	private final static String PASSWORD = "password";
+
+	private final static String NODE = "nodeid";
+
+	private MqttClient client;
+
+	@Override
+	public String getId() {
+		return EmoncmsType.MQTT.name();
 	}
 
 	@Override
-	public void log(Channel channel, long timestamp) throws EmoncmsException {
+	public boolean isActive() {
+		return client != null && !client.isClosed();
+	}
+
+	@Override
+	public void onActivate(Configuration config) throws IOException {
+		logger.info("Activating Emoncms MQTT Logger");
+		
+		String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
+		MqttBuilder builder = MqttBuilder.create(address);
+		if (config.contains(PORT)) {
+			builder.setPort(config.getInteger(PORT));
+		}
+		if (config.contains(USER) && config.contains(PASSWORD)) {
+			builder.setCredentials(config.getString(USER), config.getString(PASSWORD));
+		}
+		client = (MqttClient) builder.build();
+		client.open();
+	}
+
+	@Override
+	public void onDeactivate() {
+		client.close();
+	}
+
+	@Override
+	public void doLog(Channel channel, long timestamp) throws IOException {
 		if (!isValid(channel)) {
 			return;
 		}
+		String node = channel.getSetting(NODE).asString();
 		Long time = channel.getTime();
 		if (time == null) {
 			time = timestamp;
 		}
-		post(channel.getNode(), channel.getId(), new Timevalue(time, channel.getValue().asDouble()));
+		client.post(node, channel.getId(), new Timevalue(time, channel.getValue().asDouble()));
 	}
 
 	@Override
-	public void log(List<Channel> channels, long timestamp) throws EmoncmsException {
+	public void doLog(List<Channel> channels, long timestamp) throws IOException {
 		DataList data = new DataList();
 		for (Channel channel : channels) {
 			try {
 				if (!isValid(channel)) {
 					return;
 				}
+				String node = channel.getSetting(NODE).asString();
 				Long time = channel.getTime();
 				if (time == null) {
 					time = timestamp;
 				}
-				data.add(time, channel.getNode(), new Namevalue(channel.getId(), channel.getValue().asDouble()));
+				data.add(time, node, new Namevalue(channel.getId(), channel.getValue().asDouble()));
 				
 			} catch (EmoncmsSyntaxException e) {
 				logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
@@ -76,7 +116,7 @@ public class MqttLogger extends MqttClient implements EmoncmsLogger {
 			}
 		}
 		try {
-			post(data);
+			client.post(data);
 			
 		} catch (EmoncmsException e) {
 			logger.warn("Failed to log values: {}", e.getMessage());
@@ -102,64 +142,16 @@ public class MqttLogger extends MqttClient implements EmoncmsLogger {
 		default:
 			throw new EmoncmsSyntaxException("Invalid value type: "+channel.getValueType());
 		}
-        if (!channel.hasNode()) {
+        if (!channel.hasSetting(NODE)) {
 			throw new EmoncmsSyntaxException("Node needs to be configured");
         }
-		logger.trace("Preparing record to log for channel \"{}\": {}", channel.getId(), channel.getRecord());
+		logger.trace("Preparing record to log for channel {}", channel);
 		return true;
 	}
 
 	@Override
-	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws EmoncmsException {
+	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
 		throw new UnsupportedOperationException();
-	}
-
-	public static MqttLogger open(MqttConfig configs) throws EmoncmsUnavailableException {
-		logger.info("Activating Emoncms MQTT Logger");
-		
-		MqttBuilder builder = MqttBuilder.create(configs.getAddress())
-				.setPort(configs.getPort());
-		
-		if (configs.hasCredentials()) {
-			builder.setCredentials(configs.getUser(), configs.getPassword());
-		}
-		return new MqttLogger(builder);
-	}
-
-	static class MqttConfig extends Configuration {
-
-		private final static String ADDRESS_KEY = "address";
-		private final static String ADDRESS_DEFAULT = "tcp://localhost";
-
-		private final static String PORT_KEY = "port";
-		private final static int PORT_DEFAULT = 1883;
-
-		private final static String USER_KEY = "user";
-		private final static String PASSWORD_KEY = "password";
-
-		protected MqttConfig(Section configs) throws EmoncmsException {
-			super(configs);
-		}
-
-		public String getAddress() {
-			return configs.get(ADDRESS_KEY, ADDRESS_DEFAULT);
-		}
-
-		public int getPort() {
-			return configs.get(PORT_KEY, Integer.class, PORT_DEFAULT);
-		}
-
-		public boolean hasCredentials() {
-			return configs.containsKey(USER_KEY) && configs.containsKey(PASSWORD_KEY);
-		}
-
-		public String getUser() {
-			return configs.get(USER_KEY);
-		}
-
-		public String getPassword() {
-			return configs.get(PASSWORD_KEY);
-		}
 	}
 
 }

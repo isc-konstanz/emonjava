@@ -19,76 +19,137 @@
  */
 package org.openmuc.framework.datalogger.emoncms;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsSyntaxException;
-import org.emoncms.EmoncmsUnavailableException;
+import org.emoncms.EmoncmsType;
 import org.emoncms.Feed;
 import org.emoncms.data.Authentication;
+import org.emoncms.data.Authorization;
 import org.emoncms.data.Data;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 import org.emoncms.http.HttpBuilder;
 import org.emoncms.http.HttpConnection;
 import org.emoncms.http.HttpFeed;
-import org.ini4j.Profile.Section;
 import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Record;
-import org.openmuc.framework.datalogger.emoncms.GeneralConfig.Configuration;
-import org.openmuc.framework.datalogger.emoncms.data.Channel;
+import org.openmuc.framework.datalogger.data.Channel;
+import org.openmuc.framework.datalogger.data.Configuration;
+import org.openmuc.framework.datalogger.data.Settings;
+import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
 import org.openmuc.framework.datalogger.emoncms.data.DataContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HttpLogger extends HttpConnection implements EmoncmsLogger {
+public class HttpLogger implements DynamicLoggerService {
 	private final static Logger logger = LoggerFactory.getLogger(HttpLogger.class);
 
-	protected HttpLogger(HttpBuilder builder) throws EmoncmsUnavailableException {
-		super(builder);
-		open();
+	private final static String ADDRESS = "address";
+	private final static String ADDRESS_DEFAULT = "http://localhost/emoncms/";
+
+	private final static String AUTHORIZATION = "authorization";
+	private final static String AUTHENTICATION = "authentication";
+
+	private final static String MAX_THREADS = "maxThreads";
+
+	private final static String NODE_ID = "nodeid";
+	private final static String FEED_ID = "feedid";
+
+	private final static String API_KEY = "apikey";
+	private final static String API_AUTH = "authorization";
+
+	private HttpConnection connection;
+
+	@Override
+	public String getId() {
+		return EmoncmsType.HTTP.name();
 	}
 
 	@Override
-	public void log(Channel channel, long timestamp) throws EmoncmsException {
+	public boolean isActive() {
+		return connection != null && !connection.isClosed();
+	}
+
+	@Override
+	public void onActivate(Configuration config) throws IOException {
+		logger.info("Activating Emoncms HTTP Logger");
+		
+		String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
+		HttpBuilder builder = HttpBuilder.create(address);
+		if (config.contains(MAX_THREADS)) {
+			builder.setMaxThreads(config.getInteger(MAX_THREADS));
+		}
+		if (config.contains(AUTHORIZATION) && config.contains(AUTHENTICATION)) {
+			builder.setCredentials(config.getString(AUTHORIZATION), config.getString(AUTHENTICATION));
+		}
+		connection = (HttpConnection) builder.build();
+		connection.open();
+	}
+
+	@Override
+	public void onDeactivate() {
+		connection.close();
+	}
+
+	@Override
+	public void doLog(Channel channel, long timestamp) throws IOException {
 		if (!isValid(channel)) {
 			return;
 		}
+		String node = channel.getSetting(NODE_ID).asString();
 		Long time = channel.getTime();
 		if (time == null) {
 			time = timestamp;
 		}
-		post(channel.getNode(), channel.getId(), new Timevalue(time, channel.getValue().asDouble()));
+		connection.post(node, channel.getId(), new Timevalue(time, channel.getValue().asDouble()));
 	}
 
 	@Override
-	public void log(List<Channel> channels, long timestamp) throws EmoncmsException {
+	public void doLog(List<Channel> channels, long timestamp) throws IOException {
 		List<DataContainer> containers = new ArrayList<DataContainer>();
 		for (Channel channel : channels) {
 			try {
 				if (!isValid(channel)) {
 					return;
 				}
+		        Settings settings = channel.getSettings();
+				String node = settings.getString(NODE_ID);
 				Long time = channel.getTime();
 				if (time == null) {
 					time = timestamp;
 				}
-				Authentication authenticator = channel.getAuthenticator();
+		        
+		        Authentication authentication;
+		    	Authorization authorization = Authorization.DEFAULT;
+				if (settings.contains(API_AUTH)) {
+					authorization = Authorization.valueOf(settings.get(API_AUTH).asString());
+				}
+		    	switch(authorization) {
+		    	case NONE:
+		    		throw new EmoncmsSyntaxException("Emoncms authorization unconfigured");
+		    	case DEFAULT:
+		    		authentication = new Authentication();
+		    	default:
+		    		authentication = new Authentication(authorization, settings.getString(API_KEY));
+		    	}
 				DataContainer container = null;
 				for (DataContainer c : containers) {
-					if (c.equals(authenticator)) {
+					if (c.equals(authentication)) {
 						container = c;
 						break;
 					}
 				}
 				if (container == null) {
 					// No input collection for that device exists yet, so it needs to be created
-					container = new DataContainer(authenticator);
+					container = new DataContainer(authentication);
 					containers.add(container);
 				}
-				container.add(time, channel.getNode(), new Namevalue(channel.getId(), channel.getValue().asDouble()));
+				container.add(time, node, new Namevalue(channel.getId(), channel.getValue().asDouble()));
 				
 			} catch (EmoncmsSyntaxException e) {
 				logger.warn("Error preparing record to be logged for Channel \"{}\": {}", 
@@ -106,18 +167,18 @@ public class HttpLogger extends HttpConnection implements EmoncmsLogger {
 					// Data time is already in seconds, but needs to be in milliseconds for post()
 					long time = data.getTime()*1000;
 					if (authenticator.isDefault()) {
-						post(data.getNode(), time, data.getNamevalues());
+						connection.post(data.getNode(), time, data.getNamevalues());
 					}
 					else {
-						post(data.getNode(), time, data.getNamevalues(), authenticator);
+						connection.post(data.getNode(), time, data.getNamevalues(), authenticator);
 					}
 				}
 				else {
 					if (authenticator.isDefault()) {
-						post(container);
+						connection.post(container);
 					}
 					else {
-						post(container, authenticator);
+						connection.post(container, authenticator);
 					}
 				}
 			} catch (EmoncmsException e) {
@@ -145,85 +206,43 @@ public class HttpLogger extends HttpConnection implements EmoncmsLogger {
 		default:
 			throw new EmoncmsSyntaxException("Invalid value type: "+channel.getValueType());
 		}
-        if (!channel.hasNode()) {
+        if (!channel.hasSetting(NODE_ID)) {
 			throw new EmoncmsSyntaxException("Node needs to be configured");
         }
-    	switch(channel.getAuthorization()) {
+        Settings settings = channel.getSettings();
+        
+    	Authorization authorization = Authorization.DEFAULT;
+		if (settings.contains(API_AUTH)) {
+			authorization = Authorization.valueOf(settings.getString(API_AUTH));
+		}
+    	switch(authorization) {
     	case DEVICE:
     	case WRITE:
     	case READ:
-    		if (!channel.hasApiKey()) {
-    			throw new EmoncmsSyntaxException("Api Key needs to be configured for "+channel.getAuthorization()+" access");
+    		if (!settings.contains(API_KEY)) {
+    			throw new EmoncmsSyntaxException("Api Key needs to be configured for "+authorization+" access");
     		}
     	case DEFAULT:
     		break;
     	default:
     		return false;
     	}
-		logger.trace("Preparing record to log for channel \"{}\": {}", channel.getId(), channel.getRecord());
+		logger.trace("Preparing record to log for channel {}", channel);
 		return true;
 	}
 
 	@Override
-	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws EmoncmsException {
-		if (!channel.hasFeedId()) {
+	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
+		if (!channel.hasSetting(FEED_ID)) {
 			throw new EmoncmsException("Unable to retrieve values for channel without configured feed: " + channel.getId());
 		}
-		Feed feed = HttpFeed.connect(this, channel.getFeedId());
+		Feed feed = HttpFeed.connect(connection, channel.getSetting(FEED_ID).asInt());
 		List<Record> records = new LinkedList<Record>();
-		List<Timevalue> data = feed.getData(startTime, endTime, channel.getSettings().getMaxInterval());
+		List<Timevalue> data = feed.getData(startTime, endTime, channel.getInterval());
 		for (Timevalue timevalue : data) {
 			records.add(new Record(new DoubleValue(timevalue.getValue()), timevalue.getTime()));
 		}
 		return records;
-	}
-
-	public static HttpLogger open(HttpConfig configs) throws EmoncmsUnavailableException {
-		logger.info("Activating Emoncms HTTP Logger");
-		
-		HttpBuilder builder = HttpBuilder.create(configs.getAddress())
-				.setMaxThreads(configs.getMaxThreads());
-		
-		if (configs.hasCredentials()) {
-			builder.setCredentials(configs.getAuthorization(), configs.getAuthentication());
-		}
-		return new HttpLogger(builder);
-	}
-
-	static class HttpConfig extends Configuration {
-
-		private final static String ADDRESS_KEY = "address";
-		private final static String ADDRESS_DEFAULT = "http://localhost/emoncms/";
-
-		private final static String AUTHORIZATION_KEY = "authorization";
-		private final static String AUTHENTICATION_KEY = "authentication";
-
-		private final static String MAX_THREADS_KEY = "maxThreads";
-		private final static int MAX_THREADS_DEFAULT = 1;
-
-		protected HttpConfig(Section configs) throws EmoncmsException {
-			super(configs);
-		}
-
-		public String getAddress() {
-			return configs.get(ADDRESS_KEY, ADDRESS_DEFAULT);
-		}
-
-		public int getMaxThreads() {
-			return configs.get(MAX_THREADS_KEY, Integer.class, MAX_THREADS_DEFAULT);
-		}
-
-		public boolean hasCredentials() {
-			return configs.containsKey(AUTHORIZATION_KEY) && configs.containsKey(AUTHENTICATION_KEY);
-		}
-
-		public String getAuthorization() {
-			return configs.get(AUTHORIZATION_KEY);
-		}
-
-		public String getAuthentication() {
-			return configs.get(AUTHENTICATION_KEY);
-		}
 	}
 
 }

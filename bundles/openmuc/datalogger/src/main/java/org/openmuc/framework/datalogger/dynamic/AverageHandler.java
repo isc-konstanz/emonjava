@@ -19,11 +19,12 @@
  */
 package org.openmuc.framework.datalogger.dynamic;
 
-import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.dataaccess.RecordListener;
+import org.openmuc.framework.datalogger.data.Settings;
+import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,7 @@ public class AverageHandler extends DynamicHandler implements RecordListener {
 
 	protected Boolean listening = false;
 
-	protected AverageHandler(LogChannel channel, LogSettings settings) {
+	protected AverageHandler(LogChannel channel, Settings settings) {
 		super(channel, settings);
 	}
 
