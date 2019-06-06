@@ -54,6 +54,7 @@ public class ChannelHandler implements Channel {
 		return id;
 	}
 
+    @Deprecated
 	@Override
 	public String getDescription() {
 		return null;
