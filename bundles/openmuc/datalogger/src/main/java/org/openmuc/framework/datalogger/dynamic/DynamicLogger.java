@@ -179,7 +179,6 @@ public class DynamicLogger implements DataLoggerService {
 			for (LogChannel channel : channels) {
 				String id = channel.getId();
 				
-				logger.debug("Configuring channel \"{}\" for settings: {}", id, channel.getLoggingSettings());
 				Settings settings = new Settings(channel);
 				ChannelHandler handler;
 				if (settings.isAveraging()) {
@@ -197,9 +196,8 @@ public class DynamicLogger implements DataLoggerService {
 				}
 				this.handlers.put(id, handler);
 				
-				if (logger.isTraceEnabled() && channel.getLoggingInterval() != null) {
-					logger.trace("Channel \"{}\" configured to log every {}s", id, channel.getLoggingInterval()/1000);
-				}
+				logger.debug("{} \"{}\" configured to log every {}s", 
+						handler.getClass().getSimpleName(), id, channel.getLoggingInterval()/1000);
 			}
 			for (DynamicLoggerService service : services.values()) {
 				if (service.isActive()) {

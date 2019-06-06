@@ -26,8 +26,11 @@ import org.openmuc.framework.data.ValueType;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Settings;
 import org.openmuc.framework.datalogger.spi.LogChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChannelHandler implements Channel {
+	private final static Logger logger = LoggerFactory.getLogger(ChannelHandler.class);
 
 	protected final String id;
 	protected final String unit;
@@ -183,9 +186,11 @@ public class ChannelHandler implements Channel {
 			return true;
 		}
 		else if (Flag.VALID != update.getFlag()) {
+			logger.trace("Skipped logging value for unchanged flag: {}", update.getFlag());
 			return false;
 		}
-		if (record.getTimestamp() <= update.getTimestamp()) {
+		if (record.getTimestamp() >= update.getTimestamp()) {
+			logger.trace("Skipped logging value with invalid timestamp: {}", update.getTimestamp());
 			return false;
 		}
 		return true;

@@ -23,8 +23,11 @@ import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Settings;
 import org.openmuc.framework.datalogger.spi.LogChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DynamicHandler extends ChannelHandler {
+	private final static Logger logger = LoggerFactory.getLogger(DynamicHandler.class);
 
 	protected DynamicHandler(LogChannel channel, Settings settings) {
 		super(channel, settings);
@@ -39,9 +42,11 @@ public class DynamicHandler extends ChannelHandler {
 			return true;
 		}
 		else if (Flag.VALID != update.getFlag()) {
+			logger.trace("Skipped logging value for unchanged flag: {}", update.getFlag());
 			return false;
 		}
 		if (record.getTimestamp() >= update.getTimestamp()) {
+			logger.trace("Skipped logging value with invalid timestamp: {}", update.getTimestamp());
 			return false;
 		}
 		else {
@@ -54,6 +59,10 @@ public class DynamicHandler extends ChannelHandler {
 				double tolerance = settings.getTolerance();
 				double delta = Math.abs(update.getValue().asDouble() - record.getValue().asDouble());
 				if (tolerance >= delta && (update.getTimestamp() - record.getTimestamp()) < settings.getIntervalMax()) {
+					if (logger.isTraceEnabled()) {
+						logger.trace("Skipped logging value inside tolerance: {} -> {} <= {}",
+								record.getValue().asDouble(), update.getValue(), tolerance);
+					}
 					return false;
 				}
 			default:

@@ -87,7 +87,8 @@ public class Settings extends Configuration {
     }
 
     public boolean isDynamic() {
-        return contains(INTERVAL_MAX);
+        return contains(INTERVAL_MAX) ||
+        		contains("loggingMaxInterval");
     }
 
     public boolean isAveraging() {
