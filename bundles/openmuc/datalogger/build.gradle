@@ -22,10 +22,17 @@ def projectFullName = 'OpenMUC Data Logger - Emoncms Java'
 def projectDescription = 'Emoncms datalogger for the OpenMUC framework.'
 
 def ini4jVersion = '0.5.4'
-def gsonVersion = '2.8.5'
-def pahoVersion = '1.2.0'
+def ini4jJar = 'ini4j-'+ini4jVersion+'.jar'
 
-configurations.create('embed')
+def gsonVersion = '2.8.5'
+def gsonJar = 'gson-'+gsonVersion+'.jar'
+
+def pahoVersion = '1.2.0'
+def pahoJar = 'org.eclipse.paho.client.mqttv3-'+pahoVersion+'.jar'
+
+def apiJar = 'emoncms-api-'+projectVersion+'.jar'
+def httpJar = 'emoncms-http-'+projectVersion+'.jar'
+def mqttJar = 'emoncms-mqtt-'+projectVersion+'.jar'
 
 dependencies {
   implementation fileTree(dir: 'libs/openmuc', include: ['*.jar'])
@@ -36,12 +43,6 @@ dependencies {
   implementation group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
 
   implementation project(':http'), project(':mqtt')
-
-  embed project(':api'), project(':http'), project(':mqtt')
-
-  embed group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
-  embed group: 'com.google.code.gson', name: 'gson', version: gsonVersion
-  embed group: 'org.eclipse.paho', name: 'org.eclipse.paho.client.mqttv3', version: pahoVersion
 }
 
 eclipse {
@@ -52,19 +53,26 @@ eclipse {
 
 jar {
   into('libs') {
-    exclude 'slf4j*.jar'
-    from configurations.embed
+    from(configurations.default) {
+      include apiJar, httpJar, mqttJar, ini4jJar, gsonJar, pahoJar
+    }
   }
   manifest {
     attributes('Bundle-Name':        projectFullName,
                'Bundle-Description': projectDescription,
-               'Bundle-ClassPath':   '.,libs/emoncms-api-'+projectVersion+'.jar,' +
-                                       'libs/emoncms-http-'+projectVersion+'.jar,' +
-                                       'libs/emoncms-mqtt-'+projectVersion+'.jar,' +
-                                       'libs/ini4j-'+ini4jVersion+'.jar,' +
-                                       'libs/gson-'+gsonVersion+'.jar,' +
-                                       'libs/org.eclipse.paho.client.mqttv3-'+pahoVersion+'.jar',
-               'Import-Package':     '!org.emoncms.*,!com.google.gson.*,!org.eclipse.paho.*,!org.ini4j.*,org.slf4j,*;version=0',
-	           'Export-Package':     '')
+               'Bundle-ClassPath':   '.,libs/'+apiJar+',' +
+                                       'libs/'+httpJar+',' +
+                                       'libs/'+mqttJar+',' +
+                                       'libs/'+ini4jJar+',' +
+                                       'libs/'+gsonJar+',' +
+                                       'libs/'+pahoJar,
+               'Import-Package':      '!org.emoncms.*,' +
+                                      '!org.ini4j.*,' +
+                                      '!com.google.gson.*,' +
+                                      '!org.eclipse.paho.*,' +
+                                       'org.slf4j;version=0,' +
+                                       'org.osgi.*;version=0,' +
+                                       'org.openmuc.*;version=0',
+               'Export-Package':     '')
   }
 }

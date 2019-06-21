@@ -37,7 +37,7 @@ import org.openmuc.framework.dataaccess.DataAccessService;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
 import org.openmuc.framework.datalogger.data.Settings;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerContainer.ChannelCollection;
+import org.openmuc.framework.datalogger.dynamic.DynamicLoggerCollection.ChannelCollection;
 import org.openmuc.framework.datalogger.emoncms.HttpLogger;
 import org.openmuc.framework.datalogger.emoncms.MqttLogger;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
@@ -67,7 +67,7 @@ public class DynamicLogger implements DataLoggerService {
 
 	private final Map<String, ChannelHandler> handlers = new HashMap<String, ChannelHandler>();
 
-	private DataAccessService dataAccess = null;
+	private DataAccessService access = null;
 
 	@Override
 	public String getId() {
@@ -139,7 +139,7 @@ public class DynamicLogger implements DataLoggerService {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC)
     protected void bindDataAccessService(DataAccessService service) {
-    	this.dataAccess = service;
+    	this.access = service;
     	for (ChannelHandler handler : handlers.values()) {
     		if (handler.isAveraging()) {
     			AverageHandler listener = (AverageHandler) handler;
@@ -161,7 +161,7 @@ public class DynamicLogger implements DataLoggerService {
     			}
     		}
 		}
-    	this.dataAccess = null;
+    	this.access = null;
     }
 
 	@Override
@@ -170,8 +170,8 @@ public class DynamicLogger implements DataLoggerService {
 			// Will be called if OpenMUC receives new logging configurations
 			for (ChannelHandler handler : handlers.values()) {
 				if (handler instanceof AverageHandler && 
-						dataAccess != null && dataAccess.getAllIds().contains(handler.getId())) {
-					dataAccess.getChannel(handler.getId()).removeListener((AverageHandler) handler);
+						access != null && access.getAllIds().contains(handler.getId())) {
+					access.getChannel(handler.getId()).removeListener((AverageHandler) handler);
 				}
 			}
 			handlers.clear();
@@ -183,8 +183,8 @@ public class DynamicLogger implements DataLoggerService {
 				ChannelHandler handler;
 				if (settings.isAveraging()) {
 					handler = new AverageHandler(channel, settings);
-					if (dataAccess != null && dataAccess.getAllIds().contains(id)) {
-						dataAccess.getChannel(id).addListener((AverageHandler) handler);
+					if (access != null && access.getAllIds().contains(id)) {
+						access.getChannel(id).addListener((AverageHandler) handler);
 						((AverageHandler) handler).setListening(true);
 					}
 				}
@@ -215,7 +215,7 @@ public class DynamicLogger implements DataLoggerService {
 			logger.debug("Requested Emoncms logger to log an empty container list");
 			return;
 		}
-		DynamicLoggerContainer loggers = new DynamicLoggerContainer(this);
+		DynamicLoggerCollection loggers = new DynamicLoggerCollection(this);
 		for (LogRecordContainer container : containers) {
 			if (!handlers.containsKey(container.getChannelId())) {
 				logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());

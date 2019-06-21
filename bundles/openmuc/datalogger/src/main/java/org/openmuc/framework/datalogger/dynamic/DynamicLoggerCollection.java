@@ -23,14 +23,14 @@ import java.io.IOException;
 import java.util.LinkedList;
 
 import org.openmuc.framework.datalogger.data.Channel;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerContainer.ChannelCollection;
+import org.openmuc.framework.datalogger.dynamic.DynamicLoggerCollection.ChannelCollection;
 
-public class DynamicLoggerContainer extends LinkedList<ChannelCollection> {
+public class DynamicLoggerCollection extends LinkedList<ChannelCollection> {
 	private static final long serialVersionUID = -3846829759240096545L;
 
 	private final DynamicLogger logger;
 
-	protected DynamicLoggerContainer(DynamicLogger logger) {
+	protected DynamicLoggerCollection(DynamicLogger logger) {
 		this.logger = logger;
 	}
 
@@ -39,8 +39,9 @@ public class DynamicLoggerContainer extends LinkedList<ChannelCollection> {
 		
 		ChannelCollection channels = null;
 		for (ChannelCollection ch : this) {
-			if (!ch.getService().getId().equals(service.getId())) {
+			if (ch.getService().getId().equals(service.getId())) {
 				channels = ch;
+				break;
 			}
 		}
 		if (channels == null) {

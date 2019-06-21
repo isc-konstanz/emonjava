@@ -24,19 +24,16 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.emoncms.EmoncmsType;
 import org.emoncms.Emoncms;
 import org.emoncms.EmoncmsException;
+import org.emoncms.EmoncmsType;
 import org.emoncms.EmoncmsUnavailableException;
 import org.emoncms.Feed;
 import org.emoncms.Input;
@@ -57,12 +54,12 @@ import org.emoncms.http.json.JsonInputList;
 import org.emoncms.http.json.ToJsonArray;
 import org.emoncms.http.json.ToJsonObject;
 import org.emoncms.http.request.HttpCallable;
-import org.emoncms.http.request.HttpRequest;
-import org.emoncms.http.request.HttpResponse;
 import org.emoncms.http.request.HttpCallbacks;
 import org.emoncms.http.request.HttpMethod;
 import org.emoncms.http.request.HttpParameters;
 import org.emoncms.http.request.HttpQuery;
+import org.emoncms.http.request.HttpRequest;
+import org.emoncms.http.request.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,20 +131,21 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 	@Override
 	public void open() throws EmoncmsUnavailableException {
 		logger.info("Initializing emoncms HTTP connection \"{}\"", domain);
-		initialize();
-	}
-
-	private void initialize() {
+		
 		// The HttpURLConnection implementation is in older JREs somewhat buggy with keeping connections alive. 
 		// To avoid this, the http.keepAlive system property can be set to false. 
 		System.setProperty("http.keepAlive", "false");
 		
+		initialize();
+		closed = false;
+	}
+
+	private void initialize() {
 		if (executor != null) {
 			executor.shutdown();
 		}
 		NamedThreadFactory namedThreadFactory = new NamedThreadFactory("EmonJava HTTP request pool - thread-");
 		executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(maxThreads, namedThreadFactory);
-		closed = false;
 	}
 
 	@Override
@@ -500,31 +498,26 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		}
 		long start = System.currentTimeMillis();
 		
+		final HttpCallable task = new HttpCallable(request);
+		final Future<HttpResponse> submit = executor.submit(task);
 		try {
-			HttpCallable task = new HttpCallable(request);
-			final Future<HttpResponse> submit = executor.submit(task);
-			try {
-				HttpResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
-				
-				if (logger.isTraceEnabled()) {
-					String rsp = "Returned null";
-					if (response != null) {
-						rsp = response.getResponse();
-					}
-					logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
+			HttpResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
+			
+			if (logger.isTraceEnabled()) {
+				String rsp = "Returned null";
+				if (response != null) {
+					rsp = response.getResponse();
 				}
-				return response;
+				logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
 			}
-			catch (JsonSyntaxException e) {
-				throw new EmoncmsException("Received invalid JSON response: " + e);
-			} catch (InterruptedException | ExecutionException | 
-					TimeoutException | CancellationException e) {
-				submit.cancel(true);
-				throw new EmoncmsException("Request \"" + request.toString() + "\" failed: " + e);
-			}
+			return response;
+		} catch (JsonSyntaxException e) {
+			throw new EmoncmsException("Received invalid JSON response: " + e);
 		} catch (Exception e) {
+			submit.cancel(true);
 			initialize();
-			throw new EmoncmsException(e);
+			
+			throw new EmoncmsException("Request \"" + request.toString() + "\" failed: " + e);
 		}
 	}
 
