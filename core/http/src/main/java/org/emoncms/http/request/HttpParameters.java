@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.emoncms.http.json.ToJsonObject;
+import org.emoncms.http.json.JsonObjectBuilder;
 
 public class HttpParameters extends LinkedHashMap<String, String> {
 	private static final long serialVersionUID = 8225350318869217570L;
@@ -36,7 +36,7 @@ public class HttpParameters extends LinkedHashMap<String, String> {
 		super();
 	}
 
-	public void addParameter(String key, ToJsonObject value) {
+	public void addParameter(String key, JsonObjectBuilder value) {
 		super.put(key, value.toString());
 	}
 

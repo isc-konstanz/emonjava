@@ -27,40 +27,33 @@ import org.emoncms.data.Options;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-
-public class ToJsonObject {
+public class JsonObjectBuilder {
 
 	private final Gson gson;
 	private final JsonObject jsonObject;
 
-	public ToJsonObject() {
-		
+	public JsonObjectBuilder() {
 		gson = new Gson();
 		jsonObject = new JsonObject();
 	}
 
 	public void addBoolean(String propertyName, boolean value) {
-		
 		jsonObject.addProperty(propertyName, value);
 	}
 
 	public void addInteger(String propertyName, int value) {
-		
 		jsonObject.addProperty(propertyName, value);
 	}
 
 	public void addDouble(String propertyName, double value) {
-		
 		jsonObject.addProperty(propertyName, value);
 	}
 
 	public void addString(String propertyName, String value) {
-		
 		jsonObject.addProperty(propertyName, value);
 	}
 
 	public void addStringList(String propertyName, List<String> stringList) {
-		
 		jsonObject.add(propertyName, gson.toJsonTree(stringList).getAsJsonArray());
 	}
 
@@ -71,13 +64,12 @@ public class ToJsonObject {
 	}
 
 	public JsonObject getJsonObject() {
-		
 		return jsonObject;
 	}
 
 	@Override
 	public String toString() {
-		
 		return jsonObject.toString();
 	}
+
 }

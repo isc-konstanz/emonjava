@@ -36,7 +36,7 @@ import org.emoncms.data.Timevalue;
 import org.emoncms.http.json.Const;
 import org.emoncms.http.json.JsonFeed;
 import org.emoncms.http.json.JsonTimevalue;
-import org.emoncms.http.json.ToJsonObject;
+import org.emoncms.http.json.JsonObjectBuilder;
 import org.emoncms.http.request.HttpCallbacks;
 import org.emoncms.http.request.HttpParameters;
 import org.emoncms.http.request.HttpQuery;
@@ -202,7 +202,7 @@ public class HttpFeed implements Feed {
 		HttpParameters parameters = new HttpParameters();
 		
 		HttpResponse response = callbacks.onGet(query, parameters);
-		return response.getResponse().replaceAll("\"", "");
+		return response.toString().replaceAll("\"", "");
 	}
 
 	@Override
@@ -222,7 +222,7 @@ public class HttpFeed implements Feed {
 		HttpQuery query = new HttpQuery("feed", "set.json");
 		query.addParameter(Const.ID, id);
 		
-		ToJsonObject json = new ToJsonObject();
+		JsonObjectBuilder json = new JsonObjectBuilder();
 		for (Map.Entry<String, String> field : fields.entrySet()) {
 			json.addString(field.getKey(), field.getValue());
 		}
@@ -249,7 +249,7 @@ public class HttpFeed implements Feed {
 		
 		HttpParameters parameters = new HttpParameters();
 		HttpResponse response = callbacks.onGet(query, parameters);
-		return Double.valueOf(response.getResponse().replaceAll("\"", ""));
+		return Double.valueOf(response.toString().replaceAll("\"", ""));
 	}
 
 	public Timevalue getTimevalue() {

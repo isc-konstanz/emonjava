@@ -33,7 +33,6 @@ import java.util.concurrent.Callable;
 import org.emoncms.EmoncmsException;
 import org.emoncms.http.HttpException;
 
-
 public class HttpCallable implements Callable<HttpResponse> {
 
 	private final static Charset CHARSET = StandardCharsets.UTF_8;
@@ -49,7 +48,7 @@ public class HttpCallable implements Callable<HttpResponse> {
 	public HttpRequest getRequest() {
 		return request;
 	}
-	
+
 	@Override
 	public HttpResponse call() throws Exception {
 		HttpMethod method = request.getMethod();
@@ -104,7 +103,7 @@ public class HttpCallable implements Callable<HttpResponse> {
 		  	}
 		}
 	}
-	
+
 	private HttpResponse post(HttpRequest request) throws IOException {
 		try {
 			URL url = new URL(request.parse(CHARSET));
@@ -161,7 +160,7 @@ public class HttpCallable implements Callable<HttpResponse> {
 		  	}
 		}
 	}
-	
+
 	private HttpResponse read() throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(stream, CHARSET.name()));
 		
@@ -175,9 +174,9 @@ public class HttpCallable implements Callable<HttpResponse> {
 		if (sb.length() != 0 && !sb.toString().isEmpty()) {
 			return new HttpResponse(sb.toString());
 		}
-		return null;
+		throw new IOException("Nothing received");
 	}
-	
+
 	private boolean verifyResponse(int httpStatus) throws HttpException {
 		switch (httpStatus) {
 		case HttpURLConnection.HTTP_OK:
@@ -186,4 +185,5 @@ public class HttpCallable implements Callable<HttpResponse> {
 			return false;
 		}
 	}
+
 }

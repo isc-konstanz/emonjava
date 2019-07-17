@@ -37,8 +37,8 @@ import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.emoncms.http.json.Const;
 import org.emoncms.http.json.JsonInput;
-import org.emoncms.http.json.ToJsonArray;
-import org.emoncms.http.json.ToJsonObject;
+import org.emoncms.http.json.JsonArrayBuilder;
+import org.emoncms.http.json.JsonObjectBuilder;
 import org.emoncms.http.request.HttpCallbacks;
 import org.emoncms.http.request.HttpParameters;
 import org.emoncms.http.request.HttpQuery;
@@ -143,7 +143,7 @@ public class HttpInput implements Input {
 		HttpQuery query = new HttpQuery("input", "set");
 		query.addParameter(Const.INPUTID, id);
 		
-		ToJsonObject json = new ToJsonObject();
+		JsonObjectBuilder json = new JsonObjectBuilder();
 		for (Map.Entry<String, String> field : fields.entrySet()) {
 			json.addString(field.getKey(), field.getValue());
 		}
@@ -218,7 +218,7 @@ public class HttpInput implements Input {
 			parameters.addParameter(Const.TIME, (int) Math.round(timevalue.getTime().doubleValue()/1000));
 		}
 		
-		ToJsonObject json = new ToJsonObject();
+		JsonObjectBuilder json = new JsonObjectBuilder();
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.FULLJSON, json);
 		
@@ -252,7 +252,7 @@ public class HttpInput implements Input {
 		long time = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
 		parameters.addParameter(Const.TIME, time);
 		
-		ToJsonArray json = new ToJsonArray();
+		JsonArrayBuilder json = new JsonArrayBuilder();
 		for (Data data : dataList) {
 			json.addData(time, data);
 		}

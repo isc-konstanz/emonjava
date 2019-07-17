@@ -29,50 +29,40 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
-
-public class FromJson {
-
+public class JsonResponse {
 	private final Gson gson;
 	private final JsonElement jse;
 
-	public FromJson(String jsonString) {
-
+	public JsonResponse(String jsonString) {
 		gson = new Gson();
 		jse = gson.fromJson(jsonString, JsonElement.class);
 	}
-	
+
 	public boolean isValidObject() {
-		
 		return !jse.isJsonNull() && jse.isJsonObject();
 	}
-	
+
 	public boolean isValidArray() {
-		
 		return !jse.isJsonNull() && jse.isJsonArray();
 	}
 
 	public Gson getGson() {
-
 		return gson;
 	}
 
 	public JsonObject getJsonObject() {
-
 		return jse.getAsJsonObject();
 	}
 
 	public JsonArray getJsonArray() {
-
 		return jse.getAsJsonArray();
 	}
-	
-	public Object getObject(Class<?> objectClass) throws ClassCastException, JsonSyntaxException {
 
+	public Object getObject(Class<?> objectClass) throws ClassCastException, JsonSyntaxException {
 		return gson.fromJson(jse, objectClass);			
 	}
-	
-	public ArrayList<Object> getArrayList(Class<?> objectClass) throws ClassCastException, JsonSyntaxException {
 
+	public ArrayList<Object> getArrayList(Class<?> objectClass) throws ClassCastException, JsonSyntaxException {
 		ArrayList<Object> objectList = new ArrayList<Object>();
 		JsonArray jsa = jse.getAsJsonArray();
 
@@ -84,7 +74,6 @@ public class FromJson {
 	}
 
 	public Double[] getDoubleArray() {
-
 		Double doubleArray[] = null;
 
 		if (!jse.isJsonNull() && jse.isJsonArray()) {
@@ -94,7 +83,6 @@ public class FromJson {
 	}
 
 	public LinkedList<Double[]> getDoubleArrayList() {
-
 		LinkedList<Double[]> resultList = new LinkedList<Double[]>();
 
 		if (!jse.isJsonNull() && jse.isJsonArray()) {
@@ -110,4 +98,5 @@ public class FromJson {
 		}
 		return resultList;
 	}
+
 }

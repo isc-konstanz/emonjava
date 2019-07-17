@@ -51,8 +51,8 @@ import org.emoncms.http.json.JsonFeed;
 import org.emoncms.http.json.JsonInput;
 import org.emoncms.http.json.JsonInputConfig;
 import org.emoncms.http.json.JsonInputList;
-import org.emoncms.http.json.ToJsonArray;
-import org.emoncms.http.json.ToJsonObject;
+import org.emoncms.http.json.JsonArrayBuilder;
+import org.emoncms.http.json.JsonObjectBuilder;
 import org.emoncms.http.request.HttpCallable;
 import org.emoncms.http.request.HttpCallbacks;
 import org.emoncms.http.request.HttpMethod;
@@ -166,7 +166,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 			parameters.addParameter(Const.TIME, time);
 		}
 		
-		ToJsonObject json = new ToJsonObject();
+		JsonObjectBuilder json = new JsonObjectBuilder();
 		json.addDouble(name, timevalue.getValue());
 		parameters.addParameter(Const.FULLJSON, json);
 		
@@ -191,7 +191,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 			parameters.addParameter(Const.TIME, time);
 		}
 		
-		ToJsonObject json = new ToJsonObject();
+		JsonObjectBuilder json = new JsonObjectBuilder();
 		for (Namevalue namevalue : namevalues) {
 			json.addDouble(namevalue.getName(), namevalue.getValue());
 		}
@@ -217,7 +217,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		
 		dataList.sort();
 		
-		ToJsonArray json = new ToJsonArray();
+		JsonArrayBuilder json = new JsonArrayBuilder();
 		for (Data data : dataList) {
 			json.addData(time, data);
 		}
@@ -433,7 +433,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		query.addParameter(Const.DATATYPE, type.getValue());
 		query.addParameter(Const.ENGINE, engine.getValue());
 		if (options != null && !options.isEmpty()) {
-			ToJsonObject json = new ToJsonObject();
+			JsonObjectBuilder json = new JsonObjectBuilder();
 			json.addOptions(options);
 			query.addParameter(Const.OPTIONS, json);
 		}
@@ -481,10 +481,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		HttpRequest request = new HttpRequest(method, domain, query, parameters, authentication);
 		HttpResponse response = submitRequest(request);
 		if (response != null) {
-			if (response.isSuccess()) {
-				return response;
-			}
-			throw new EmoncmsException("Emoncms request responsed \"false\"");
+			return response;
 		}
 		throw new EmoncmsException("Emoncms request failed");
 	}
@@ -502,15 +499,11 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		final Future<HttpResponse> submit = executor.submit(task);
 		try {
 			HttpResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
-			
 			if (logger.isTraceEnabled()) {
-				String rsp = "Returned null";
-				if (response != null) {
-					rsp = response.getResponse();
-				}
-				logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, rsp);
+				logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, response);
 			}
 			return response;
+			
 		} catch (JsonSyntaxException e) {
 			throw new EmoncmsException("Received invalid JSON response: " + e);
 		} catch (Exception e) {

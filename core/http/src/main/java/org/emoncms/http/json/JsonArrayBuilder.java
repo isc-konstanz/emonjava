@@ -25,29 +25,24 @@ import org.emoncms.data.Namevalue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-
-public class ToJsonArray {
+public class JsonArrayBuilder {
 
 	private final JsonArray jsonArray;
 
-	public ToJsonArray() {
-		
+	public JsonArrayBuilder() {
 		jsonArray = new JsonArray();
 	}
 
 	public JsonArray getJsonArray() {
-		
 		return jsonArray;
 	}
 
 	@Override
 	public String toString() {
-		
 		return jsonArray.toString();
 	}
 
 	public void addData(long referenceTime, Data data) {
-		
 		JsonArray dataArray = new JsonArray();
 		
 		if (data.getTime() != null) {
@@ -66,4 +61,5 @@ public class ToJsonArray {
 		}
 		jsonArray.add(dataArray);
 	}
+
 }

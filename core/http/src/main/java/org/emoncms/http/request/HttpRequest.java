@@ -72,7 +72,7 @@ public class HttpRequest {
 					if (parameters != null && parameters.size() > 0) {
 						content += '&';
 					}
-					content += getAuthentication(charset);
+					content += parseAuthentication(charset);
 					break;
 				default:
 					break;
@@ -81,7 +81,7 @@ public class HttpRequest {
 		return content;
 	}
 
-	public String getAuthentication(Charset charset) throws UnsupportedEncodingException {
+	public String parseAuthentication(Charset charset) throws UnsupportedEncodingException {
 		if (authentication != null) {
 			return URLEncoder.encode(authentication.getAuthorization().getValue(), charset.name()) + 
 					'=' + URLEncoder.encode(authentication.getKey(), charset.name());
@@ -106,30 +106,46 @@ public class HttpRequest {
 					else {
 						request += '?';
 					}
-					request += getAuthentication(charset);
+					request += parseAuthentication(charset);
 					break;
 			}
 		}
 		return request;
 	}
 
-	@Override
-	public String toString() {
+	public String toString(Charset charset) {
 		try {
-			String request = parse(StandardCharsets.UTF_8);
+			String request = domain;
+			if (path != null) {
+				request += path.parse(charset);
+			}
 			if (parameters != null) {
-				if (parameters.size() > 0 && path.size() == 0) {
-					request += '?';
-				}
 				if (path != null && path.size() > 0) {
 					request += '&';
 				}
-				request += parseParameters(StandardCharsets.UTF_8);
+				else {
+					request += '?';
+				}
+				request += parameters.parse(charset);
+			}
+			if (authentication != null) {
+				if ((path != null && path.size() > 0) || (parameters != null && parameters.size() > 0)) {
+					request += '&';
+				}
+				else {
+					request += '?';
+				}
+				request += parseAuthentication(charset);
 			}
 			return request;
 			
 		} catch (UnsupportedEncodingException e) {
 		}
 		return null;
+	}
+
+	@Override
+	public String toString() {
+		return toString(StandardCharsets.UTF_8);
 	}
 }
