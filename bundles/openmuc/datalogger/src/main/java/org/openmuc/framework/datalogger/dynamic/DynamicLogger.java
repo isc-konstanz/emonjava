@@ -40,6 +40,7 @@ import org.openmuc.framework.datalogger.data.Settings;
 import org.openmuc.framework.datalogger.dynamic.DynamicLoggerCollection.ChannelCollection;
 import org.openmuc.framework.datalogger.emoncms.HttpLogger;
 import org.openmuc.framework.datalogger.emoncms.MqttLogger;
+import org.openmuc.framework.datalogger.emoncms.SqlLogger;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
 import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.openmuc.framework.datalogger.spi.LogRecordContainer;
@@ -79,6 +80,7 @@ public class DynamicLogger implements DataLoggerService {
 		try {
 			Ini config = new Ini(new File(CONFIG));
 			activate(config, EmoncmsType.MQTT);
+			activate(config, EmoncmsType.SQL);
 			activate(config, EmoncmsType.HTTP);
 			
 		} catch (IOException e) {
@@ -104,6 +106,9 @@ public class DynamicLogger implements DataLoggerService {
 				switch(type) {
 				case MQTT:
 					service = new MqttLogger();
+					break;
+				case SQL:
+					service = new SqlLogger();
 					break;
 				case HTTP:
 					service = new HttpLogger();

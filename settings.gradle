@@ -19,9 +19,10 @@
  */
 rootProject.name = 'emonjava'
 
-include 'api', 'http', 'mqtt', 'bundle'
+include 'api', 'http', 'mqtt', 'sql', 'bundle'
 
 project(':http').projectDir = file('core/http')
 project(':mqtt').projectDir = file('core/mqtt')
+project(':sql').projectDir = file('core/sql')
 
 project(':bundle').projectDir = file('bundles/openmuc/datalogger')

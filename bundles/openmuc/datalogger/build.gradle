@@ -30,6 +30,9 @@ def gsonJar = 'gson-'+gsonVersion+'.jar'
 def pahoVersion = '1.2.0'
 def pahoJar = 'org.eclipse.paho.client.mqttv3-'+pahoVersion+'.jar'
 
+def hibernateVersion = '5.2.10.Final'
+def hibernateJar = 'hibernate-'+hibernateVersion+'.jar'
+
 def apiJar = 'emoncms-api-'+projectVersion+'.jar'
 def httpJar = 'emoncms-http-'+projectVersion+'.jar'
 def mqttJar = 'emoncms-mqtt-'+projectVersion+'.jar'
@@ -42,7 +45,7 @@ dependencies {
 
   implementation group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
 
-  implementation project(':http'), project(':mqtt')
+  implementation project(':http'), project(':mqtt'), project(':sql')
 }
 
 eclipse {
@@ -65,11 +68,13 @@ jar {
                                        'libs/'+mqttJar+',' +
                                        'libs/'+ini4jJar+',' +
                                        'libs/'+gsonJar+',' +
-                                       'libs/'+pahoJar,
+                                       'libs/'+pahoJar+',' +
+                                       'libs/'+hibernateJar,
                'Import-Package':      '!org.emoncms.*,' +
                                       '!org.ini4j.*,' +
                                       '!com.google.gson.*,' +
                                       '!org.eclipse.paho.*,' +
+                                      '!org.hibernate.*,' +
                                        'org.slf4j;version=0,' +
                                        'org.osgi.*;version=0,' +
                                        'org.openmuc.*;version=0',
