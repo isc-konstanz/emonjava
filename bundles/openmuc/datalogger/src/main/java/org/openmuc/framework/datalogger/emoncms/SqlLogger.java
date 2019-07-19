@@ -1,18 +1,20 @@
 package org.openmuc.framework.datalogger.emoncms;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsSyntaxException;
 import org.emoncms.EmoncmsType;
-import org.emoncms.data.DataList;
-import org.emoncms.data.Namevalue;
+import org.emoncms.Feed;
 import org.emoncms.data.Timevalue;
-import org.emoncms.sql.SqlTimeSeries;
 import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
+import org.emoncms.sql.SqlFeed;
+import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
@@ -33,6 +35,7 @@ public class SqlLogger implements DynamicLoggerService {
 	private final static String PASSWORD = "password";
 
 	private final static String NODE = "nodeid";
+	private final static String FEED_ID = "feedid";
 
 	private SqlClient client;
 
@@ -70,60 +73,33 @@ public class SqlLogger implements DynamicLoggerService {
 	@Override 
 	public void onConfigure(List<Channel> channels) throws IOException {
 		logger.info("Configuring Emoncms SQL Logger");
-		List<SqlTimeSeries> timeSeriesArray = new ArrayList<SqlTimeSeries>(channels.size());
+		Map<Integer, SqlFeed> feedMap = new HashMap<Integer, SqlFeed>(channels.size());
 		for (Channel channel : channels) {
 
             if (logger.isTraceEnabled()) {
                 logger.trace("channel.getId() " + channel.getId());
             }
             
-	        SqlTimeSeries ts = new SqlTimeSeries(channel.getId(), channel.getValueType().name());
-	        timeSeriesArray.add(ts);
+	        SqlFeed feed = new SqlFeed(channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
+	        feed.setEntityName(channel.getId());
+	        feedMap.put(channel.getSetting(FEED_ID).asInt(), feed);
 		}
-		client.setTimeSeriesArray(timeSeriesArray);
+		client.setFeedMap(feedMap);
 		client.open();
 		
+		for (SqlFeed feed : feedMap.values()) {
+			feed.setSessionFactory(client.getSessionFactory());
+		}
 	}
 
 	@Override
 	public void doLog(Channel channel, long timestamp) throws IOException {
-		if (!isValid(channel)) {
-			return;
-		}
-		String node = channel.getSetting(NODE).asString();
-		Long time = channel.getTime();
-		if (time == null) {
-			time = timestamp;
-		}
-		client.post(node, channel.getId(), new Timevalue(time, channel.getValue().asDouble()));
+		//TODO
 	}
 
 	@Override
 	public void doLog(List<org.openmuc.framework.datalogger.data.Channel> channels, long timestamp) throws IOException {
-		DataList data = new DataList();
-		for (Channel channel : channels) {
-			try {
-				if (!isValid(channel)) {
-					return;
-				}
-				String node = channel.getSetting(NODE).asString();
-				Long time = channel.getTime();
-				if (time == null) {
-					time = timestamp;
-				}
-				data.add(time, node, new Namevalue(channel.getId(), channel.getValue().asDouble()));
-				
-			} catch (EmoncmsSyntaxException e) {
-				logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
-						channel.getId(), e.getMessage());
-			}
-		}
-		try {
-			client.post(data);
-			
-		} catch (EmoncmsException e) {
-			logger.warn("Failed to log values: {}", e.getMessage());
-		}
+		//TODO
 	}
 
 	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
@@ -155,7 +131,17 @@ public class SqlLogger implements DynamicLoggerService {
 	@Override
 	public List<Record> getRecords(Channel channel, long startTime, long endTime)
 			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		if (!channel.hasSetting(FEED_ID)) {
+			throw new EmoncmsException("Unable to retrieve values for channel without configured feed: " + channel.getId());
+		}
+		List<Record> records = new LinkedList<Record>();
+		if (!client.isClosed()) {
+			Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+			List<Timevalue> data = feed.getData(startTime, endTime, channel.getInterval());
+			for (Timevalue timevalue : data) {
+				records.add(new Record(new DoubleValue(timevalue.getValue()), timevalue.getTime()));
+			}
+		}
+		return records;
 	}
 }

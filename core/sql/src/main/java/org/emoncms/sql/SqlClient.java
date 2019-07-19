@@ -10,7 +10,7 @@ import org.emoncms.Emoncms;
 import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.EmoncmsUnavailableException;
-import org.emoncms.data.Data;
+import org.emoncms.Feed;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
@@ -18,6 +18,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,7 @@ public class SqlClient implements Emoncms {
 	private final File hibernatePropsFile;
 
 	private SessionFactory factory;
-	private List<SqlTimeSeries> timeSeriesArray;
-	private Map<String, SqlTimeSeries> idTimeSeriesMap;
+	private Map<Integer, SqlFeed> feedMap;
 
 
 	protected SqlClient(String id, String connectionDriverClass, String connectionUrl, String user, String password) {
@@ -89,8 +89,8 @@ public class SqlClient implements Emoncms {
 		initialize();
 	}
 
-	public void setTimeSeriesArray(List<SqlTimeSeries> timeSeriesArray) {
-		this.timeSeriesArray = timeSeriesArray;
+	public void setFeedMap(Map<Integer, SqlFeed> feedMap) {
+		this.feedMap = feedMap;
 	}
 
 	private void initialize() {
@@ -99,15 +99,12 @@ public class SqlClient implements Emoncms {
         config = config.setProperty("connection.url", connectionUrl);
         config = config.setProperty("connection.username", user);
         config = config.setProperty("connection.password", password);
-        idTimeSeriesMap = new HashMap<String, SqlTimeSeries>(timeSeriesArray.size());
-        if (timeSeriesArray == null) return;
-		for (SqlTimeSeries timeSeries : timeSeriesArray) {
+        if (feedMap == null) return;
+		for (SqlFeed feed : feedMap.values()) {
             if (logger.isTraceEnabled()) {
-                logger.trace("timeSeries.getId() " + timeSeries.getId());
+                logger.trace("timeSeries.getId() " + feed.getId());
             }
-            
-        	InputStream inputStream = timeSeries.createMappingInputStream();
-        	idTimeSeriesMap.put(timeSeries.getId(), timeSeries);
+        	InputStream inputStream = feed.createMappingInputStream();
     		config.addInputStream(inputStream);
 		}
 		if (!isClosed()) {
@@ -115,69 +112,67 @@ public class SqlClient implements Emoncms {
 		}
 		factory = config.buildSessionFactory();
 	}
-
-	@SuppressWarnings("null")
+	
+	public SessionFactory getSessionFactory() {
+		return factory;
+	}
+	
 	@Override
-	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
-		SqlTimeSeries ts = idTimeSeriesMap.get(name);
-		if (ts == null) {
-			ts = new SqlTimeSeries(name, "DOUBLE");
-			timeSeriesArray.add(ts);
-			open();
+	public Feed getFeed(int id) throws EmoncmsException {
+		logger.debug("Requesting feed with id: {}", id);
+		
+		Feed feed = feedMap.get(id);
+		
+		if (feed != null) {
+			if (factory == null || !feedExists(id)) {
+				throw new EmoncmsException("Feed " + id + " not found!");
+			}
+			
+			feed = new SqlFeed(factory, id, "Double");
 		}
+		return feed;
+	}
+	
+	private boolean feedExists(int id) {
+		//TODO find better way than query table
 		
 		Session session = factory.openSession();
 		Transaction t = session.beginTransaction();
-        
-    	session.save(id, ts.buildMap(timevalue.getTime(), timevalue.getValue(), (Byte) null));
+		
+		Query<?> query = session.createQuery("from " + "feed_" + id);
+		query.setMaxResults(1);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		List<Map> list = (List<Map>) query.list();
 		
 		t.commit();
-		session.close();
+		session.close();		
+
+		return list==null || list.size()==0;
+	}
+
+	@Override
+	public Map<Feed, Double> getFeedValues(List<Feed> feeds) throws EmoncmsException {
+		Map<Feed, Double> map = new HashMap<Feed, Double>();
+		
+		for (Feed feed : feeds) {
+			map.put(feed, feed.getLatestValue());
+		}
+		return map;
+	}
+	
+	@Override
+	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
+		throw new UnsupportedOperationException("Unsupported for type "+getType());
 	}
 
 	@Override
 	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
-		boolean hasNewTimeSeries = false;
-		for (Namevalue nameValue: namevalues) {
-			if (!idTimeSeriesMap.containsKey(nameValue.getName())) {
-				timeSeriesArray.add(new SqlTimeSeries(nameValue.getName(), "DOUBLE"));
-				hasNewTimeSeries = true;
-			}
-		}
-		if (hasNewTimeSeries) open();
-
-		Session session = factory.openSession();
-		Transaction t = session.beginTransaction();
-        
-		for (Namevalue nameValue: namevalues) {
-			SqlTimeSeries ts = idTimeSeriesMap.get(nameValue.getName());
-			session.save(id, ts.buildMap(time, nameValue.getValue(), (Byte) null));
-		}
-
-		t.commit();
-		session.close();
+		throw new UnsupportedOperationException("Unsupported for type "+getType());
 	}
 
 	@Override
 	public void post(DataList dataList) throws EmoncmsException {
-		logger.debug("Requesting to bulk post {} data sets", dataList.size());
-		
-		dataList.sort();
-		
-		boolean hasNewTimeSeries = false;
-		for (Data data : dataList) {
-			for (Namevalue nameValue: data.getNamevalues()) {
-				if (!idTimeSeriesMap.containsKey(nameValue.getName())) {
-					timeSeriesArray.add(new SqlTimeSeries(nameValue.getName(), "DOUBLE"));
-					hasNewTimeSeries = true;
-				}
-			}
-		}
-		if (hasNewTimeSeries) open();
-		
-		for (Data data : dataList) {
-			post(data.getNode(), data.getTime(), data.getNamevalues());
-		}
+		throw new UnsupportedOperationException("Unsupported for type "+getType());
 	}
 
 	public String getConnectionUrl() {
