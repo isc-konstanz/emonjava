@@ -18,11 +18,12 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.metamodel.internal.EntityTypeImpl;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SqlClient implements Emoncms {
+public class SqlClient implements Emoncms, SqlFactoryGetter {
 	private static final Logger logger = LoggerFactory.getLogger(SqlClient.class);
 
 
@@ -77,7 +78,7 @@ public class SqlClient implements Emoncms {
 
 	@Override
 	public boolean isClosed() {
-		if (factory != null && factory.isClosed()) {
+		if (factory == null || factory.isClosed()) {
 			return true;
 		}
 		return false;
@@ -113,6 +114,7 @@ public class SqlClient implements Emoncms {
 		factory = config.buildSessionFactory();
 	}
 	
+	@Override
 	public SessionFactory getSessionFactory() {
 		return factory;
 	}
@@ -127,8 +129,10 @@ public class SqlClient implements Emoncms {
 			if (factory == null || !feedExists(id)) {
 				throw new EmoncmsException("Feed " + id + " not found!");
 			}
-			
-			feed = new SqlFeed(factory, id, "Double");
+		}
+		else {
+			feed = new SqlFeed(this, id, "Double");
+			feedMap.put(id, (SqlFeed) feed);
 		}
 		return feed;
 	}
@@ -137,17 +141,15 @@ public class SqlClient implements Emoncms {
 		//TODO find better way than query table
 		
 		Session session = factory.openSession();
-		Transaction t = session.beginTransaction();
-		
-		Query<?> query = session.createQuery("from " + "feed_" + id);
-		query.setMaxResults(1);
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		List<Map> list = (List<Map>) query.list();
-		
-		t.commit();
-		session.close();		
-
-		return list==null || list.size()==0;
+		EntityTypeImpl<?> type = (EntityTypeImpl<?>) session.getMetamodel().getEntities().toArray()[0];
+		if (("feed_" + id).equals(type.getTypeName())) {
+			session.close();
+			return true;
+		}
+		else {
+			session.close();
+			return false;
+		}
 	}
 
 	@Override

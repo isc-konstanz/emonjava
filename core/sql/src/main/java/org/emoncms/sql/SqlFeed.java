@@ -31,15 +31,15 @@ public class SqlFeed implements Feed {
 	protected static final String DEFAULT_MAPPING_TEMPLATE = "hibernate.record.hbm.xml";
 	protected static final String PREFIX_FEED = "feed_";
 
-	protected static final String VALUE_COLUMN = "data"; 
-	protected static final String TIME_COLUMN = "time"; 
+	protected static final String VALUE_COLUMN = "value"; 
+	protected static final String TIME_COLUMN = "timestamp"; 
 
 	protected static String MAPPING_TEMPLATE = null;
 
 	protected final int id;
 	protected String entityName;
 	protected final String dataType;
-	protected SessionFactory factory;
+	protected SqlFactoryGetter factoryGetter;
 	
 	public SqlFeed(int id, String dataType) {
 		this.id = id;
@@ -51,9 +51,9 @@ public class SqlFeed implements Feed {
 		}
 	}
 	
-	public SqlFeed(SessionFactory factory, int id, String dataType) {
+	public SqlFeed(SqlFactoryGetter factoryGetter, int id, String dataType) {
 		this(id, dataType);
-		this.factory = factory;
+		this.factoryGetter = factoryGetter;
 	}
 	
 	protected void loadMappingTemplate() {
@@ -69,30 +69,30 @@ public class SqlFeed implements Feed {
 	}
 	
 	public InputStream createMappingInputStream() {
-		String mapping = MAPPING_TEMPLATE.replace("entity-name=\"entity\"", "entity-name=\""+id+"\"");
-		switch (dataType) {
-		case "Boolean":
+		String mapping = MAPPING_TEMPLATE.replace("entity-name=\"entity\"", "entity-name=\""+entityName+"\"");
+		switch (dataType.toUpperCase()) {
+		case "BOOLEAN":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Boolean");
 			break;
-		case "Byte":
+		case "BYTE":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
 			break;
-		case "Double":
+		case "DOUBLE":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Double");
 			break;
-		case "Float":
+		case "FLOAT":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
 			break;
-		case "Integer":
+		case "INTEGER":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
 			break;
-		case "Long":
+		case "LONG":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Long");
 			break;
-		case "Short":
+		case "SHORT":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Short");
 			break;
-		case "String":
+		case "STRING":
 			mapping = mapping.replace("java.lang.Object", "java.lang.String");
 			break;
 		default:
@@ -108,10 +108,6 @@ public class SqlFeed implements Feed {
 		return id;
 	}
 	
-	public void setSessionFactory(SessionFactory factory) {
-		this.factory = factory;
-	}
-
 	public String getEntityName() {
 		return entityName;
 	}
@@ -136,10 +132,10 @@ public class SqlFeed implements Feed {
 	}
 
 	@Override
-	public void deleteData(long time) {
+	public void deleteData(long time) throws EmoncmsException {
 		logger.debug("Requesting to delete value at time: {} for feed with id: {}", time, id);
 
-		Session session = factory.openSession();
+		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
 		String hql = "delete " + entityName + " where " + TIME_COLUMN + " = :time";
@@ -153,11 +149,17 @@ public class SqlFeed implements Feed {
 		session.close();		
 	}
 
+	private SessionFactory getFactory() throws EmoncmsException {
+		SessionFactory factory = factoryGetter.getSessionFactory();
+		if (factory == null || factory.isClosed()) throw new EmoncmsException("Sql Client is not opened!");
+		return factory;
+	}
+
 	@Override
 	public void deleteDataRange(long start, long end) throws EmoncmsException {
 		logger.debug("Requesting to delete values from {} to {} for feed with id: {}", start, end, id);
 
-		Session session = factory.openSession();
+		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
 		String hql = "delete " + entityName + " where " + TIME_COLUMN + " <= :start and " +
@@ -176,7 +178,7 @@ public class SqlFeed implements Feed {
 	public LinkedList<Timevalue> getData(long start, long end, int interval) throws EmoncmsException {
 		logger.debug("Requesting to fetch data from {} to {} for feed with id: {}", start, end, id);
 
-		Session session = factory.openSession();
+		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
 		//TODO implement interval to get only data with start-i*interval 
@@ -203,7 +205,7 @@ public class SqlFeed implements Feed {
 	public Timevalue getLatestTimevalue() throws EmoncmsException {
 		logger.debug("Requesting to get latest timevalue for feed with id: {}", id);
 
-		Session session = factory.openSession();
+		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
 		Query<?> query = session.createQuery("from " + entityName + " order by " + TIME_COLUMN);
@@ -241,7 +243,7 @@ public class SqlFeed implements Feed {
 	public Double getLatestValue() throws EmoncmsException {
 		logger.debug("Requesting to get latest value for feed with id: {}", id);
 		
-		Session session = factory.openSession();
+		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
 		Query<?> query = session.createQuery("from " + entityName + " order by " + TIME_COLUMN);
@@ -261,7 +263,7 @@ public class SqlFeed implements Feed {
 	}
 
 	@Override
-	public void insertData(Timevalue timevalue) {
+	public void insertData(Timevalue timevalue) throws EmoncmsException {
 		logger.debug("Requesting to insert value: {}, time: {} for feed with id: {}",
 				timevalue.getValue(), timevalue.getTime(), id);
 
@@ -276,8 +278,8 @@ public class SqlFeed implements Feed {
 		setData(timevalue.getTime(), timevalue.getValue());
 	}
 
-	protected void setData(Long time, double value) {
-		Session session = factory.openSession();
+	protected void setData(Long time, double value) throws EmoncmsException {
+		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
     	// Build Map
@@ -290,8 +292,9 @@ public class SqlFeed implements Feed {
 
 	protected Map<String, Object> buildMap(Long time, double value) {
 		Map<String, Object> map = new HashMap<String, Object>();
-		map.put(TIME_COLUMN, time);
-		map.put(TIME_COLUMN, new Double(value));
+		map.put(TIME_COLUMN, Integer.valueOf(time.toString()));
+		//TODO Check Data type of Table!
+		map.put(VALUE_COLUMN, new Float(value));
 		return map;
 	}
 }

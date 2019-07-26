@@ -26,16 +26,16 @@ public class SqlLogger implements DynamicLoggerService {
 
 	private final static Logger logger = LoggerFactory.getLogger(SqlLogger.class);
 
-	private final static String CONNECTION_URL = "connectionUrl";
-	private final static String CONNECTION_URL_DEFAULT = "jdbc:mysql://127.0.0.1:3306/openmuc?useSSL=false";
-	private final static String CONNECTION_DRIVER_CLASS = "connectionDriverClass";
-	private final static String CONNECTION_DRIVER_CLASS_DEFAULT = "com.mysql.jdbc.Driver";
+	protected final static String CONNECTION_URL = "connectionUrl";
+	protected final static String CONNECTION_URL_DEFAULT = "jdbc:mysql://127.0.0.1:3306/openmuc?useSSL=false";
+	protected final static String CONNECTION_DRIVER_CLASS = "connectionDriverClass";
+	protected final static String CONNECTION_DRIVER_CLASS_DEFAULT = "com.mysql.jdbc.Driver";
 
-	private final static String USER = "user";
-	private final static String PASSWORD = "password";
+	protected final static String USER = "user";
+	protected final static String PASSWORD = "password";
 
-	private final static String NODE = "nodeid";
-	private final static String FEED_ID = "feedid";
+	protected final static String NODE = "nodeid";
+	protected final static String FEED_ID = "feedid";
 
 	private SqlClient client;
 
@@ -80,26 +80,43 @@ public class SqlLogger implements DynamicLoggerService {
                 logger.trace("channel.getId() " + channel.getId());
             }
             
-	        SqlFeed feed = new SqlFeed(channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
-	        feed.setEntityName(channel.getId());
+	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
 	        feedMap.put(channel.getSetting(FEED_ID).asInt(), feed);
 		}
 		client.setFeedMap(feedMap);
 		client.open();
-		
-		for (SqlFeed feed : feedMap.values()) {
-			feed.setSessionFactory(client.getSessionFactory());
-		}
 	}
 
 	@Override
 	public void doLog(Channel channel, long timestamp) throws IOException {
-		//TODO
+		if (!isValid(channel)) {
+			return;
+		}
+		if (!client.isClosed()) {
+			Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+			Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
+			feed.insertData(timevalue);
+		}
 	}
 
 	@Override
 	public void doLog(List<org.openmuc.framework.datalogger.data.Channel> channels, long timestamp) throws IOException {
-		//TODO
+		for (Channel channel : channels) {
+			try {
+				if (!isValid(channel)) {
+					return;
+				}
+				if (!client.isClosed()) {
+					Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+					Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
+					feed.insertData(timevalue);					
+				}
+			} 
+			catch (EmoncmsSyntaxException e) {
+				logger.warn("Error preparing record to be logged for Channel \"{}\": {}", 
+						channel.getId(), e.getMessage());
+			}
+		}
 	}
 
 	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
