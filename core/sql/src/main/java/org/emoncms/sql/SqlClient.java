@@ -3,8 +3,11 @@ package org.emoncms.sql;
 import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.persistence.metamodel.EntityType;
 
 import org.emoncms.Emoncms;
 import org.emoncms.EmoncmsException;
@@ -16,10 +19,8 @@ import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.metamodel.internal.EntityTypeImpl;
-import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,25 +132,26 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 			}
 		}
 		else {
-			feed = new SqlFeed(this, id, "Double");
+			feed = new SqlFeed(this, id);
 			feedMap.put(id, (SqlFeed) feed);
 		}
 		return feed;
 	}
 	
 	private boolean feedExists(int id) {
-		//TODO find better way than query table
+		//TODO find better way than use internal hibernate classes
 		
 		Session session = factory.openSession();
-		EntityTypeImpl<?> type = (EntityTypeImpl<?>) session.getMetamodel().getEntities().toArray()[0];
-		if (("feed_" + id).equals(type.getTypeName())) {
-			session.close();
-			return true;
+		Iterator<EntityType<?>> it = session.getMetamodel().getEntities().iterator();
+		while (it.hasNext()) {
+			EntityTypeImpl<?> type = (EntityTypeImpl<?>)it.next();
+			if (("feed_" + id).equals(type.getTypeName())) {
+				session.close();
+				return true;
+			}
 		}
-		else {
-			session.close();
-			return false;
-		}
+		session.close();
+		return false;
 	}
 
 	@Override

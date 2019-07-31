@@ -14,8 +14,15 @@ import org.emoncms.data.Timevalue;
 import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
 import org.emoncms.sql.SqlFeed;
+import org.openmuc.framework.data.BooleanValue;
+import org.openmuc.framework.data.ByteValue;
 import org.openmuc.framework.data.DoubleValue;
+import org.openmuc.framework.data.FloatValue;
+import org.openmuc.framework.data.IntValue;
+import org.openmuc.framework.data.LongValue;
 import org.openmuc.framework.data.Record;
+import org.openmuc.framework.data.ShortValue;
+import org.openmuc.framework.data.StringValue;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
 import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
@@ -80,7 +87,8 @@ public class SqlLogger implements DynamicLoggerService {
                 logger.trace("channel.getId() " + channel.getId());
             }
             
-	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
+//	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
+	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt());
 	        feedMap.put(channel.getSetting(FEED_ID).asInt(), feed);
 		}
 		client.setFeedMap(feedMap);
@@ -156,7 +164,37 @@ public class SqlLogger implements DynamicLoggerService {
 			Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
 			List<Timevalue> data = feed.getData(startTime, endTime, channel.getInterval());
 			for (Timevalue timevalue : data) {
-				records.add(new Record(new DoubleValue(timevalue.getValue()), timevalue.getTime()));
+				Double d = timevalue.getValue();
+				switch (channel.getValueType()) {
+					case BOOLEAN:
+						boolean v = (d.intValue()!= 0);
+						records.add(new Record(new BooleanValue(v), timevalue.getTime()));
+						break;
+					case BYTE:
+						records.add(new Record(new ByteValue(d.byteValue()), timevalue.getTime()));
+						break;
+					case DOUBLE:
+						records.add(new Record(new DoubleValue(d), timevalue.getTime()));
+						break;
+					case FLOAT:
+						records.add(new Record(new FloatValue(d.floatValue()), timevalue.getTime()));
+						break;
+					case INTEGER:
+						records.add(new Record(new IntValue(d.intValue()), timevalue.getTime()));
+						break;
+					case LONG:
+						records.add(new Record(new LongValue(d.longValue()), timevalue.getTime()));
+						break;
+					case SHORT:
+						records.add(new Record(new ShortValue(d.shortValue()), timevalue.getTime()));
+						break;
+					case STRING:
+						records.add(new Record(new StringValue(String.valueOf(d)), timevalue.getTime()));
+						break;
+					default:
+						records.add(new Record(new StringValue(String.valueOf(d)), timevalue.getTime()));
+						break;
+				}
 			}
 		}
 		return records;

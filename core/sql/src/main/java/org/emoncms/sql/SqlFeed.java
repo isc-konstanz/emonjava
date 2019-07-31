@@ -18,6 +18,7 @@ import org.emoncms.data.Timevalue;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.metamodel.internal.EntityTypeImpl;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,21 +39,21 @@ public class SqlFeed implements Feed {
 
 	protected final int id;
 	protected String entityName;
-	protected final String dataType;
+//	protected final String dataType;
 	protected SqlFactoryGetter factoryGetter;
 	
-	public SqlFeed(int id, String dataType) {
+	public SqlFeed(int id) {
 		this.id = id;
 		this.entityName = PREFIX_FEED + id;
-		this.dataType = dataType;
+//		this.dataType = dataType;
 
 		if (MAPPING_TEMPLATE == null) {
 			loadMappingTemplate();
 		}
 	}
 	
-	public SqlFeed(SqlFactoryGetter factoryGetter, int id, String dataType) {
-		this(id, dataType);
+	public SqlFeed(SqlFactoryGetter factoryGetter, int id) {
+		this(id);
 		this.factoryGetter = factoryGetter;
 	}
 	
@@ -70,35 +71,35 @@ public class SqlFeed implements Feed {
 	
 	public InputStream createMappingInputStream() {
 		String mapping = MAPPING_TEMPLATE.replace("entity-name=\"entity\"", "entity-name=\""+entityName+"\"");
-		switch (dataType.toUpperCase()) {
-		case "BOOLEAN":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Boolean");
-			break;
-		case "BYTE":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
-			break;
-		case "DOUBLE":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Double");
-			break;
-		case "FLOAT":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
-			break;
-		case "INTEGER":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
-			break;
-		case "LONG":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Long");
-			break;
-		case "SHORT":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Short");
-			break;
-		case "STRING":
-			mapping = mapping.replace("java.lang.Object", "java.lang.String");
-			break;
-		default:
-			mapping = mapping.replace("java.lang.Object", "java.lang.String");
-			break;
-		}
+//		switch (dataType.toUpperCase()) {
+//		case "BOOLEAN":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Boolean");
+//			break;
+//		case "BYTE":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
+//			break;
+//		case "DOUBLE":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Double");
+//			break;
+//		case "FLOAT":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
+//			break;
+//		case "INTEGER":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
+//			break;
+//		case "LONG":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Long");
+//			break;
+//		case "SHORT":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.Short");
+//			break;
+//		case "STRING":
+//			mapping = mapping.replace("java.lang.Object", "java.lang.String");
+//			break;
+//		default:
+//			mapping = mapping.replace("java.lang.Object", "java.lang.String");
+//			break;
+//		}
 		return new ByteArrayInputStream(StandardCharsets.UTF_16.encode(mapping).array());		
 		
 	}
@@ -283,18 +284,26 @@ public class SqlFeed implements Feed {
 		Transaction t = session.beginTransaction();
 		
     	// Build Map
-        Map<String, Object> map = buildMap(time, value);
+		EntityTypeImpl<?> type = (EntityTypeImpl<?>) session.getMetamodel().getEntities().toArray()[0];
+		Class<?> cl = type.getAttribute("timestamp").getJavaType();
+        Map<String, Object> map = buildMap(time, value, cl);
     	session.save(entityName, map);
 		
 		t.commit();
 		session.close();		
 	}
 
-	protected Map<String, Object> buildMap(Long time, double value) {
+	protected Map<String, Object> buildMap(Long time, double value, Class<?> cl) {
 		Map<String, Object> map = new HashMap<String, Object>();
-		map.put(TIME_COLUMN, Integer.valueOf(time.toString()));
-		//TODO Check Data type of Table!
-		map.put(VALUE_COLUMN, new Float(value));
+		Object myTime;
+		if (cl.equals(Integer.class)) {
+			myTime = new Integer(time.toString());
+		}
+		else {
+			myTime = time;
+		}
+		map.put(TIME_COLUMN, myTime);
+		map.put(VALUE_COLUMN, value);
 		return map;
 	}
 }
