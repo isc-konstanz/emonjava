@@ -18,7 +18,6 @@ import org.emoncms.data.Timevalue;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.metamodel.internal.EntityTypeImpl;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,14 +37,14 @@ public class SqlFeed implements Feed {
 	protected static String MAPPING_TEMPLATE = null;
 
 	protected final int id;
+	protected String name;
 	protected String entityName;
-//	protected final String dataType;
 	protected SqlFactoryGetter factoryGetter;
 	
 	public SqlFeed(int id) {
 		this.id = id;
+		this.name = Integer.toString(id);
 		this.entityName = PREFIX_FEED + id;
-//		this.dataType = dataType;
 
 		if (MAPPING_TEMPLATE == null) {
 			loadMappingTemplate();
@@ -54,6 +53,12 @@ public class SqlFeed implements Feed {
 	
 	public SqlFeed(SqlFactoryGetter factoryGetter, int id) {
 		this(id);
+		this.factoryGetter = factoryGetter;
+	}
+	
+	public SqlFeed(SqlFactoryGetter factoryGetter, String name) {
+		id = Integer.MIN_VALUE;
+		this.name = name; 
 		this.factoryGetter = factoryGetter;
 	}
 	
@@ -71,35 +76,6 @@ public class SqlFeed implements Feed {
 	
 	public InputStream createMappingInputStream() {
 		String mapping = MAPPING_TEMPLATE.replace("entity-name=\"entity\"", "entity-name=\""+entityName+"\"");
-//		switch (dataType.toUpperCase()) {
-//		case "BOOLEAN":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Boolean");
-//			break;
-//		case "BYTE":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
-//			break;
-//		case "DOUBLE":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Double");
-//			break;
-//		case "FLOAT":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
-//			break;
-//		case "INTEGER":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
-//			break;
-//		case "LONG":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Long");
-//			break;
-//		case "SHORT":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.Short");
-//			break;
-//		case "STRING":
-//			mapping = mapping.replace("java.lang.Object", "java.lang.String");
-//			break;
-//		default:
-//			mapping = mapping.replace("java.lang.Object", "java.lang.String");
-//			break;
-//		}
 		return new ByteArrayInputStream(StandardCharsets.UTF_16.encode(mapping).array());		
 		
 	}
@@ -134,7 +110,7 @@ public class SqlFeed implements Feed {
 
 	@Override
 	public void deleteData(long time) throws EmoncmsException {
-		logger.debug("Requesting to delete value at time: {} for feed with id: {}", time, id);
+		logger.debug("Requesting to delete value at time: {} for feed with id: {}", time, name);
 
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
@@ -143,7 +119,7 @@ public class SqlFeed implements Feed {
 		Query<?> query = session.createQuery(hql).setParameter("time", time);
 		int deletedRecs = query.executeUpdate();
 		if (deletedRecs == 0) {
-			logger.debug("No value found at time: {} for feed with id: {}", time, id);
+			logger.debug("No value found at time: {} for feed with id: {}", time, name);
 		}
 		
 		t.commit();
@@ -158,7 +134,7 @@ public class SqlFeed implements Feed {
 
 	@Override
 	public void deleteDataRange(long start, long end) throws EmoncmsException {
-		logger.debug("Requesting to delete values from {} to {} for feed with id: {}", start, end, id);
+		logger.debug("Requesting to delete values from {} to {} for feed with id: {}", start, end, name);
 
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
@@ -168,7 +144,7 @@ public class SqlFeed implements Feed {
 		Query<?> query = session.createQuery(hql).setParameter("start", start).setParameter("end", end);
 		int deletedRecs = query.executeUpdate();
 		if (deletedRecs == 0) {
-			logger.debug("No values found from {} to {} for feed with id: {}", start, end, id);
+			logger.debug("No values found from {} to {} for feed with id: {}", start, end, name);
 		}
 		
 		t.commit();
@@ -177,7 +153,7 @@ public class SqlFeed implements Feed {
 	
 	@Override
 	public LinkedList<Timevalue> getData(long start, long end, int interval) throws EmoncmsException {
-		logger.debug("Requesting to fetch data from {} to {} for feed with id: {}", start, end, id);
+		logger.debug("Requesting to fetch data from {} to {} for feed with id: {}", start, end, name);
 
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
@@ -190,7 +166,7 @@ public class SqlFeed implements Feed {
 		List<Map> list = (List<Map>) query.list();
 		LinkedList<Timevalue> timeValuesList = new LinkedList<Timevalue>();
 		for (@SuppressWarnings("rawtypes") Map map : list) {
-			Long time = (long)map.get(TIME_COLUMN);
+			Long time = Long.valueOf(map.get(TIME_COLUMN).toString());
 			double value = getValue(map.get(VALUE_COLUMN));
 			Timevalue timeValue = new Timevalue(time, value);
 			timeValuesList.add(timeValue);
@@ -204,7 +180,7 @@ public class SqlFeed implements Feed {
 
 	@Override
 	public Timevalue getLatestTimevalue() throws EmoncmsException {
-		logger.debug("Requesting to get latest timevalue for feed with id: {}", id);
+		logger.debug("Requesting to get latest timevalue for feed with id: {}", name);
 
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
@@ -242,7 +218,7 @@ public class SqlFeed implements Feed {
 
 	@Override
 	public Double getLatestValue() throws EmoncmsException {
-		logger.debug("Requesting to get latest value for feed with id: {}", id);
+		logger.debug("Requesting to get latest value for feed with id: {}", name);
 		
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
@@ -266,7 +242,7 @@ public class SqlFeed implements Feed {
 	@Override
 	public void insertData(Timevalue timevalue) throws EmoncmsException {
 		logger.debug("Requesting to insert value: {}, time: {} for feed with id: {}",
-				timevalue.getValue(), timevalue.getTime(), id);
+				timevalue.getValue(), timevalue.getTime(), name);
 
 		setData(timevalue.getTime(), timevalue.getValue());
 	}
@@ -274,7 +250,7 @@ public class SqlFeed implements Feed {
 	@Override
 	public void updateData(Timevalue timevalue) throws EmoncmsException {
 		logger.debug("Requesting to update value: {} at time: {} for feed with id: {}",
-				timevalue.getValue(), timevalue.getTime(), id);
+				timevalue.getValue(), timevalue.getTime(), name);
 
 		setData(timevalue.getTime(), timevalue.getValue());
 	}
@@ -283,26 +259,16 @@ public class SqlFeed implements Feed {
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
-    	// Build Map
-		EntityTypeImpl<?> type = (EntityTypeImpl<?>) session.getMetamodel().getEntities().toArray()[0];
-		Class<?> cl = type.getAttribute("timestamp").getJavaType();
-        Map<String, Object> map = buildMap(time, value, cl);
-    	session.save(entityName, map);
+        Map<String, Object> map = buildMap(time, value);
+    	session.saveOrUpdate(entityName, map);
 		
 		t.commit();
 		session.close();		
 	}
 
-	protected Map<String, Object> buildMap(Long time, double value, Class<?> cl) {
+	protected Map<String, Object> buildMap(Long time, double value) {
 		Map<String, Object> map = new HashMap<String, Object>();
-		Object myTime;
-		if (cl.equals(Integer.class)) {
-			myTime = new Integer(time.toString());
-		}
-		else {
-			myTime = time;
-		}
-		map.put(TIME_COLUMN, myTime);
+		map.put(TIME_COLUMN, time.intValue());
 		map.put(VALUE_COLUMN, value);
 		return map;
 	}

@@ -32,6 +32,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 	private static final String DEFAULT_CONFIG_PATH = "conf/";
 	private static final String HIBERNATE_CONFIG = "hibernate.config.file";
 	private static final String DEFAULT_HIBERNATE_CONFIG = "hibernate.cfg.xml";
+	protected final static String FEED_PREFIX = "feed_";
 
 	private final String id;
 	private final String connectionDriverClass;
@@ -145,7 +146,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 		Iterator<EntityType<?>> it = session.getMetamodel().getEntities().iterator();
 		while (it.hasNext()) {
 			EntityTypeImpl<?> type = (EntityTypeImpl<?>)it.next();
-			if (("feed_" + id).equals(type.getTypeName())) {
+			if ((FEED_PREFIX + id).equals(type.getTypeName())) {
 				session.close();
 				return true;
 			}

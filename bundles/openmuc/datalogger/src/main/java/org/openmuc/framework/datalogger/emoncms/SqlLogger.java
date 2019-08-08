@@ -23,6 +23,7 @@ import org.openmuc.framework.data.LongValue;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.ShortValue;
 import org.openmuc.framework.data.StringValue;
+import org.openmuc.framework.data.Value;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
 import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
@@ -43,8 +44,10 @@ public class SqlLogger implements DynamicLoggerService {
 
 	protected final static String NODE = "nodeid";
 	protected final static String FEED_ID = "feedid";
+	protected final static String FEED_PREFIX = "feed_";
 
 	private SqlClient client;
+	private Map<String, Feed> channelIdFeedsMap;
 
 	@Override
 	public String getId() {
@@ -88,8 +91,18 @@ public class SqlLogger implements DynamicLoggerService {
             }
             
 //	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
-	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt());
-	        feedMap.put(channel.getSetting(FEED_ID).asInt(), feed);
+            Value feedId = channel.getSetting(FEED_ID);
+            if (feedId != null) {
+    	        SqlFeed feed = new SqlFeed(client, feedId.asInt());
+    	        feedMap.put(feedId.asInt(), feed);
+            }
+            else {
+    	        SqlFeed feed = new SqlFeed(client, channel.getId());
+    	        if (channelIdFeedsMap == null) {
+    	        	channelIdFeedsMap = new HashMap<String, Feed>();
+    	        }
+    	        channelIdFeedsMap.put(channel.getId(), feed);
+            }
 		}
 		client.setFeedMap(feedMap);
 		client.open();
@@ -101,7 +114,15 @@ public class SqlLogger implements DynamicLoggerService {
 			return;
 		}
 		if (!client.isClosed()) {
-			Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+            Value feedId = channel.getSetting(FEED_ID);
+            Feed feed;
+            if (feedId != null) {
+            	feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+            }
+            else {
+            	feed = channelIdFeedsMap.get(channel.getId());
+            }
+            timestamp = Math.round(timestamp/1000.0);
 			Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
 			feed.insertData(timevalue);
 		}
@@ -109,13 +130,21 @@ public class SqlLogger implements DynamicLoggerService {
 
 	@Override
 	public void doLog(List<org.openmuc.framework.datalogger.data.Channel> channels, long timestamp) throws IOException {
+        timestamp = Math.round(timestamp/1000.0);
 		for (Channel channel : channels) {
 			try {
 				if (!isValid(channel)) {
 					return;
 				}
 				if (!client.isClosed()) {
-					Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+		            Value feedId = channel.getSetting(FEED_ID);
+		            Feed feed;
+		            if (feedId != null) {
+		            	feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+		            }
+		            else {
+		            	feed = channelIdFeedsMap.get(channel.getId());
+		            }
 					Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
 					feed.insertData(timevalue);					
 				}
@@ -161,38 +190,48 @@ public class SqlLogger implements DynamicLoggerService {
 		}
 		List<Record> records = new LinkedList<Record>();
 		if (!client.isClosed()) {
-			Feed feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+            Value feedId = channel.getSetting(FEED_ID);
+            Feed feed;
+            if (feedId != null) {
+            	feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
+            }
+            else {
+            	feed = channelIdFeedsMap.get(channel.getId());
+            }
+            startTime = Math.round(startTime/1000.0);
+            endTime = Math.round(endTime/1000.0);
 			List<Timevalue> data = feed.getData(startTime, endTime, channel.getInterval());
 			for (Timevalue timevalue : data) {
 				Double d = timevalue.getValue();
+				Long time = timevalue.getTime() * 1000;
 				switch (channel.getValueType()) {
 					case BOOLEAN:
 						boolean v = (d.intValue()!= 0);
-						records.add(new Record(new BooleanValue(v), timevalue.getTime()));
+						records.add(new Record(new BooleanValue(v), time));
 						break;
 					case BYTE:
-						records.add(new Record(new ByteValue(d.byteValue()), timevalue.getTime()));
+						records.add(new Record(new ByteValue(d.byteValue()), time));
 						break;
 					case DOUBLE:
-						records.add(new Record(new DoubleValue(d), timevalue.getTime()));
+						records.add(new Record(new DoubleValue(d), time));
 						break;
 					case FLOAT:
-						records.add(new Record(new FloatValue(d.floatValue()), timevalue.getTime()));
+						records.add(new Record(new FloatValue(d.floatValue()), time));
 						break;
 					case INTEGER:
-						records.add(new Record(new IntValue(d.intValue()), timevalue.getTime()));
+						records.add(new Record(new IntValue(d.intValue()), time));
 						break;
 					case LONG:
-						records.add(new Record(new LongValue(d.longValue()), timevalue.getTime()));
+						records.add(new Record(new LongValue(d.longValue()), time));
 						break;
 					case SHORT:
-						records.add(new Record(new ShortValue(d.shortValue()), timevalue.getTime()));
+						records.add(new Record(new ShortValue(d.shortValue()), time));
 						break;
 					case STRING:
-						records.add(new Record(new StringValue(String.valueOf(d)), timevalue.getTime()));
+						records.add(new Record(new StringValue(String.valueOf(d)), time));
 						break;
 					default:
-						records.add(new Record(new StringValue(String.valueOf(d)), timevalue.getTime()));
+						records.add(new Record(new StringValue(String.valueOf(d)), time));
 						break;
 				}
 			}

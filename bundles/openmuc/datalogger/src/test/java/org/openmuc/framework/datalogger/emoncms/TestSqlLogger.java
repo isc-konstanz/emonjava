@@ -52,13 +52,14 @@ public class TestSqlLogger {
 				e.printStackTrace();
 			}
 			Value value = new BooleanValue(true);
-			Long time = System.currentTimeMillis()/1000;
+			Long time = System.currentTimeMillis();
 			ChannelHandler channelHandler = createChannelHandler();
 			channelHandler.update(new Record(value, time));
 			logger.doLog(channelHandler, time);
 			
 			List<Record> recList = logger.getRecords(channelHandler, time, time-1);
 			Record rec = recList.get(0);
+			time = Math.round(time/1000.0)*1000;
 			assertEquals(rec.getTimestamp(), time);
 			assertEquals(rec.getValue().asBoolean(), true);			
 		} 
@@ -79,7 +80,8 @@ public class TestSqlLogger {
 		try {
 			onActivateLogger();
 			
-			Long time = System.currentTimeMillis()/1000;
+			Long time = System.currentTimeMillis();
+//			Long time = new Long("1564743066000");
 			List<Channel> list = createChannelHandlers(time);
 			logger.onConfigure(list);
 			logger.doLog(list, time);
@@ -106,6 +108,7 @@ public class TestSqlLogger {
 			List<Record> recList = logger.getRecords(channel, time, time-5);
 			if (recList.size() > 0) {
 				Record rec = recList.get(0);
+				time = Math.round(time/1000.0)*1000;
 				assertEquals((long)rec.getTimestamp(), time);
 				switch (type) {
 					case BOOLEAN:
