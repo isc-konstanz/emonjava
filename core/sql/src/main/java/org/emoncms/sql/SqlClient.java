@@ -21,20 +21,20 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.metamodel.internal.EntityTypeImpl;
+import org.hibernate.type.BasicType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SqlClient implements Emoncms, SqlFactoryGetter {
 	private static final Logger logger = LoggerFactory.getLogger(SqlClient.class);
 
-
+	public static final String SCALE_INTEGER_TYPE = "ScaleInteger";
+	
 	private static final String CONFIG_PATH = "hibernate.configPath";
 	private static final String DEFAULT_CONFIG_PATH = "conf/";
 	private static final String HIBERNATE_CONFIG = "hibernate.config.file";
 	private static final String DEFAULT_HIBERNATE_CONFIG = "hibernate.cfg.xml";
-	protected final static String FEED_PREFIX = "feed_";
 
-	private final String id;
 	private final String connectionDriverClass;
 	private final String connectionUrl;
 	private final String user;
@@ -43,12 +43,11 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 	private final File hibernatePropsFile;
 
 	private SessionFactory factory;
-	private Map<Integer, SqlFeed> feedMap;
+	private Map<String, SqlFeed> feedMap;
 
+	protected BasicType userType;
 
-	protected SqlClient(String id, String connectionDriverClass, String connectionUrl, String user, String password) {
-		this.id = id;
-		
+	protected SqlClient(String connectionDriverClass, String connectionUrl, String user, String password) {
 		this.connectionDriverClass = connectionDriverClass;
 		this.connectionUrl = connectionUrl;
 		this.user = user;
@@ -61,7 +60,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 	}
 
 	public SqlClient(SqlBuilder sqlBuilder) {
-		this(sqlBuilder.id, sqlBuilder.connectionDriverClass, sqlBuilder.connectionUrl, sqlBuilder.user, sqlBuilder.password);
+		this(sqlBuilder.connectionDriverClass, sqlBuilder.connectionUrl, sqlBuilder.user, sqlBuilder.password);
 	}
 
 	@Override
@@ -92,7 +91,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 		initialize();
 	}
 
-	public void setFeedMap(Map<Integer, SqlFeed> feedMap) {
+	public void setFeedMap(Map<String, SqlFeed> feedMap) {
 		this.feedMap = feedMap;
 	}
 
@@ -105,15 +104,29 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
         if (feedMap == null) return;
 		for (SqlFeed feed : feedMap.values()) {
             if (logger.isTraceEnabled()) {
-                logger.trace("timeSeries.getId() " + feed.getId());
+                logger.trace("Entity of feed " + feed.getEntityName());
             }
+	        if (feed.containsUserType(SCALE_INTEGER_TYPE)) {
+	        	userType = ScaleIntegerType.INSTANCE;
+	        }            
         	InputStream inputStream = feed.createMappingInputStream();
     		config.addInputStream(inputStream);
 		}
 		if (!isClosed()) {
 			close();
 		}
+		
+		if (userType !=  null) {
+			config.registerTypeContributor( (typeContributions, serviceRegistry) -> {
+					typeContributions.contributeType(userType, SCALE_INTEGER_TYPE);
+			} );
+		}
+		
 		factory = config.buildSessionFactory();
+	}
+	
+	public BasicType getUserType() {
+		return userType;
 	}
 	
 	@Override
@@ -121,32 +134,31 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 		return factory;
 	}
 	
-	@Override
-	public Feed getFeed(int id) throws EmoncmsException {
-		logger.debug("Requesting feed with id: {}", id);
+	public Feed getFeed(String entityName) throws EmoncmsException {
+		logger.debug("Requesting feed with entity: {}", entityName);
 		
-		Feed feed = feedMap.get(id);
+		Feed feed = feedMap.get(entityName);
 		
 		if (feed != null) {
-			if (factory == null || !feedExists(id)) {
-				throw new EmoncmsException("Feed " + id + " not found!");
+			if (factory == null || !feedExists(entityName)) {
+				throw new EmoncmsException("Feed with entity: " + entityName + " not found!");
 			}
 		}
 		else {
-			feed = new SqlFeed(this, id);
-			feedMap.put(id, (SqlFeed) feed);
+			feed = new SqlFeed(this, entityName);
+			feedMap.put(entityName, (SqlFeed) feed);
 		}
-		return feed;
+		return feed;		
 	}
 	
-	private boolean feedExists(int id) {
+	private boolean feedExists(String entityName) {
 		//TODO find better way than use internal hibernate classes
 		
 		Session session = factory.openSession();
 		Iterator<EntityType<?>> it = session.getMetamodel().getEntities().iterator();
 		while (it.hasNext()) {
 			EntityTypeImpl<?> type = (EntityTypeImpl<?>)it.next();
-			if ((FEED_PREFIX + id).equals(type.getTypeName())) {
+			if (entityName.equals(type.getTypeName())) {
 				session.close();
 				return true;
 			}

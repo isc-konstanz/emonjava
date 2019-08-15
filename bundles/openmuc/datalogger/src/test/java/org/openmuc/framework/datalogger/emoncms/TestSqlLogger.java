@@ -12,7 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.emoncms.sql.ScaleIntegerType;
 import org.hibernate.service.spi.ServiceException;
+import org.hibernate.type.BasicType;
 import org.junit.jupiter.api.Test;
 import org.openmuc.framework.data.BooleanValue;
 import org.openmuc.framework.data.ByteValue;
@@ -59,8 +61,7 @@ public class TestSqlLogger {
 			
 			List<Record> recList = logger.getRecords(channelHandler, time, time-1);
 			Record rec = recList.get(0);
-			time = Math.round(time/1000.0)*1000;
-			assertEquals(rec.getTimestamp(), time);
+			checkTimestamp(rec.getTimestamp(), time);
 			assertEquals(rec.getValue().asBoolean(), true);			
 		} 
 		catch (ServiceException e) {
@@ -100,6 +101,16 @@ public class TestSqlLogger {
 		onDeactivateLogger();
 	}
 	
+	private void checkTimestamp(Long timestamp, Long time) {
+		BasicType userType = logger.getUserType();
+		if (userType instanceof  ScaleIntegerType) {
+			Integer i = ((ScaleIntegerType)userType).getJavaTypeDescriptor().unwrap(time, Integer.class, null);
+			time = ((ScaleIntegerType)userType).getJavaTypeDescriptor().wrap(i, null);
+		}
+		assertEquals(timestamp, time);
+		
+	}
+
 	private void getRecords(List<Channel> list) throws IOException {
 		for (Channel channel : list) {
 			long time = channel.getTime();
@@ -108,8 +119,7 @@ public class TestSqlLogger {
 			List<Record> recList = logger.getRecords(channel, time, time-5);
 			if (recList.size() > 0) {
 				Record rec = recList.get(0);
-				time = Math.round(time/1000.0)*1000;
-				assertEquals((long)rec.getTimestamp(), time);
+				checkTimestamp(rec.getTimestamp(), time);
 				switch (type) {
 					case BOOLEAN:
 						assertEquals(rec.getValue().asBoolean(), val.asBoolean());			

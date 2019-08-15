@@ -14,6 +14,7 @@ import org.emoncms.data.Timevalue;
 import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
 import org.emoncms.sql.SqlFeed;
+import org.hibernate.type.BasicType;
 import org.openmuc.framework.data.BooleanValue;
 import org.openmuc.framework.data.ByteValue;
 import org.openmuc.framework.data.DoubleValue;
@@ -47,7 +48,6 @@ public class SqlLogger implements DynamicLoggerService {
 	protected final static String FEED_PREFIX = "feed_";
 
 	private SqlClient client;
-	private Map<String, Feed> channelIdFeedsMap;
 
 	@Override
 	public String getId() {
@@ -83,26 +83,17 @@ public class SqlLogger implements DynamicLoggerService {
 	@Override 
 	public void onConfigure(List<Channel> channels) throws IOException {
 		logger.info("Configuring Emoncms SQL Logger");
-		Map<Integer, SqlFeed> feedMap = new HashMap<Integer, SqlFeed>(channels.size());
+		Map<String, SqlFeed> feedMap = new HashMap<String, SqlFeed>(channels.size());
 		for (Channel channel : channels) {
 
             if (logger.isTraceEnabled()) {
                 logger.trace("channel.getId() " + channel.getId());
             }
             
-//	        SqlFeed feed = new SqlFeed(client, channel.getSetting(FEED_ID).asInt(), channel.getValueType().name());
-            Value feedId = channel.getSetting(FEED_ID);
-            if (feedId != null) {
-    	        SqlFeed feed = new SqlFeed(client, feedId.asInt());
-    	        feedMap.put(feedId.asInt(), feed);
-            }
-            else {
-    	        SqlFeed feed = new SqlFeed(client, channel.getId());
-    	        if (channelIdFeedsMap == null) {
-    	        	channelIdFeedsMap = new HashMap<String, Feed>();
-    	        }
-    	        channelIdFeedsMap.put(channel.getId(), feed);
-            }
+            String entityName = getEntityName(channel);
+            SqlFeed feed = new SqlFeed(client, entityName);
+            feed.setValueType(channel.getValueType().toString());
+	        feedMap.put(entityName, feed);
 		}
 		client.setFeedMap(feedMap);
 		client.open();
@@ -114,15 +105,9 @@ public class SqlLogger implements DynamicLoggerService {
 			return;
 		}
 		if (!client.isClosed()) {
-            Value feedId = channel.getSetting(FEED_ID);
-            Feed feed;
-            if (feedId != null) {
-            	feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
-            }
-            else {
-            	feed = channelIdFeedsMap.get(channel.getId());
-            }
-            timestamp = Math.round(timestamp/1000.0);
+            String entityName = getEntityName(channel);
+            Feed feed = client.getFeed(entityName);
+
 			Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
 			feed.insertData(timevalue);
 		}
@@ -130,21 +115,14 @@ public class SqlLogger implements DynamicLoggerService {
 
 	@Override
 	public void doLog(List<org.openmuc.framework.datalogger.data.Channel> channels, long timestamp) throws IOException {
-        timestamp = Math.round(timestamp/1000.0);
 		for (Channel channel : channels) {
 			try {
 				if (!isValid(channel)) {
 					return;
 				}
 				if (!client.isClosed()) {
-		            Value feedId = channel.getSetting(FEED_ID);
-		            Feed feed;
-		            if (feedId != null) {
-		            	feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
-		            }
-		            else {
-		            	feed = channelIdFeedsMap.get(channel.getId());
-		            }
+		            String entityName = getEntityName(channel);
+		            Feed feed = client.getFeed(entityName);
 					Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
 					feed.insertData(timevalue);					
 				}
@@ -190,20 +168,13 @@ public class SqlLogger implements DynamicLoggerService {
 		}
 		List<Record> records = new LinkedList<Record>();
 		if (!client.isClosed()) {
-            Value feedId = channel.getSetting(FEED_ID);
-            Feed feed;
-            if (feedId != null) {
-            	feed = client.getFeed(channel.getSetting(FEED_ID).asInt());
-            }
-            else {
-            	feed = channelIdFeedsMap.get(channel.getId());
-            }
-            startTime = Math.round(startTime/1000.0);
-            endTime = Math.round(endTime/1000.0);
+            String entityName = getEntityName(channel);
+            Feed feed = client.getFeed(entityName);
+
 			List<Timevalue> data = feed.getData(startTime, endTime, channel.getInterval());
 			for (Timevalue timevalue : data) {
 				Double d = timevalue.getValue();
-				Long time = timevalue.getTime() * 1000;
+				Long time = timevalue.getTime();
 				switch (channel.getValueType()) {
 					case BOOLEAN:
 						boolean v = (d.intValue()!= 0);
@@ -237,5 +208,21 @@ public class SqlLogger implements DynamicLoggerService {
 			}
 		}
 		return records;
+	}
+	
+	protected String getEntityName(Channel channel) {
+        Value feedId = channel.getSetting(FEED_ID);
+        String entityName;
+        if (feedId != null) {
+        	entityName = FEED_PREFIX + feedId.asString();
+        }
+        else {
+        	entityName = channel.getId();
+        }
+		return entityName;
+	}
+
+	public BasicType getUserType() {
+		return client.getUserType();
 	}
 }
