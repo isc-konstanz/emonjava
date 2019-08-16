@@ -14,7 +14,6 @@ import org.emoncms.data.Timevalue;
 import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
 import org.emoncms.sql.SqlFeed;
-import org.hibernate.type.BasicType;
 import org.openmuc.framework.data.BooleanValue;
 import org.openmuc.framework.data.ByteValue;
 import org.openmuc.framework.data.DoubleValue;
@@ -35,19 +34,33 @@ public class SqlLogger implements DynamicLoggerService {
 
 	private final static Logger logger = LoggerFactory.getLogger(SqlLogger.class);
 
-	protected final static String CONNECTION_URL = "connectionUrl";
-	protected final static String CONNECTION_URL_DEFAULT = "jdbc:mysql://127.0.0.1:3306/openmuc?useSSL=false";
+	protected final static String CONNECTION_ADDRESS = "address";
+	protected final static String CONNECTION_ADDRESS_DEFAULT = "127.0.0.1";
+	protected final static String CONNECTION_PORT = "port";
+	protected final static int    CONNECTION_PORT_DEFAULT = 3306;
+	protected final static String CONNECTION_DB_NAME = "databaseName";
+	protected final static String CONNECTION_DB_NAME_DEFAULT = "openmuc";
+	protected final static String CONNECTION_DB_TYPE = "databaseType";
+	protected final static String CONNECTION_DB_TYPE_DEFAULT = "jdbc:mysql";
 	protected final static String CONNECTION_DRIVER_CLASS = "connectionDriverClass";
 	protected final static String CONNECTION_DRIVER_CLASS_DEFAULT = "com.mysql.jdbc.Driver";
 
+	protected final static String DB_DIALECT = "databaseDialect";
+	protected final static String DB_DIALECT_DEFAULT = "org.hibernate.dialect.MySQL5Dialect";
+
 	protected final static String USER = "user";
 	protected final static String PASSWORD = "password";
+
+	protected final static String PREFIX = "prefix";
+	protected final static String GENERIC = "generic";
 
 	protected final static String NODE = "nodeid";
 	protected final static String FEED_ID = "feedid";
 	protected final static String FEED_PREFIX = "feed_";
 
 	private SqlClient client;
+	private String prefix = "";
+	private boolean isGeneric = false;
 
 	@Override
 	public String getId() {
@@ -63,14 +76,34 @@ public class SqlLogger implements DynamicLoggerService {
 	public void onActivate(Configuration config) throws IOException {
 		logger.info("Activating Emoncms SQL Logger");
 		
-		String connectionUrl = config.getString(CONNECTION_URL, CONNECTION_URL_DEFAULT);
+		String connectionUrl = config.getString(CONNECTION_ADDRESS, CONNECTION_ADDRESS_DEFAULT);
 		SqlBuilder builder = SqlBuilder.create(connectionUrl);
 		if (config.contains(CONNECTION_DRIVER_CLASS)) {
 			builder.setConnectionDriverClass(config.getString(CONNECTION_DRIVER_CLASS, CONNECTION_DRIVER_CLASS_DEFAULT));
 		}
+		if (config.contains(CONNECTION_PORT)) {
+			builder.setPort(config.getInteger(CONNECTION_PORT, CONNECTION_PORT_DEFAULT));
+		}
+		if (config.contains(CONNECTION_DB_NAME)) {
+			builder.setDatabaseName(config.getString(CONNECTION_DB_NAME, CONNECTION_DB_NAME_DEFAULT));
+		}
+		if (config.contains(CONNECTION_DB_TYPE)) {
+			builder.setDatabaseType(config.getString(CONNECTION_DB_TYPE, CONNECTION_DB_TYPE_DEFAULT));
+		}
+		if (config.contains(DB_DIALECT)) {
+			builder.setDatabaseDialect(config.getString(DB_DIALECT, DB_DIALECT_DEFAULT));
+		}
 		if (config.contains(USER) && config.contains(PASSWORD)) {
 			builder.setCredentials(config.getString(USER), config.getString(PASSWORD));
 		}
+		if (config.contains(PREFIX)) {
+			prefix = config.getString(PREFIX);
+		}
+		if (config.contains(GENERIC)) {
+			isGeneric = config.getBoolean(GENERIC);
+		}
+		
+		
 		client = (SqlClient) builder.build();
 //		client.open();
 	}
@@ -210,19 +243,38 @@ public class SqlLogger implements DynamicLoggerService {
 		return records;
 	}
 	
-	protected String getEntityName(Channel channel) {
+	protected String getEntityName(Channel channel) throws EmoncmsSyntaxException {
         Value feedId = channel.getSetting(FEED_ID);
-        String entityName;
-        if (feedId != null) {
-        	entityName = FEED_PREFIX + feedId.asString();
+        String entityName = prefix;
+        if (isGeneric) {
+	        if (feedId != null) {
+	        	if (prefix.equals("")) entityName += FEED_PREFIX;
+	        	entityName += feedId.asString();
+	        }
+	        else {
+	        	throw new EmoncmsSyntaxException("Feed id not available!");
+	        }
         }
         else {
-        	entityName = channel.getId();
+        	if (prefix.equals("") && isNumeric(channel.getId())) {
+        		entityName = FEED_PREFIX;
+        	}
+        	entityName += channel.getId();
         }
 		return entityName;
 	}
 
-	public BasicType getUserType() {
-		return client.getUserType();
+	public static boolean isNumeric(String str) { 
+		try {  
+			Double.parseDouble(str);  
+			return true;
+		} 
+		catch(NumberFormatException e){  
+			return false;  
+		}  
+	}
+	
+	public SqlClient getClient() {
+		return client;
 	}
 }

@@ -37,6 +37,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 
 	private final String connectionDriverClass;
 	private final String connectionUrl;
+	private final String dialect;
 	private final String user;
 	private final String password;
 	
@@ -47,9 +48,10 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 
 	protected BasicType userType;
 
-	protected SqlClient(String connectionDriverClass, String connectionUrl, String user, String password) {
+	protected SqlClient(String connectionDriverClass, String connectionUrl, String dialect, String user, String password) {
 		this.connectionDriverClass = connectionDriverClass;
 		this.connectionUrl = connectionUrl;
+		this.dialect = dialect;
 		this.user = user;
 		this.password = password;
 		
@@ -60,7 +62,8 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 	}
 
 	public SqlClient(SqlBuilder sqlBuilder) {
-		this(sqlBuilder.connectionDriverClass, sqlBuilder.connectionUrl, sqlBuilder.user, sqlBuilder.password);
+		this(sqlBuilder.connectionDriverClass, sqlBuilder.connectionUrl, sqlBuilder.databaseDialect, 
+				sqlBuilder.user, sqlBuilder.password);
 	}
 
 	@Override
@@ -101,6 +104,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
         config = config.setProperty("connection.url", connectionUrl);
         config = config.setProperty("connection.username", user);
         config = config.setProperty("connection.password", password);
+        config = config.setProperty("dialect", dialect);
         if (feedMap == null) return;
 		for (SqlFeed feed : feedMap.values()) {
             if (logger.isTraceEnabled()) {

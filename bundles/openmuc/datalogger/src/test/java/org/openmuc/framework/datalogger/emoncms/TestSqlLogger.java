@@ -13,9 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.emoncms.sql.ScaleIntegerType;
-import org.hibernate.service.spi.ServiceException;
 import org.hibernate.type.BasicType;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.openmuc.framework.data.BooleanValue;
 import org.openmuc.framework.data.ByteValue;
 import org.openmuc.framework.data.DoubleValue;
@@ -46,7 +45,6 @@ public class TestSqlLogger {
 	public void testDoLogChannel() {
 		try {
 			onActivateLogger();
-			onConfigureLogger();
 			
 			try {
 				Thread.sleep(2000);
@@ -57,22 +55,20 @@ public class TestSqlLogger {
 			Long time = System.currentTimeMillis();
 			ChannelHandler channelHandler = createChannelHandler();
 			channelHandler.update(new Record(value, time));
+			List<Channel> channelList = new ArrayList<Channel>();
+			channelList.add(channelHandler);
+			logger.onConfigure(channelList);
 			logger.doLog(channelHandler, time);
 			
 			List<Record> recList = logger.getRecords(channelHandler, time, time-1);
 			Record rec = recList.get(0);
 			checkTimestamp(rec.getTimestamp(), time);
 			assertEquals(rec.getValue().asBoolean(), true);			
-		} 
-		catch (ServiceException e) {
-			e.printStackTrace();
-			return;
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-		
 		onDeactivateLogger();
 	}
 
@@ -88,22 +84,17 @@ public class TestSqlLogger {
 			logger.doLog(list, time);
 			
 			getRecords(list);
-		} 
-		catch (ServiceException e) {
-			e.printStackTrace();
-			return;
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-		
 		onDeactivateLogger();
 	}
 	
 	private void checkTimestamp(Long timestamp, Long time) {
-		BasicType userType = logger.getUserType();
-		if (userType instanceof  ScaleIntegerType) {
+		BasicType userType = logger.getClient().getUserType();
+		if (userType instanceof ScaleIntegerType) {
 			Integer i = ((ScaleIntegerType)userType).getJavaTypeDescriptor().unwrap(time, Integer.class, null);
 			time = ((ScaleIntegerType)userType).getJavaTypeDescriptor().wrap(i, null);
 		}
@@ -205,8 +196,9 @@ public class TestSqlLogger {
 
 	private void onActivateLogger() throws IOException {
 		Map<String, String> map = new HashMap<String, String>();
-		map.put(SqlLogger.CONNECTION_URL, SqlLogger.CONNECTION_URL_DEFAULT);
-		map.put(SqlLogger.CONNECTION_DRIVER_CLASS, SqlLogger.CONNECTION_DRIVER_CLASS_DEFAULT);
+		map.put(SqlLogger.CONNECTION_ADDRESS, SqlLogger.CONNECTION_ADDRESS_DEFAULT);
+		map.put(SqlLogger.CONNECTION_PORT, Integer.toString(SqlLogger.CONNECTION_PORT_DEFAULT));
+		map.put(SqlLogger.CONNECTION_DB_NAME, SqlLogger.CONNECTION_DB_NAME_DEFAULT);
 		map.put(SqlLogger.USER, "root");
 		map.put(SqlLogger.PASSWORD, "");
 		
@@ -214,22 +206,8 @@ public class TestSqlLogger {
 		logger.onActivate(config);
 	}
 
-	private void onConfigureLogger() throws IOException {
-		List<Channel> channels = new ArrayList<Channel>();
-		Value feedId = new IntValue(777);
-		String tableName = feedId.asString();
-		// Attention ValueType are not relevant
-		LogChannel logChannel = new LogChannelTestImpl(tableName, ValueType.FLOAT);
-		Settings settings = new Settings(logChannel);
-		settings.put(SqlLogger.FEED_ID, feedId);
-		Channel channel = TestChannelHandler.createChannelHandler(logChannel, settings);
-		channels.add(channel);
-		logger.onConfigure(channels);
-	}
-
 	private ChannelHandler createChannelHandler() {
 		String name = "testSqlLoggerBoolean";
-		// Attention tableName is not relevant
 		LogChannel logChannel = new LogChannelTestImpl(name, ValueType.BOOLEAN);
 		Settings settings = new Settings(logChannel);
 		settings.put(SqlLogger.FEED_ID, new IntValue(777));
