@@ -80,8 +80,8 @@ public class DynamicLogger implements DataLoggerService {
 		try {
 			Ini config = new Ini(new File(CONFIG));
 			activate(config, EmoncmsType.MQTT);
-			activate(config, EmoncmsType.SQL);
 			activate(config, EmoncmsType.HTTP);
+			activate(config, EmoncmsType.SQL);
 			
 		} catch (IOException e) {
 			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
