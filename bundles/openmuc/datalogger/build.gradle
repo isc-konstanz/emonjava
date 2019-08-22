@@ -72,7 +72,7 @@ jar {
                                       '!org.eclipse.paho.*,' +
                                        'org.slf4j;version=0,' +
                                        'org.osgi.*;version=0,' +
-                                       'org.openmuc.*;version=0',
+                                       'org.openmuc.framework.*;version=0',
                'Export-Package':     '')
   }
 }
