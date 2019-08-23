@@ -28,6 +28,7 @@ def mysqlVersion = '5.1.6'
 dependencies {
   api project(':api')
 
+  implementation group: 'org.hibernate', name: 'hibernate-c3p0', version: hibernateVersion
   implementation group: 'org.hibernate', name: 'hibernate-core', version: hibernateVersion
   implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
 }
