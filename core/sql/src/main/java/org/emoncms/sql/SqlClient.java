@@ -100,11 +100,11 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 
 	private void initialize() {
         Configuration config = new Configuration().configure(hibernatePropsFile);
-        config = config.setProperty("connection.driver_class", connectionDriverClass);
-        config = config.setProperty("connection.url", connectionUrl);
-        config = config.setProperty("connection.username", user);
-        config = config.setProperty("connection.password", password);
-        config = config.setProperty("dialect", dialect);
+        config = config.setProperty("hibernate.connection.driver_class", connectionDriverClass);
+        config = config.setProperty("hibernate.connection.url", connectionUrl);
+        if (user !=  null) config = config.setProperty("hibernate.connection.username", user);
+        if (password != null) config = config.setProperty("hibernate.connection.password", password);
+        config = config.setProperty("hibernate.dialect", dialect);
         if (feedMap == null) return;
 		for (SqlFeed feed : feedMap.values()) {
             if (logger.isTraceEnabled()) {
@@ -154,10 +154,9 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 		}
 		return feed;		
 	}
-	
+
 	private boolean feedExists(String entityName) {
-		//TODO find better way than use internal hibernate classes
-		
+		//TODO EntityTypeImpl is deprecated and needs to be handled better than to use internal hibernate classes
 		Session session = factory.openSession();
 		Iterator<EntityType<?>> it = session.getMetamodel().getEntities().iterator();
 		while (it.hasNext()) {

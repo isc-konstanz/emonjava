@@ -14,7 +14,7 @@ public class SqlBuilder {
 	protected int port = 3306;
 	protected String databaseName = "openmuc"; 
 	protected String databaseType = "jdbc:mysql";
-	protected String databaseDialect = "org.hibernate.dialect.MySQL5Dialect";
+	protected String databaseDialect = "org.hibernate.dialect.MariaDBDialect";
 	protected String connectionUrl;
 
 	protected String user = null;
