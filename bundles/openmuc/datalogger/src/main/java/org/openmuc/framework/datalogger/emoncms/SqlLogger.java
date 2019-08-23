@@ -46,7 +46,7 @@ public class SqlLogger implements DynamicLoggerService {
 	protected final static String CONNECTION_DRIVER_CLASS_DEFAULT = "com.mysql.jdbc.Driver";
 
 	protected final static String DB_DIALECT = "databaseDialect";
-	protected final static String DB_DIALECT_DEFAULT = "org.hibernate.dialect.MySQL5Dialect";
+	protected final static String DB_DIALECT_DEFAULT = "org.hibernate.dialect.MariaDBDialect";
 
 	protected final static String USER = "user";
 	protected final static String PASSWORD = "password";
