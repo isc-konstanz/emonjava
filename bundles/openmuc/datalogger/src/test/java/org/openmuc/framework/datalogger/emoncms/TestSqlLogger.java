@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.emoncms.sql.ScaleIntegerType;
+import org.emoncms.hibernate.ScaleIntegerType;
 import org.hibernate.type.BasicType;
 import org.junit.Test;
 import org.openmuc.framework.data.BooleanValue;

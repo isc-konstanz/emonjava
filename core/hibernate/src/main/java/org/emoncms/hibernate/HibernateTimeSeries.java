@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.hibernate;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.util.Map;
  * @author gb
  *
  */
-public class SqlTimeSeries {
+public class HibernateTimeSeries {
 
 	protected static final String VALUE_COLUMN = "value"; 
 	protected static final String TIME_COLUMN = "timestamp"; 
@@ -51,7 +51,7 @@ public class SqlTimeSeries {
 	protected final String id;
 	protected final String type;
 	
-	public SqlTimeSeries(String id, String type) {
+	public HibernateTimeSeries(String id, String type) {
 		this.id = id;
 		this.type = type;
 

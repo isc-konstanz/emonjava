@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.hibernate;
 
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
@@ -72,6 +72,8 @@ public class ScaleIntegerDescriptor extends AbstractTypeDescriptor<Long> {
 	public <X> Long wrap(X value, WrapperOptions options) {
 		if (value == null) return null;
 		if (Integer.class.isInstance(value)) {
+			
+			@SuppressWarnings("deprecation")
 			Long newValue = new Long((Integer)value);
 			newValue = (long) Math.round(newValue * factor);
 			return newValue;

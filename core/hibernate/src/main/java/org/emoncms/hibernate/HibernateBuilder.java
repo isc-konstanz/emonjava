@@ -17,16 +17,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.hibernate;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.emoncms.Emoncms;
 
-public class SqlBuilder {
+public class HibernateBuilder {
 
-	private static final List<SqlClient> sqlSingletons = new ArrayList<SqlClient>();
+	private static final List<HibernateClient> sqlSingletons = new ArrayList<HibernateClient>();
 
 	protected String connectionDriverClass = "com.mysql.jdbc.Driver";
 	protected String address = "127.0.0.1";
@@ -39,60 +39,60 @@ public class SqlBuilder {
 	protected String user = null;
 	protected String password = null;
 
-	private SqlBuilder() {
+	private HibernateBuilder() {
 	}
 
-	private SqlBuilder(String address) {
+	private HibernateBuilder(String address) {
 		this.address = address;
 	}
 
-    public static SqlBuilder create() {
-        return new SqlBuilder();
+    public static HibernateBuilder create() {
+        return new HibernateBuilder();
     }
 
-    public static SqlBuilder create(String address) {
-        return new SqlBuilder(address);
+    public static HibernateBuilder create(String address) {
+        return new HibernateBuilder(address);
     }
 
-	public SqlBuilder setDatabaseDialect(String databaseDialect) {
+	public HibernateBuilder setDatabaseDialect(String databaseDialect) {
 		this.databaseDialect = databaseDialect;
 		return this;
 	}
 
-	public SqlBuilder setDatabaseName(String databaseName) {
+	public HibernateBuilder setDatabaseName(String databaseName) {
 		this.databaseName = databaseName;
 		return this;
 	}
 
-	public SqlBuilder setDatabaseType(String databaseType) {
+	public HibernateBuilder setDatabaseType(String databaseType) {
 		this.databaseType = databaseType;
 		return this;
 	}
 
-	public SqlBuilder setConnectionDriverClass(String connectionDriverClass) {
+	public HibernateBuilder setConnectionDriverClass(String connectionDriverClass) {
 		this.connectionDriverClass = connectionDriverClass;
 		return this;
 	}
 
-	public SqlBuilder setPort(int port) {
+	public HibernateBuilder setPort(int port) {
 		this.port = port;
 		return this;
 	}
 
-	public SqlBuilder setCredentials(String user, String password) {
+	public HibernateBuilder setCredentials(String user, String password) {
 		this.user = user;
 		this.password = password;
 		return this;
 	}
 
 	public Emoncms build() {
-		SqlClient sqlClient = null;
+		HibernateClient sqlClient = null;
 		if (!databaseType.endsWith(":")) databaseType += ":";
 		
 		connectionUrl = databaseType + "//" + address + ":" + port + "/" + 
 					databaseName + "?useSSL=false";
 
-		for (SqlClient emoncms : sqlSingletons) {
+		for (HibernateClient emoncms : sqlSingletons) {
 					
 			if (emoncms.getConnectionUrl().equals(connectionUrl)) {
 				sqlClient = emoncms;
@@ -100,7 +100,7 @@ public class SqlBuilder {
 			}
 		}
 		if (sqlClient == null) {
-			sqlClient = new SqlClient(this);
+			sqlClient = new HibernateClient(this);
 			sqlSingletons.add(sqlClient);
 		}
 		return sqlClient;

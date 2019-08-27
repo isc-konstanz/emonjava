@@ -17,27 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.hibernate;
 
-import org.hibernate.type.AbstractSingleColumnStandardBasicType;
-import org.hibernate.type.descriptor.sql.IntegerTypeDescriptor;
+import org.hibernate.SessionFactory;
 
-public class ScaleIntegerType extends AbstractSingleColumnStandardBasicType<Long> {
+public interface HibernateFactoryGetter {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = -7171959951207336491L;
-	
-	public static final ScaleIntegerType INSTANCE = new ScaleIntegerType();
-    
-    public ScaleIntegerType() {
-		super(IntegerTypeDescriptor.INSTANCE, ScaleIntegerDescriptor.INSTANCE);
-	}
-
-	@Override
-	public String getName() {
-		return "ScaleInteger";
-	}
-
+	public SessionFactory getSessionFactory();
 }

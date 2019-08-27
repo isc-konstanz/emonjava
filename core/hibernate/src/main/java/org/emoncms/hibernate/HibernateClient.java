@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.hibernate;
 
 import java.io.File;
 import java.io.InputStream;
@@ -44,8 +44,8 @@ import org.hibernate.type.BasicType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SqlClient implements Emoncms, SqlFactoryGetter {
-	private static final Logger logger = LoggerFactory.getLogger(SqlClient.class);
+public class HibernateClient implements Emoncms, HibernateFactoryGetter {
+	private static final Logger logger = LoggerFactory.getLogger(HibernateClient.class);
 
 	public static final String SCALE_INTEGER_TYPE = "ScaleInteger";
 	
@@ -63,11 +63,11 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 	private final File hibernatePropsFile;
 
 	private SessionFactory factory;
-	private Map<String, SqlFeed> feedMap;
+	private Map<String, HibernateFeed> feedMap;
 
 	protected BasicType userType;
 
-	protected SqlClient(String connectionDriverClass, String connectionUrl, String dialect, String user, String password) {
+	protected HibernateClient(String connectionDriverClass, String connectionUrl, String dialect, String user, String password) {
 		this.connectionDriverClass = connectionDriverClass;
 		this.connectionUrl = connectionUrl;
 		this.dialect = dialect;
@@ -80,7 +80,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 		hibernatePropsFile = new File(hibernatePropsFilePath);
 	}
 
-	public SqlClient(SqlBuilder sqlBuilder) {
+	public HibernateClient(HibernateBuilder sqlBuilder) {
 		this(sqlBuilder.connectionDriverClass, sqlBuilder.connectionUrl, sqlBuilder.databaseDialect, 
 				sqlBuilder.user, sqlBuilder.password);
 	}
@@ -113,7 +113,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 		initialize();
 	}
 
-	public void setFeedMap(Map<String, SqlFeed> feedMap) {
+	public void setFeedMap(Map<String, HibernateFeed> feedMap) {
 		this.feedMap = feedMap;
 	}
 
@@ -125,7 +125,7 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
         if (password != null) config = config.setProperty("hibernate.connection.password", password);
         config = config.setProperty("hibernate.dialect", dialect);
         if (feedMap == null) return;
-		for (SqlFeed feed : feedMap.values()) {
+		for (HibernateFeed feed : feedMap.values()) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Entity of feed " + feed.getEntityName());
             }
@@ -168,8 +168,8 @@ public class SqlClient implements Emoncms, SqlFactoryGetter {
 			}
 		}
 		else {
-			feed = new SqlFeed(this, entityName);
-			feedMap.put(entityName, (SqlFeed) feed);
+			feed = new HibernateFeed(this, entityName);
+			feedMap.put(entityName, (HibernateFeed) feed);
 		}
 		return feed;		
 	}

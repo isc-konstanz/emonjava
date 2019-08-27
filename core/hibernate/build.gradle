@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-archivesBaseName = 'emoncms-sql'
-def projectName = 'EmoncmsSQL'
-def projectFullName = 'Emoncms Java - SQL'
-def projectDescription = 'Emoncms SQL client implementation'
+archivesBaseName = 'emoncms-hibernate'
+def projectName = 'EmoncmsHibernate'
+def projectFullName = 'Emoncms Java - Hibernate'
+def projectDescription = 'Emoncms Hibernate client implementation'
 
 def hibernateVersion = '5.2.10.Final'
 def mysqlVersion = '5.1.6'

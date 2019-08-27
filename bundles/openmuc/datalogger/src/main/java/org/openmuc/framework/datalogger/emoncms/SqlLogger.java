@@ -11,9 +11,9 @@ import org.emoncms.EmoncmsSyntaxException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.Feed;
 import org.emoncms.data.Timevalue;
-import org.emoncms.sql.SqlBuilder;
-import org.emoncms.sql.SqlClient;
-import org.emoncms.sql.SqlFeed;
+import org.emoncms.hibernate.HibernateBuilder;
+import org.emoncms.hibernate.HibernateClient;
+import org.emoncms.hibernate.HibernateFeed;
 import org.openmuc.framework.data.BooleanValue;
 import org.openmuc.framework.data.ByteValue;
 import org.openmuc.framework.data.DoubleValue;
@@ -58,7 +58,7 @@ public class SqlLogger implements DynamicLoggerService {
 	protected final static String FEED_ID = "feedid";
 	protected final static String FEED_PREFIX = "feed_";
 
-	private SqlClient client;
+	private HibernateClient client;
 	private String prefix = "";
 	private boolean isGeneric = false;
 
@@ -77,7 +77,7 @@ public class SqlLogger implements DynamicLoggerService {
 		logger.info("Activating Emoncms SQL Logger");
 		
 		String connectionUrl = config.getString(CONNECTION_ADDRESS, CONNECTION_ADDRESS_DEFAULT);
-		SqlBuilder builder = SqlBuilder.create(connectionUrl);
+		HibernateBuilder builder = HibernateBuilder.create(connectionUrl);
 		if (config.contains(CONNECTION_DRIVER_CLASS)) {
 			builder.setConnectionDriverClass(config.getString(CONNECTION_DRIVER_CLASS, CONNECTION_DRIVER_CLASS_DEFAULT));
 		}
@@ -104,7 +104,7 @@ public class SqlLogger implements DynamicLoggerService {
 		}
 		
 		
-		client = (SqlClient) builder.build();
+		client = (HibernateClient) builder.build();
 //		client.open();
 	}
 
@@ -116,7 +116,7 @@ public class SqlLogger implements DynamicLoggerService {
 	@Override 
 	public void onConfigure(List<Channel> channels) throws IOException {
 		logger.info("Configuring Emoncms SQL Logger");
-		Map<String, SqlFeed> feedMap = new HashMap<String, SqlFeed>(channels.size());
+		Map<String, HibernateFeed> feedMap = new HashMap<String, HibernateFeed>(channels.size());
 		for (Channel channel : channels) {
 
             if (logger.isTraceEnabled()) {
@@ -124,7 +124,7 @@ public class SqlLogger implements DynamicLoggerService {
             }
             
             String entityName = getEntityName(channel);
-            SqlFeed feed = new SqlFeed(client, entityName);
+            HibernateFeed feed = new HibernateFeed(client, entityName);
             feed.setValueType(channel.getValueType().toString());
 	        feedMap.put(entityName, feed);
 		}
@@ -274,7 +274,7 @@ public class SqlLogger implements DynamicLoggerService {
 		}  
 	}
 	
-	public SqlClient getClient() {
+	public HibernateClient getClient() {
 		return client;
 	}
 }

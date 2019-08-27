@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.hibernate;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,8 +42,8 @@ import org.hibernate.type.BasicType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SqlFeed implements Feed {
-	private static final Logger logger = LoggerFactory.getLogger(SqlFeed.class);
+public class HibernateFeed implements Feed {
+	private static final Logger logger = LoggerFactory.getLogger(HibernateFeed.class);
 
 	protected static final String CONFIG_PATH = "hibernate.configPath";
 	protected static final String DEFAULT_CONFIG_PATH = "conf/";
@@ -56,10 +56,10 @@ public class SqlFeed implements Feed {
 	protected static String MAPPING_TEMPLATE = null;
 
 	protected String entityName;
-	protected SqlFactoryGetter factoryGetter;
+	protected HibernateFactoryGetter factoryGetter;
 	protected String type;
 	
-	public SqlFeed(SqlFactoryGetter factoryGetter, String entityName) {
+	public HibernateFeed(HibernateFactoryGetter factoryGetter, String entityName) {
 		this.entityName = entityName;
 		this.factoryGetter = factoryGetter;
 
@@ -209,7 +209,7 @@ public class SqlFeed implements Feed {
 				" where " + TIME_COLUMN + " <= :start and " +
 							TIME_COLUMN + " >= :end");
 		BasicType userType = null;
-		if (containsUserType(SqlClient.SCALE_INTEGER_TYPE)) {
+		if (containsUserType(HibernateClient.SCALE_INTEGER_TYPE)) {
 			userType = ScaleIntegerType.INSTANCE;
 			query.setParameter("start", start, userType)
 			     .setParameter("end", end, userType);
@@ -258,7 +258,8 @@ public class SqlFeed implements Feed {
 
 		return timeValue;
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	protected Double getValue(Object val) {
 		Double value = null;
 		if (val instanceof Boolean) value = new Double(((Boolean)val) == false ? 0 : 1);
