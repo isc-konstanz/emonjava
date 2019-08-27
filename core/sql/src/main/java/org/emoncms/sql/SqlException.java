@@ -17,29 +17,27 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.http;
+package org.emoncms.sql;
 
 import org.emoncms.EmoncmsException;
 
+public class SqlException extends EmoncmsException {
+	private static final long serialVersionUID = -2086956087655922865L;
 
-public class HttpException extends EmoncmsException {
-	private static final long serialVersionUID = -2024942377965269078L;
-
-	private String message = "Unknown HTTP error";
-
-	public HttpException() {
+	public SqlException() {
+		super();
 	}
 
-	public HttpException(String message) {
-		this.message = message;
-	}
+    public SqlException(String s) {
+        super(s);
+    }
 
-	public HttpException(int httpCode) {
-		this.message = "HTTP status code: " + httpCode;
-	}
+    public SqlException(Throwable cause) {
+        super(cause);
+    }
 
-	@Override
-	public String getMessage() {
-		return message;
-	}
+    public SqlException(String s, Throwable cause) {
+        super(s, cause);
+    }
+
 }

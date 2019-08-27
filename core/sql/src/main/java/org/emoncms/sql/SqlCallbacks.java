@@ -1,8 +1,8 @@
 /* 
- * Copyright 2016-19 ISC Konstanz
+ * Copyright 2016-18 ISC Konstanz
  * 
  * This file is part of emonjava.
- * For more information visit https://github.com/isc-konstanz/emonjava
+ * For more information visit mqtts://github.com/isc-konstanz/emonjava
  * 
  * Emonjava is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,31 +15,17 @@
  * GNU Lesser General Public License for more details.
  * 
  * You should have received a copy of the GNU Lesser General Public License
- * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
+ * along with emonjava.  If not, see <mqtt://www.gnu.org/licenses/>.
  */
-package org.emoncms.http;
+package org.emoncms.sql;
 
 import org.emoncms.EmoncmsException;
 
+/**
+ * Interface used to notify the {@link SqlClient} about query requests
+ */
+interface SqlCallbacks {
 
-public class HttpException extends EmoncmsException {
-	private static final long serialVersionUID = -2024942377965269078L;
+	SqlTransaction startTransaction() throws EmoncmsException;
 
-	private String message = "Unknown HTTP error";
-
-	public HttpException() {
-	}
-
-	public HttpException(String message) {
-		this.message = message;
-	}
-
-	public HttpException(int httpCode) {
-		this.message = "HTTP status code: " + httpCode;
-	}
-
-	@Override
-	public String getMessage() {
-		return message;
-	}
 }

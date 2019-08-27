@@ -71,6 +71,13 @@ public class HttpInput implements Input {
 
 	protected Timevalue timevalue = null;
 
+	public static Input connect(HttpCallbacks callbacks, String name, String node) throws EmoncmsUnavailableException {
+		if (callbacks == null) {
+			throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
+		}
+		return new HttpInput(callbacks, name, node);
+	}
+
 	protected HttpInput(HttpCallbacks callbacks, Integer id, String node, String name, 
 			String description, ProcessList processList, Timevalue timevalue) {
 		this.callbacks = callbacks;
@@ -325,13 +332,6 @@ public class HttpInput implements Input {
 		this.description = null;
 		this.processList = null;
 		this.timevalue = null;
-	}
-
-	public static Input connect(HttpCallbacks callbacks, String name, String node) throws EmoncmsUnavailableException {
-		if (callbacks == null) {
-			throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
-		}
-		return new HttpInput((HttpCallbacks) callbacks, name, node);
 	}
 
 }

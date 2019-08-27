@@ -17,29 +17,27 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.emoncms.http;
+archivesBaseName = 'emoncms-sql'
+def projectName = 'EmoncmsSQL'
+def projectFullName = 'Emoncms Java - SQL'
+def projectDescription = 'Emoncms SQL client implementation'
 
-import org.emoncms.EmoncmsException;
+dependencies {
+  api project(':api')
 
+  implementation group: 'c3p0', name: 'c3p0', version: '0.9.1.2'
+}
 
-public class HttpException extends EmoncmsException {
-	private static final long serialVersionUID = -2024942377965269078L;
+eclipse {
+  project {
+    name = projectName
+  }
+}
 
-	private String message = "Unknown HTTP error";
-
-	public HttpException() {
-	}
-
-	public HttpException(String message) {
-		this.message = message;
-	}
-
-	public HttpException(int httpCode) {
-		this.message = "HTTP status code: " + httpCode;
-	}
-
-	@Override
-	public String getMessage() {
-		return message;
-	}
+jar {
+  manifest {
+    attributes('Bundle-Name':        projectFullName,
+               'Bundle-Description': projectDescription,
+	           'Export-Package':     '')
+  }
 }

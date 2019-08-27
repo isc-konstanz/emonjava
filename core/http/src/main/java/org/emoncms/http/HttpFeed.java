@@ -72,6 +72,13 @@ public class HttpFeed implements Feed {
 	protected ProcessList processList = null;
 	protected Timevalue timevalue = null;
 
+	public static Feed connect(HttpCallbacks callbacks, int id) throws EmoncmsUnavailableException {
+		if (callbacks == null) {
+			throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
+		}
+		return new HttpFeed(callbacks, id);
+	}
+
 	protected HttpFeed(HttpCallbacks callbacks, int id, String name, String tag, 
 			boolean visible, Integer size, Datatype datatype, Engine engine, 
 			ProcessList processList, Timevalue value) {
@@ -409,12 +416,5 @@ public class HttpFeed implements Feed {
 		this.engine = null;
 		this.processList = null;
 		this.timevalue = null;
-	}
-
-	public static Feed connect(HttpCallbacks callbacks, int id) throws EmoncmsUnavailableException {
-		if (callbacks == null) {
-			throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
-		}
-		return new HttpFeed((HttpCallbacks) callbacks, id);
 	}
 }
