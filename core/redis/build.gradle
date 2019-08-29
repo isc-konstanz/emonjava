@@ -17,32 +17,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-project.ext {
+archivesBaseName = 'emoncms-redis'
+def projectName = 'EmoncmsRedis'
+def projectFullName = 'Emoncms Java - Redis'
+def projectDescription = 'Emoncms Redis client implementation'
 
-  projectVersion = '1.3.0'
+def jedisVersion = '3.1.0'
 
-  projectGroup = 'org.emoncms'
+dependencies {
+  api project(':api')
 
-  projectVendor = 'ISC Konstanz e.V.'
-  projectSite = 'https://github.com/isc-konstanz/emonjava'
+  implementation group: 'redis.clients', name: 'jedis', version: jedisVersion
+}
 
-  copyDependencies = false
-
-  distributionProjects = subprojects.findAll {
-    it.getPath() == ':api' ||
-    it.getPath() == ':http' ||
-    it.getPath() == ':mqtt' ||
-    it.getPath() == ':redis' ||
-    it.getPath() == ':sql' ||
-    it.getPath() == ':bundle'
+eclipse {
+  project {
+    name = projectName
   }
+}
 
-  javadocProjects = distributionProjects.findAll {
-    it.getPath() == ':api' ||
-    it.getPath() == ':http' ||
-    it.getPath() == ':mqtt' ||
-    it.getPath() == ':redis' ||
-    it.getPath() == ':sql'
+jar {
+  manifest {
+    attributes('Bundle-Name':        projectFullName,
+               'Bundle-Description': projectDescription,
+	           'Export-Package':     '')
   }
-
 }

@@ -24,5 +24,6 @@ public enum EmoncmsType {
 	DEFAULT,
 	HTTP,
 	MQTT,
+	REDIS,
 	SQL;
 }

@@ -31,13 +31,14 @@ import org.emoncms.EmoncmsType;
 import org.emoncms.EmoncmsUnavailableException;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
+import org.emoncms.redis.RedisClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 public class SqlClient implements Emoncms, SqlCallbacks {
-    private static final Logger logger = LoggerFactory.getLogger(SqlClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(RedisClient.class);
 
     private final String driver;
     private final String url;

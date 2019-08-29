@@ -30,6 +30,9 @@ def gsonJar = 'gson-'+gsonVersion+'.jar'
 def pahoVersion = '1.2.0'
 def pahoJar = 'org.eclipse.paho.client.mqttv3-'+pahoVersion+'.jar'
 
+def jedisVersion = '3.1.0'
+def jedisJar = 'jedis-'+jedisVersion+'.jar'
+
 def c3poVersion = '0.9.5.4'
 def c3piJar = 'c3p0-'+c3poVersion+'.jar'
 
@@ -42,6 +45,7 @@ def mysqlJar = 'mysql-connector-java-'+mysqlVersion+'.jar'
 def apiJar = 'emoncms-api-'+projectVersion+'.jar'
 def httpJar = 'emoncms-http-'+projectVersion+'.jar'
 def mqttJar = 'emoncms-mqtt-'+projectVersion+'.jar'
+def redisJar = 'emoncms-redis-'+projectVersion+'.jar'
 def sqlJar = 'emoncms-sql-'+projectVersion+'.jar'
 
 dependencies {
@@ -53,7 +57,7 @@ dependencies {
   implementation group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
   implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
 
-  implementation project(':http'), project(':mqtt'), project(':sql')
+  implementation project(':http'), project(':mqtt'), project(':sql'), project(':redis')
 }
 
 eclipse {
@@ -65,7 +69,8 @@ eclipse {
 jar {
   into('libs') {
     from(configurations.default) {
-      include apiJar, httpJar, mqttJar, sqlJar, mysqlJar, mchargeJar, c3piJar, pahoJar, gsonJar, ini4jJar
+      include apiJar, httpJar, mqttJar, redisJar, sqlJar, 
+	          ini4jJar, gsonJar, pahoJar, jedisJar, mysqlJar, c3piJar, mchargeJar
     }
   }
   manifest {
@@ -74,10 +79,12 @@ jar {
                'Bundle-ClassPath':   '.,libs/'+apiJar+',' +
                                        'libs/'+httpJar+',' +
                                        'libs/'+mqttJar+',' +
+                                       'libs/'+redisJar+',' +
                                        'libs/'+sqlJar+',' +
                                        'libs/'+mysqlJar+',' +
                                        'libs/'+mchargeJar+',' +
                                        'libs/'+c3piJar+',' +
+                                       'libs/'+jedisJar+',' +
                                        'libs/'+pahoJar+',' +
                                        'libs/'+gsonJar+',' +
                                        'libs/'+ini4jJar,
@@ -85,6 +92,7 @@ jar {
                                       '!org.ini4j.*,' +
                                       '!com.google.gson.*,' +
                                       '!org.eclipse.paho.*,' +
+									  '!redis.clients.*,' +
                                       '!com.mchange.*,' + 
                                       '!com.mysql.*,' +
                                        'javax.sql.*;version=0,' +

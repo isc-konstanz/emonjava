@@ -21,8 +21,10 @@ package org.emoncms.sql;
 
 import java.sql.Connection;
 
+import org.emoncms.redis.RedisClient;
+
 /**
- * Interface used to notify the {@link SqlClient} about query requests
+ * Interface used to notify the {@link RedisClient} about query requests
  */
 interface SqlCallbacks {
 

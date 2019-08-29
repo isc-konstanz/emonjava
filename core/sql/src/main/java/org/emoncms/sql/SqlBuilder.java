@@ -27,7 +27,7 @@ import org.emoncms.Emoncms;
  */
 public class SqlBuilder {
 
-	private String address = "127.0.0.1";
+	private String host = "127.0.0.1";
 	private int port = 3306;
 
 	private String driver = "com.mysql.cj.jdbc.Driver";
@@ -40,20 +40,20 @@ public class SqlBuilder {
 	private SqlBuilder() {
 	}
 
-	private SqlBuilder(String address) {
-		this.address = address;
+	private SqlBuilder(String host) {
+		this.host = host;
 	}
 
     public static SqlBuilder create() {
         return new SqlBuilder();
     }
 
-    public static SqlBuilder create(String address) {
-        return new SqlBuilder(address);
+    public static SqlBuilder create(String host) {
+        return new SqlBuilder(host);
     }
 
-	public SqlBuilder setAddress(String address) {
-		this.address = address;
+	public SqlBuilder setHost(String host) {
+		this.host = host;
 		return this;
 	}
 
@@ -84,7 +84,7 @@ public class SqlBuilder {
 	}
 
 	public Emoncms build() {
-		return new SqlClient(driver, type+"://"+address+":"+port+"/"+name+"?autoReconnect=true&useSSL=false", user, password);
+		return new SqlClient(driver, type+"://"+host+":"+port+"/"+name+"?autoReconnect=true&useSSL=false", user, password);
 	}
 
 }

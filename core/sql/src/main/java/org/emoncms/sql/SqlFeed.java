@@ -10,12 +10,12 @@ import java.util.LinkedList;
 import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.EmoncmsUnavailableException;
-import org.emoncms.Feed;
 import org.emoncms.data.Timevalue;
+import org.emoncms.redis.RedisFeed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SqlFeed implements Feed {
+public class SqlFeed extends RedisFeed {
     private static final Logger logger = LoggerFactory.getLogger(SqlFeed.class);
 
     public static int TYPE_LENGTH_DEFAULT = 10;
@@ -98,9 +98,9 @@ public class SqlFeed implements Feed {
     }
 
     protected SqlFeed(SqlCallbacks callbacks, Integer id, String table) throws EmoncmsException {
+    	super(id);
         this.callbacks = callbacks;
         this.table = table;
-        this.id = id;
     }
 
     @Override
@@ -114,18 +114,6 @@ public class SqlFeed implements Feed {
     @Override
     public EmoncmsType getType() {
         return EmoncmsType.SQL;
-    }
-
-    @Override
-    public Double getLatestValue() throws EmoncmsException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unsupported for type "+getType());
-    }
-
-    @Override
-    public Timevalue getLatestTimevalue() throws EmoncmsException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unsupported for type "+getType());
     }
 
     @Override
