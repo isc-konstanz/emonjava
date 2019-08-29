@@ -21,7 +21,6 @@ package org.openmuc.framework.datalogger.dynamic;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,11 +57,14 @@ import org.slf4j.LoggerFactory;
 public class DynamicLogger implements DataLoggerService {
 	private final static Logger logger = LoggerFactory.getLogger(DynamicLogger.class);
 
+	private static final String DISABLE = "disable";
+	private static final String DISABLED = "disabled";
+
     private static final String CONFIG = System.getProperty(DynamicLogger.class.
     		getPackage().getName().toLowerCase() + ".config", "conf" + File.separator + "emoncms.conf");
 
     private static final String DEFAULT = System.getProperty(DynamicLogger.class.
-    		getPackage().getName().toLowerCase() + ".default", "HTTP");
+    		getPackage().getName().toLowerCase() + ".default", "MQTT");
 
 	protected final Map<String, DynamicLoggerService> services = new LinkedHashMap<String, DynamicLoggerService>();
 
@@ -83,7 +85,7 @@ public class DynamicLogger implements DataLoggerService {
 			activate(config, EmoncmsType.HTTP);
 			activate(config, EmoncmsType.SQL);
 			
-		} catch (IOException e) {
+		} catch (Exception e) {
 			logger.error("Error while reading emoncms configuration: {}", e.getMessage());
 		}
 	}
@@ -98,20 +100,27 @@ public class DynamicLogger implements DataLoggerService {
 	    		section = config.get("Emoncms");
 			}
 			else {
-				logger.debug("Skipping {} Logger activation", type.name());
+				logger.debug("Skipping invalid {} Logger activation", type.name());
 				return;
 			}
+			if (Boolean.parseBoolean(section.get(DISABLE)) ||
+					Boolean.parseBoolean(section.get(DISABLED))) {
+				
+				logger.debug("Skipping disabled {} Logger activation", type.name());
+				return;
+			}
+			
 			try {
 				DynamicLoggerService service;
 				switch(type) {
 				case MQTT:
 					service = new MqttLogger();
 					break;
-				case SQL:
-					service = new SqlLogger();
-					break;
 				case HTTP:
 					service = new HttpLogger();
+					break;
+				case SQL:
+					service = new SqlLogger();
 					break;
 				default:
 					return;
@@ -180,7 +189,8 @@ public class DynamicLogger implements DataLoggerService {
 				}
 			}
 			handlers.clear();
-			
+
+			DynamicLoggerCollection loggers = new DynamicLoggerCollection(this);
 			for (LogChannel channel : channels) {
 				String id = channel.getId();
 				
@@ -199,14 +209,17 @@ public class DynamicLogger implements DataLoggerService {
 				else {
 					handler = new ChannelHandler(channel, settings);
 				}
-				this.handlers.put(id, handler);
+				loggers.add(handler);
+				handlers.put(id, handler);
 				
 				logger.debug("{} \"{}\" configured to log every {}s", 
 						handler.getClass().getSimpleName(), id, channel.getLoggingInterval()/1000);
 			}
-			for (DynamicLoggerService service : services.values()) {
-				if (service.isActive()) {
-					service.onConfigure(new ArrayList<Channel>(handlers.values()));
+			for (ChannelCollection channelCollection : loggers) {
+				channelCollection.configure();
+				if (logger.isDebugEnabled()) {
+			    	logger.debug("Configured {} channels for the {} Logger", 
+			    			channelCollection.size(), channelCollection.getService().getId());
 				}
 			}
 		} catch (Exception e) {

@@ -30,7 +30,7 @@ public class SqlBuilder {
 	private String address = "127.0.0.1";
 	private int port = 3306;
 
-	private String driver = "com.mysql.jdbc.Driver";
+	private String driver = "com.mysql.cj.jdbc.Driver";
 	private String type = "jdbc:mysql";
 	private String name = "emoncms";
 
@@ -52,36 +52,39 @@ public class SqlBuilder {
         return new SqlBuilder(address);
     }
 
-	public void setAddress(String address) {
+	public SqlBuilder setAddress(String address) {
 		this.address = address;
+		return this;
 	}
 
-	public void setPort(int port) {
+	public SqlBuilder setPort(int port) {
 		this.port = port;
+		return this;
 	}
 
-	public void setDriver(String driver) {
+	public SqlBuilder setDriver(String driver) {
 		this.driver = driver;
+		return this;
 	}
 
-	public void setDatabaseType(String type) {
+	public SqlBuilder setDatabaseType(String type) {
 		this.type = type;
+		return this;
 	}
 
-	public void setDatabaseName(String name) {
+	public SqlBuilder setDatabaseName(String name) {
 		this.name = name;
+		return this;
 	}
 
-	public void setUser(String user) {
+	public SqlBuilder setCredentials(String user, String password) {
 		this.user = user;
-	}
-
-	public void setPassword(String password) {
 		this.password = password;
+		return this;
 	}
 
 	public Emoncms build() {
-		return new SqlClient(driver, type+"://"+address+":"+port+"/"+name, user, password);
+		return new SqlClient(driver, type+"://"+address+":"+port+"/"+name+"?autoReconnect=true&useSSL=false", user, password);
 	}
 
 }

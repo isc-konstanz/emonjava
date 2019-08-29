@@ -5,9 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.emoncms.EmoncmsSyntaxException;
 import org.emoncms.EmoncmsType;
+import org.emoncms.data.Timevalue;
+import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
+import org.emoncms.sql.SqlException;
 import org.emoncms.sql.SqlFeed;
+import org.emoncms.sql.Transaction;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
@@ -16,317 +21,193 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SqlLogger implements DynamicLoggerService {
-	private final static Logger logger = LoggerFactory.getLogger(SqlLogger.class);
+    private final static Logger logger = LoggerFactory.getLogger(SqlLogger.class);
 
-	protected final static String ADDRESS = "address";
-	protected final static String ADDRESS_DEFAULT = "127.0.0.1";
-	protected final static String PORT = "port";
+    protected final static String FEED_ID = "feedid";
 
-	protected final static String DRIVER = "driver";
-	protected final static String DATABASE_TYPE = "type";
-	protected final static String DATABASE_NAME = "database";
+    protected final static String DRIVER = "driver";
+    protected final static String TYPE = "type";
+    protected final static String ADDRESS = "address";
+    protected final static String ADDRESS_DEFAULT = "127.0.0.1";
+    protected final static String PORT = "port";
 
-	private SqlClient client;
+    protected final static String DATABASE_NAME = "database";
+    protected final static String DATABASE_USER = "user";
+    protected final static String DATABASE_PASSWORD = "password";
 
-	private final Map<String, SqlFeed> feeds = new HashMap<String, SqlFeed>();
+    protected final static String PREFIX = "prefix";
+    protected final static String GENERIC = "generic";
 
-	@Override
-	public String getId() {
-		return EmoncmsType.SQL.name();
+    private boolean isGeneric = true;
+    private String prefix = "feed_";
+
+    private SqlClient client;
+
+    private final Map<String, SqlFeed> feeds = new HashMap<String, SqlFeed>();
+
+    @Override
+    public String getId() {
+        return EmoncmsType.SQL.name();
+    }
+
+    @Override
+    public boolean isActive() {
+        return client != null && !client.isClosed();
+    }
+
+    @Override
+    public void onActivate(Configuration config) throws IOException {
+        logger.info("Activating Emoncms SQL Logger");
+        
+        if (config.contains(GENERIC)) {
+            isGeneric = config.getBoolean(GENERIC);
+        }
+        if (config.contains(PREFIX)) {
+            prefix = config.getString(PREFIX);
+            if (prefix.equals("False") || prefix.equals("false")) {
+            	prefix = "";
+            }
+        }
+        
+        String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
+        SqlBuilder builder = SqlBuilder.create(address);
+        if (config.contains(PORT)) {
+            builder.setPort(config.getInteger(PORT));
+        }
+        if (config.contains(DRIVER)) {
+            builder.setDriver(config.getString(DRIVER));
+        }
+        if (config.contains(TYPE)) {
+            builder.setDatabaseType(config.getString(TYPE));
+        }
+        if (config.contains(DATABASE_NAME)) {
+            builder.setDatabaseName(config.getString(DATABASE_NAME));
+        }
+		if (config.contains(DATABASE_USER) && config.contains(DATABASE_PASSWORD)) {
+			builder.setCredentials(
+					config.getString(DATABASE_USER), 
+					config.getString(DATABASE_PASSWORD));
+		}
+        client = (SqlClient) builder.build();
+        client.open();
+    }
+
+    @Override
+    public void onConfigure(List<Channel> channels) throws IOException {
+        feeds.clear();
+        try {
+        	// TODO: Check necessity. Without this, it seems bound to crash in an InterruptionException.
+			Thread.sleep(1000);
+			
+		} catch (InterruptedException ignore) {}
+        try (Transaction transaction = client.getTransaction()) {
+            for (Channel channel : channels) {
+            	try {
+                	String channelId = channel.getId();
+                    Integer feedId = null;
+                    if (channel.hasSetting(FEED_ID)) {
+                    	feedId = channel.getSetting(FEED_ID).asInt();
+                    }
+                	
+                    String valueType;
+                    switch (channel.getValueType()) {
+                    case STRING:
+                    	Integer maxStrLength =  channel.getValueTypeLength();
+                        if (maxStrLength == null) {
+                            maxStrLength = SqlFeed.TYPE_LENGTH_DEFAULT;
+                        }
+                        valueType = "VARCHAR(" + maxStrLength + ")";
+                    case BYTE_ARRAY:
+                        Integer maxBytesLength = channel.getValueTypeLength();
+                        if (maxBytesLength == null) {
+                            maxBytesLength = SqlFeed.TYPE_LENGTH_DEFAULT;
+                        }
+                        valueType = "VARBINARY(" + maxBytesLength + ")";
+                    case BYTE:
+                        valueType = "TINYINT";
+                    case BOOLEAN:
+                        valueType = "BIT";
+                    case SHORT:
+                        valueType = "SMALLINT";
+                    case LONG:
+                        valueType = "BIGINT";
+                    case INTEGER:
+                        valueType = "INT";
+                    case FLOAT:
+                        valueType = "REAL";
+                    default:
+                    	valueType = "FLOAT";
+                    }
+                    String tableName = prefix;
+                	if (isGeneric) {
+                		if (feedId == null) {
+                            throw new EmoncmsSyntaxException("Feed id needs to be configured for generic configurations");
+                		}
+                		tableName += feedId;
+                	}
+                	else {
+                		tableName += channelId;
+                    }
+                    feeds.put(channelId, SqlFeed.connect(client, transaction, feedId, tableName, valueType, false));
+    			    
+    			} catch (EmoncmsSyntaxException e) {
+    				logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
+    						channel.getId(), e.getMessage());
+    			}
+            }
+        } catch (Exception e) {
+			throw new SqlException(e);
+		}
+    }
+
+    @Override
+    public void doLog(Channel channel, long timestamp) throws IOException {
+    	if (!isValid(channel)) {
+    		return;
+    	}
+    	Long time = channel.getTime();
+    	if (time == null) {
+    		time = timestamp;
+    	}
+        feeds.get(channel.getId()).insertData(new Timevalue(time, channel.getValue().asDouble()));
+    }
+
+    @Override
+    public void doLog(List<Channel> channels, long timestamp) throws IOException {
+        try (Transaction transaction = client.getTransaction()) {
+            for (Channel channel : channels) {
+            	doLog(transaction, channel, timestamp);
+            }
+        } catch (Exception e) {
+			throw new SqlException(e);
+		}
+    }
+
+    private void doLog(Transaction transaction, Channel channel, long timestamp) throws IOException {
+    	if (!isValid(channel)) {
+    		return;
+    	}
+    	Long time = channel.getTime();
+    	if (time == null) {
+    		time = timestamp;
+    	}
+        feeds.get(channel.getId()).insertData(transaction, timestamp, channel.getValue().asDouble());
+    }
+
+	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
+		if (!channel.isValid()) {
+			logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}",
+					channel.getId(), channel.getFlag());
+			
+			return false;
+		}
+		logger.trace("Preparing record to log for channel {}", channel);
+		return true;
 	}
 
-	@Override
-	public boolean isActive() {
-		return client != null && !client.isClosed();
-	}
-
-	@Override
-	public void onActivate(Configuration config) throws IOException {
-		logger.info("Activating Emoncms SQL Logger");
-
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void onConfigure(List<Channel> channels) throws IOException {
-		//  switch (string) {
-		//  case "DOUBLE":
-		//	      return "FLOAT";
-		//  case "FLOAT":
-		//	      return "REAL";
-		//  case "INTEGER":
-		//	      return "INT";
-		//  case "LONG":
-		//	      return "BIGINT";
-		//  case "SHORT":
-		//	      return "SMALLINT";
-		//  case "BYTE":
-		//	      return "TINYINT";
-		//  case "BOOLEAN":
-		//	      return "BIT";
-		//  case "BYTE_ARRAY":
-		//	      int maxBytesLength = DEFAULT_MAX_ARRAY_LENGTH;
-		//	      if (valueTypeLength != null) {
-		//	          maxBytesLength = valueTypeLength;
-		//	      }
-		//	      return "VARBINARY(" + maxBytesLength + ")";
-		//  case "STRING":
-		//	      int maxStrLength = DEFAULT_MAX_ARRAY_LENGTH;
-		//	      if (valueTypeLength != null) {
-		//	          maxStrLength = valueTypeLength;
-		//	      }
-		//	      return "VARCHAR(" + maxStrLength + ")";
-		//}
-	}
-
-	@Override
-	public void doLog(Channel channel, long timestamp) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void doLog(List<Channel> channels, long timestamp) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-//	protected final static String DB_DIALECT = "databaseDialect";
-//	protected final static String DB_DIALECT_DEFAULT = "org.hibernate.dialect.MariaDBDialect";
-//
-//	protected final static String USER = "user";
-//	protected final static String PASSWORD = "password";
-//
-//	protected final static String PREFIX = "prefix";
-//	protected final static String GENERIC = "generic";
-//
-//	protected final static String NODE = "nodeid";
-//	protected final static String FEED_ID = "feedid";
-//	protected final static String FEED_PREFIX = "feed_";
-//
-//	private HibernateClient client;
-//	private String prefix = "";
-//	private boolean isGeneric = false;
-//
-//	@Override
-//	public String getId() {
-//		return EmoncmsType.SQL.name();
-//	}
-//
-//	@Override
-//	public boolean isActive() {
-//		return client != null; // && !client.isClosed();
-//	}
-//
-//	@Override
-//	public void onActivate(Configuration config) throws IOException {
-//		logger.info("Activating Emoncms SQL Logger");
-//		
-//		String connectionUrl = config.getString(CONNECTION_ADDRESS, CONNECTION_ADDRESS_DEFAULT);
-//		HibernateBuilder builder = HibernateBuilder.create(connectionUrl);
-//		if (config.contains(CONNECTION_DRIVER_CLASS)) {
-//			builder.setConnectionDriverClass(config.getString(CONNECTION_DRIVER_CLASS, CONNECTION_DRIVER_CLASS_DEFAULT));
-//		}
-//		if (config.contains(CONNECTION_PORT)) {
-//			builder.setPort(config.getInteger(CONNECTION_PORT, CONNECTION_PORT_DEFAULT));
-//		}
-//		if (config.contains(CONNECTION_DB_NAME)) {
-//			builder.setDatabaseName(config.getString(CONNECTION_DB_NAME, CONNECTION_DB_NAME_DEFAULT));
-//		}
-//		if (config.contains(CONNECTION_DB_TYPE)) {
-//			builder.setDatabaseType(config.getString(CONNECTION_DB_TYPE, CONNECTION_DB_TYPE_DEFAULT));
-//		}
-//		if (config.contains(DB_DIALECT)) {
-//			builder.setDatabaseDialect(config.getString(DB_DIALECT, DB_DIALECT_DEFAULT));
-//		}
-//		if (config.contains(USER) && config.contains(PASSWORD)) {
-//			builder.setCredentials(config.getString(USER), config.getString(PASSWORD));
-//		}
-//		if (config.contains(PREFIX)) {
-//			prefix = config.getString(PREFIX);
-//		}
-//		if (config.contains(GENERIC)) {
-//			isGeneric = config.getBoolean(GENERIC);
-//		}
-//		
-//		
-//		client = (HibernateClient) builder.build();
-////		client.open();
-//	}
-//
-//	@Override
-//	public void onDeactivate() {
-//		client.close();
-//	}
-//
-//	@Override 
-//	public void onConfigure(List<Channel> channels) throws IOException {
-//		logger.info("Configuring Emoncms SQL Logger");
-//		Map<String, HibernateFeed> feedMap = new HashMap<String, HibernateFeed>(channels.size());
-//		for (Channel channel : channels) {
-//
-//            if (logger.isTraceEnabled()) {
-//                logger.trace("channel.getId() " + channel.getId());
-//            }
-//            
-//            String entityName = getEntityName(channel);
-//            HibernateFeed feed = new HibernateFeed(client, entityName);
-//            feed.setValueType(channel.getValueType().toString());
-//	        feedMap.put(entityName, feed);
-//		}
-//		client.setFeedMap(feedMap);
-//		client.open();
-//	}
-//
-//	@Override
-//	public void doLog(Channel channel, long timestamp) throws IOException {
-//		if (!isValid(channel)) {
-//			return;
-//		}
-//		if (!client.isClosed()) {
-//            String entityName = getEntityName(channel);
-//            Feed feed = client.getFeed(entityName);
-//
-//			Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
-//			feed.insertData(timevalue);
-//		}
-//	}
-//
-//	@Override
-//	public void doLog(List<org.openmuc.framework.datalogger.data.Channel> channels, long timestamp) throws IOException {
-//		for (Channel channel : channels) {
-//			try {
-//				if (!isValid(channel)) {
-//					return;
-//				}
-//				if (!client.isClosed()) {
-//		            String entityName = getEntityName(channel);
-//		            Feed feed = client.getFeed(entityName);
-//					Timevalue timevalue = new Timevalue(timestamp, channel.getValue().asDouble());
-//					feed.insertData(timevalue);					
-//				}
-//			} 
-//			catch (EmoncmsSyntaxException e) {
-//				logger.warn("Error preparing record to be logged for Channel \"{}\": {}", 
-//						channel.getId(), e.getMessage());
-//			}
-//		}
-//	}
-//
-//	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
-//		if (!channel.isValid()) {
-//			logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
-//					channel.getId(), channel.getFlag());
-//			
-//			return false;
-//		}
-//		switch(channel.getValueType()) {
-//		case DOUBLE:
-//		case FLOAT:
-//		case LONG:
-//		case INTEGER:
-//		case SHORT:
-//		case BYTE:
-//		case BOOLEAN:
-//			break;
-//		default:
-//			throw new EmoncmsSyntaxException("Invalid value type: "+channel.getValueType());
-//		}
-//        if (!channel.hasSetting(NODE)) {
-//			throw new EmoncmsSyntaxException("Node needs to be configured");
-//        }
-//		logger.trace("Preparing record to log for channel {}", channel);
-//		return true;
-//	}
-//
-//	@Override
-//	public List<Record> getRecords(Channel channel, long startTime, long endTime)
-//			throws IOException {
-//		if (!channel.hasSetting(FEED_ID)) {
-//			throw new EmoncmsException("Unable to retrieve values for channel without configured feed: " + channel.getId());
-//		}
-//		List<Record> records = new LinkedList<Record>();
-//		if (!client.isClosed()) {
-//            String entityName = getEntityName(channel);
-//            Feed feed = client.getFeed(entityName);
-//
-//			List<Timevalue> data = feed.getData(startTime, endTime, channel.getInterval());
-//			for (Timevalue timevalue : data) {
-//				Double d = timevalue.getValue();
-//				Long time = timevalue.getTime();
-//				switch (channel.getValueType()) {
-//					case BOOLEAN:
-//						boolean v = (d.intValue()!= 0);
-//						records.add(new Record(new BooleanValue(v), time));
-//						break;
-//					case BYTE:
-//						records.add(new Record(new ByteValue(d.byteValue()), time));
-//						break;
-//					case DOUBLE:
-//						records.add(new Record(new DoubleValue(d), time));
-//						break;
-//					case FLOAT:
-//						records.add(new Record(new FloatValue(d.floatValue()), time));
-//						break;
-//					case INTEGER:
-//						records.add(new Record(new IntValue(d.intValue()), time));
-//						break;
-//					case LONG:
-//						records.add(new Record(new LongValue(d.longValue()), time));
-//						break;
-//					case SHORT:
-//						records.add(new Record(new ShortValue(d.shortValue()), time));
-//						break;
-//					case STRING:
-//						records.add(new Record(new StringValue(String.valueOf(d)), time));
-//						break;
-//					default:
-//						records.add(new Record(new StringValue(String.valueOf(d)), time));
-//						break;
-//				}
-//			}
-//		}
-//		return records;
-//	}
-//	
-//	protected String getEntityName(Channel channel) throws EmoncmsSyntaxException {
-//        Value feedId = channel.getSetting(FEED_ID);
-//        String entityName = prefix;
-//        if (isGeneric) {
-//	        if (feedId != null) {
-//	        	if (prefix.equals("")) entityName += FEED_PREFIX;
-//	        	entityName += feedId.asString();
-//	        }
-//	        else {
-//	        	throw new EmoncmsSyntaxException("Feed id not available!");
-//	        }
-//        }
-//        else {
-//        	if (prefix.equals("") && isNumeric(channel.getId())) {
-//        		entityName = FEED_PREFIX;
-//        	}
-//        	entityName += channel.getId();
-//        }
-//		return entityName;
-//	}
-//
-//	public static boolean isNumeric(String str) { 
-//		try {  
-//			Double.parseDouble(str);  
-//			return true;
-//		} 
-//		catch(NumberFormatException e){  
-//			return false;  
-//		}  
-//	}
-//	
-//	public HibernateClient getClient() {
-//		return client;
-//	}
+    @Override
+    public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

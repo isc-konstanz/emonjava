@@ -22,10 +22,14 @@ def projectName = 'EmoncmsSQL'
 def projectFullName = 'Emoncms Java - SQL'
 def projectDescription = 'Emoncms SQL client implementation'
 
+def c3poVersion = '0.9.5.4'
+def mchangeVersion = '0.2.16'
+
 dependencies {
   api project(':api')
 
-  implementation group: 'c3p0', name: 'c3p0', version: '0.9.1.2'
+  implementation group: 'com.mchange', name: 'c3p0', version: c3poVersion
+  implementation group: 'com.mchange', name: 'mchange-commons-java', version: mchangeVersion
 }
 
 eclipse {

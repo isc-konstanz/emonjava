@@ -64,6 +64,10 @@ public class DynamicLoggerCollection extends LinkedList<ChannelCollection> {
 			return service;
 		}
 
+		public void configure() throws IOException {
+			service.onConfigure(this);
+		}
+
 		public void log(long timestamp) throws IOException {
 			if (size() == 1) {
 				service.doLog(get(0), timestamp);

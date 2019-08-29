@@ -71,7 +71,7 @@ public class HttpInput implements Input {
 
 	protected Timevalue timevalue = null;
 
-	public static Input connect(HttpCallbacks callbacks, String name, String node) throws EmoncmsUnavailableException {
+	public static HttpInput connect(HttpCallbacks callbacks, String name, String node) throws EmoncmsUnavailableException {
 		if (callbacks == null) {
 			throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
 		}

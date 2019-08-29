@@ -22,18 +22,13 @@ package org.emoncms.sql;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.List;
 
 import org.emoncms.Emoncms;
 import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.EmoncmsUnavailableException;
-import org.emoncms.data.Data;
-import org.emoncms.data.DataList;
 import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 import org.slf4j.Logger;
@@ -44,8 +39,6 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 public class SqlClient implements Emoncms, SqlCallbacks {
     private static final Logger logger = LoggerFactory.getLogger(SqlClient.class);
 
-    private static final String INSERT = "INSERT INTO (?) (time, data) VALUES((?),(?))";
-
     private final String driver;
     private final String url;
     private final String user;
@@ -55,6 +48,7 @@ public class SqlClient implements Emoncms, SqlCallbacks {
 
     public SqlClient(String driver, String url, String user, String password) {
         this.driver = driver;
+        
         this.url = url;
         this.user = user;
         this.password = password;
@@ -92,6 +86,9 @@ public class SqlClient implements Emoncms, SqlCallbacks {
     public void open() throws EmoncmsUnavailableException {
         logger.info("Initializing emoncms SQL connection \"{}\"", url);
         try {
+        	if (source != null) {
+        		source.close();
+        	}
             source = new ComboPooledDataSource();
             source.setDriverClass(driver);
             source.setJdbcUrl(url);
@@ -118,94 +115,74 @@ public class SqlClient implements Emoncms, SqlCallbacks {
         throw new UnsupportedOperationException("Unsupported for type "+getType());
     }
 
-    public void insert(Long time, List<Namevalue> namevalues) throws SQLException {
-        logger.debug("Inserting values for {} tables {}", namevalues.size(), namevalues.toString());
-        
-        Connection connection = DriverManager.getConnection(url, user, password);
-        PreparedStatement statement = null;
-        try {
-            statement = connection.prepareStatement(INSERT);
-            for (Namevalue  nameVal : namevalues) {
-                statement.setString(1, nameVal.getName());
-                statement.setLong(2, time);
-                statement.setDouble(3, nameVal.getValue());
-                statement.executeUpdate();
-            }
-        }
-        finally {
-            if (statement != null) try {
-                statement.close(); 
-            }
-            catch (SQLException ignore) {}
-        }
-    }
-
-    public void insert(DataList dataList) throws SQLException {
-        logger.debug("Inserting bulk of {} data sets", dataList.size());
-        
-        Connection connection = DriverManager.getConnection(url, user, password);
-        PreparedStatement statement = null;
-        try {
-            statement = connection.prepareStatement(INSERT);
-            Iterator<Data> it = dataList.iterator();
-            while (it.hasNext()) {
-                Data data = it.next();
-                List<Namevalue> namevals = data.getNamevalues();
-                for (Namevalue  nameVal : namevals) {
-                    statement.setString(1, nameVal.getName());
-                    statement.setLong(2, data.getTime());
-                    statement.setDouble(3, nameVal.getValue());
-                    statement.executeUpdate();
-                }
-            }
-        }
-        finally {
-            if (statement != null) try {
-                statement.close();
-            }
-            catch (SQLException ignore) {}
-            try {
-                connection.close();
-            }
-            catch (SQLException ignore) {}
-        }
-    }
-
-    @Override
-    public SqlTransaction startTransaction() throws EmoncmsException {
-    	Connection connection = null;
-        try {
-        	connection = source.getConnection(user, password);
-			return new SqlTransaction(connection);
+	@Override
+	public Connection getConnection() throws SqlException {
+		try {
+			return source.getConnection(user, password);
 			
 		} catch (SQLException e) {
-        	try {
-				connection.close();
-				
-			} catch (SQLException ignore) {}
-        	throw new EmoncmsException(e);
+			throw new SqlException(e);
 		}
-    }
+	}
 
-//    @Override
-//    public void doExecute(String query) throws SQLException {
+	@Override
+	public Transaction getTransaction() throws SqlException {
+		return new Transaction(getConnection());
+	}
+
+//  private static final String INSERT = "INSERT INTO (?) (time, data) VALUES((?),(?))";
 //
-//        Connection connection = DriverManager.getConnection(url, user, password);
-//        Statement statement = null;
-//        try {
-//            statement = connection.createStatement();
-//            statement.execute(query);
-//        }
-//        finally {
-//            if (statement != null) try {
-//                statement.close();
-//            }
-//            catch (SQLException ignore) {}
-//            try {
-//                connection.close(); 
-//            }
-//            catch (SQLException ignore) {}
-//        }
-//    }
+//  public void insert(Long time, List<Namevalue> namevalues) throws SQLException {
+//      logger.debug("Inserting values for {} tables {}", namevalues.size(), namevalues.toString());
+//      
+//      Connection connection = source.getConnection(user, password);
+//      PreparedStatement statement = null;
+//      try {
+//          statement = connection.prepareStatement(INSERT);
+//          for (Namevalue  nameVal : namevalues) {
+//              statement.setString(1, nameVal.getName());
+//              statement.setLong(2, time);
+//              statement.setDouble(3, nameVal.getValue());
+//              statement.executeUpdate();
+//          }
+//      }
+//      finally {
+//          if (statement != null) try {
+//              statement.close(); 
+//          }
+//          catch (SQLException ignore) {}
+//      }
+//  }
+//
+//  public void insert(DataList dataList) throws SQLException {
+//      logger.debug("Inserting bulk of {} data sets", dataList.size());
+//      
+//      Connection connection = source.getConnection(user, password);
+//      PreparedStatement statement = null;
+//      try {
+//          statement = connection.prepareStatement(INSERT);
+//          Iterator<Data> it = dataList.iterator();
+//          while (it.hasNext()) {
+//              Data data = it.next();
+//              List<Namevalue> namevals = data.getNamevalues();
+//              for (Namevalue  nameVal : namevals) {
+//                  statement.setString(1, nameVal.getName());
+//                  statement.setLong(2, data.getTime());
+//                  statement.setDouble(3, nameVal.getValue());
+//                  statement.executeUpdate();
+//              }
+//          }
+//      }
+//      finally {
+//          if (statement != null) try {
+//              statement.close();
+//          }
+//          catch (SQLException ignore) {}
+//          try {
+//              connection.close();
+//          }
+//          catch (SQLException ignore) {}
+//      }
+//  }
 
 }

@@ -19,13 +19,15 @@
  */
 package org.emoncms.sql;
 
-import org.emoncms.EmoncmsException;
+import java.sql.Connection;
 
 /**
  * Interface used to notify the {@link SqlClient} about query requests
  */
 interface SqlCallbacks {
 
-	SqlTransaction startTransaction() throws EmoncmsException;
+	Connection getConnection() throws SqlException;
+
+	Transaction getTransaction() throws SqlException;
 
 }

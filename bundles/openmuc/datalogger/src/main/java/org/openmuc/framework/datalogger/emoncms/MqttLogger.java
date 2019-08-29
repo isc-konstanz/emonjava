@@ -125,7 +125,7 @@ public class MqttLogger implements DynamicLoggerService {
 
 	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
 		if (!channel.isValid()) {
-			logger.debug("Skipped logging an invalid or empty value for channel \"{}\": {}",
+			logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}",
 					channel.getId(), channel.getFlag());
 			
 			return false;

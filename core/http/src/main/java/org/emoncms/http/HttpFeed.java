@@ -72,7 +72,7 @@ public class HttpFeed implements Feed {
 	protected ProcessList processList = null;
 	protected Timevalue timevalue = null;
 
-	public static Feed connect(HttpCallbacks callbacks, int id) throws EmoncmsUnavailableException {
+	public static HttpFeed connect(HttpCallbacks callbacks, int id) throws EmoncmsUnavailableException {
 		if (callbacks == null) {
 			throw new EmoncmsUnavailableException("HTTP connection to emoncms webserver invalid");
 		}
