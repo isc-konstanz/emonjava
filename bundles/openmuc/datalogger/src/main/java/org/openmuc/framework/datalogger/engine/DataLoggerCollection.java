@@ -17,29 +17,29 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.dynamic;
+package org.openmuc.framework.datalogger.engine;
 
 import java.io.IOException;
 import java.util.LinkedList;
 
 import org.openmuc.framework.datalogger.data.Channel;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerCollection.ChannelCollection;
+import org.openmuc.framework.datalogger.engine.DataLoggerCollection.ChannelCollection;
 
-public class DynamicLoggerCollection extends LinkedList<ChannelCollection> {
+public class DataLoggerCollection extends LinkedList<ChannelCollection> {
 	private static final long serialVersionUID = -3846829759240096545L;
 
 	private final DynamicLogger logger;
 
-	protected DynamicLoggerCollection(DynamicLogger logger) {
+	protected DataLoggerCollection(DynamicLogger logger) {
 		this.logger = logger;
 	}
 
 	public void add(Channel channel) throws IOException {
-		DynamicLoggerService service = logger.getLogger(channel);
+		DataLoggerEngine service = logger.getEngine(channel);
 		
 		ChannelCollection channels = null;
 		for (ChannelCollection ch : this) {
-			if (ch.getService().getId().equals(service.getId())) {
+			if (ch.getEngine().getId().equals(service.getId())) {
 				channels = ch;
 				break;
 			}
@@ -54,13 +54,13 @@ public class DynamicLoggerCollection extends LinkedList<ChannelCollection> {
 	static class ChannelCollection extends LinkedList<Channel> {
 		private static final long serialVersionUID = -2418938992605046464L;
 
-		private final DynamicLoggerService service;
+		private final DataLoggerEngine service;
 
-		public ChannelCollection(DynamicLoggerService service) {
+		public ChannelCollection(DataLoggerEngine service) {
 			this.service = service;
 		}
 
-		public DynamicLoggerService getService() {
+		public DataLoggerEngine getEngine() {
 			return service;
 		}
 

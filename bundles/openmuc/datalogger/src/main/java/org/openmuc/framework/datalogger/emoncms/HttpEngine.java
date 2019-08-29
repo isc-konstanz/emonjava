@@ -41,13 +41,13 @@ import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
 import org.openmuc.framework.datalogger.data.Settings;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
 import org.openmuc.framework.datalogger.emoncms.data.DataContainer;
+import org.openmuc.framework.datalogger.engine.DataLoggerEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HttpLogger implements DynamicLoggerService {
-	private final static Logger logger = LoggerFactory.getLogger(HttpLogger.class);
+public class HttpEngine implements DataLoggerEngine {
+	private final static Logger logger = LoggerFactory.getLogger(HttpEngine.class);
 
 	private final static String ADDRESS = "address";
 	private final static String ADDRESS_DEFAULT = "http://localhost/emoncms/";

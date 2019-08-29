@@ -16,19 +16,19 @@ import org.emoncms.sql.Transaction;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
+import org.openmuc.framework.datalogger.engine.DataLoggerEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SqlLogger implements DynamicLoggerService {
-    private final static Logger logger = LoggerFactory.getLogger(SqlLogger.class);
+public class SqlEngine implements DataLoggerEngine {
+    private final static Logger logger = LoggerFactory.getLogger(SqlEngine.class);
 
     protected final static String FEED_ID = "feedid";
 
     protected final static String DRIVER = "driver";
     protected final static String TYPE = "type";
-    protected final static String ADDRESS = "address";
-    protected final static String ADDRESS_DEFAULT = "127.0.0.1";
+    protected final static String HOST = "address";
+    protected final static String HOST_DEFAULT = "127.0.0.1";
     protected final static String PORT = "port";
 
     protected final static String DATABASE_NAME = "database";
@@ -69,7 +69,7 @@ public class SqlLogger implements DynamicLoggerService {
             }
         }
         
-        String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
+        String address = config.getString(HOST, HOST_DEFAULT);
         SqlBuilder builder = SqlBuilder.create(address);
         if (config.contains(PORT)) {
             builder.setPort(config.getInteger(PORT));

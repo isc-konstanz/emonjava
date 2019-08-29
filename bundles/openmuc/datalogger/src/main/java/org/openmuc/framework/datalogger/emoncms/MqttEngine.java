@@ -33,12 +33,12 @@ import org.emoncms.mqtt.MqttClient;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerService;
+import org.openmuc.framework.datalogger.engine.DataLoggerEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MqttLogger implements DynamicLoggerService {
-	private final static Logger logger = LoggerFactory.getLogger(MqttLogger.class);
+public class MqttEngine implements DataLoggerEngine {
+	private final static Logger logger = LoggerFactory.getLogger(MqttEngine.class);
 
 	private final static String ADDRESS = "address";
 	private final static String ADDRESS_DEFAULT = "tcp://localhost";

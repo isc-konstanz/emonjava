@@ -27,7 +27,7 @@ import org.openmuc.framework.datalogger.spi.LogChannel;
 public class Settings extends Configuration {
     private static final long serialVersionUID = -1562428342279468583L;
 
-    private final static String LOGGER = "logger";
+    private final static String ENGINE = "engine";
     private final static String OFFSET = "intervalOffset";
     private final static String INTERVAL = "interval";
     private final static String INTERVAL_MAX = "intervalMax";
@@ -60,8 +60,8 @@ public class Settings extends Configuration {
         }
     }
 
-    public String getLogger() {
-        return getString(LOGGER);
+    public String getEngine() {
+        return getString(ENGINE);
     }
 
     public Integer getIntervalOffset() {

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.dynamic;
+package org.openmuc.framework.datalogger.engine;
 
 import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Flag;

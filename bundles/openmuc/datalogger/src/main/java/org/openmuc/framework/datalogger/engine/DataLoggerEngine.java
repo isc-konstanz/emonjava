@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.dynamic;
+package org.openmuc.framework.datalogger.engine;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,7 +26,7 @@ import org.openmuc.framework.data.Record;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
 
-public interface DynamicLoggerService {
+public interface DataLoggerEngine {
 
 	public String getId();
 

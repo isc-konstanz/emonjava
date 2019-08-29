@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.dynamic;
+package org.openmuc.framework.datalogger.engine;
 
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
@@ -76,8 +76,8 @@ public class ChannelHandler implements Channel {
 	}
 
 	@Override
-    public String getLogger() {
-		return settings.getLogger();
+    public String getEngine() {
+		return settings.getEngine();
     }
 
     @Deprecated

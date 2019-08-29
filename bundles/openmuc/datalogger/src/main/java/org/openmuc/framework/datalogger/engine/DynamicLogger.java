@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.dynamic;
+package org.openmuc.framework.datalogger.engine;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,10 +36,10 @@ import org.openmuc.framework.dataaccess.DataAccessService;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
 import org.openmuc.framework.datalogger.data.Settings;
-import org.openmuc.framework.datalogger.dynamic.DynamicLoggerCollection.ChannelCollection;
-import org.openmuc.framework.datalogger.emoncms.HttpLogger;
-import org.openmuc.framework.datalogger.emoncms.MqttLogger;
-import org.openmuc.framework.datalogger.emoncms.SqlLogger;
+import org.openmuc.framework.datalogger.emoncms.HttpEngine;
+import org.openmuc.framework.datalogger.emoncms.MqttEngine;
+import org.openmuc.framework.datalogger.emoncms.SqlEngine;
+import org.openmuc.framework.datalogger.engine.DataLoggerCollection.ChannelCollection;
 import org.openmuc.framework.datalogger.spi.DataLoggerService;
 import org.openmuc.framework.datalogger.spi.LogChannel;
 import org.openmuc.framework.datalogger.spi.LogRecordContainer;
@@ -66,7 +66,7 @@ public class DynamicLogger implements DataLoggerService {
     private static final String DEFAULT = System.getProperty(DynamicLogger.class.
     		getPackage().getName().toLowerCase() + ".default", "MQTT");
 
-	protected final Map<String, DynamicLoggerService> services = new LinkedHashMap<String, DynamicLoggerService>();
+	protected final Map<String, DataLoggerEngine> engines = new LinkedHashMap<String, DataLoggerEngine>();
 
 	private final Map<String, ChannelHandler> handlers = new HashMap<String, ChannelHandler>();
 
@@ -93,60 +93,59 @@ public class DynamicLogger implements DataLoggerService {
 	protected void activate(Ini config, EmoncmsType type) {
 		try {
 			Section section;
-			if (config.containsKey(type.name())) {
-				section = config.get(type.name());
+			if (config.containsKey(type.toString())) {
+				section = config.get(type.toString());
 			}
 			else if (config.keySet().size() == 1) {
 	    		section = config.get("Emoncms");
 			}
 			else {
-				logger.debug("Skipping invalid {} Logger activation", type.name());
+				logger.debug("Skipping invalid {} engine activation", type.toString());
 				return;
 			}
 			if (Boolean.parseBoolean(section.get(DISABLE)) ||
 					Boolean.parseBoolean(section.get(DISABLED))) {
 				
-				logger.debug("Skipping disabled {} Logger activation", type.name());
+				logger.debug("Skipping disabled {} engine activation", type.toString());
 				return;
 			}
-			
 			try {
-				DynamicLoggerService service;
+				DataLoggerEngine engine;
 				switch(type) {
 				case MQTT:
-					service = new MqttLogger();
+					engine = new MqttEngine();
 					break;
 				case HTTP:
-					service = new HttpLogger();
+					engine = new HttpEngine();
 					break;
 				case SQL:
-					service = new SqlLogger();
+					engine = new SqlEngine();
 					break;
 				default:
 					return;
 				}
-				service.onActivate(new Configuration(section));
-				services.put(service.getId(), service);
+				engine.onActivate(new Configuration(section));
+				engines.put(engine.getId(), engine);
 				
 			} catch (EmoncmsUnavailableException e) {
 				logger.warn("Unable to establish {} connection. "
-						+ "Please remove or disable the configuration section if this is intentional.", type.name());
+						+ "Please remove or disable the configuration section if this is intentional.", type.toString());
 			}
 		} catch (Exception e) {
-			logger.error("Error while activating logger \"{}: {}", type.name(), e.getMessage());
+			logger.error("Error while activating engine \"{}: {}", type.toString(), e.getMessage());
 		}
 	}
 
 	@Deactivate
 	protected void deactivate(ComponentContext context) {
 		logger.info("Deactivating Emoncms Logger");
-		for (DynamicLoggerService service : services.values()) {
+		for (DataLoggerEngine engine : engines.values()) {
 			try {
-				if (service.isActive()) {
-					service.onDeactivate();
+				if (engine.isActive()) {
+					engine.onDeactivate();
 				}
 			} catch (Exception e) {
-				logger.warn("Error while deactivating logger: {}", e);
+				logger.warn("Error while deactivating engine: {}", e);
 			}
 		}
 	}
@@ -190,7 +189,7 @@ public class DynamicLogger implements DataLoggerService {
 			}
 			handlers.clear();
 
-			DynamicLoggerCollection loggers = new DynamicLoggerCollection(this);
+			DataLoggerCollection engines = new DataLoggerCollection(this);
 			for (LogChannel channel : channels) {
 				String id = channel.getId();
 				
@@ -209,17 +208,17 @@ public class DynamicLogger implements DataLoggerService {
 				else {
 					handler = new ChannelHandler(channel, settings);
 				}
-				loggers.add(handler);
+				engines.add(handler);
 				handlers.put(id, handler);
 				
 				logger.debug("{} \"{}\" configured to log every {}s", 
 						handler.getClass().getSimpleName(), id, channel.getLoggingInterval()/1000);
 			}
-			for (ChannelCollection channelCollection : loggers) {
+			for (ChannelCollection channelCollection : engines) {
 				channelCollection.configure();
 				if (logger.isDebugEnabled()) {
-			    	logger.debug("Configured {} channels for the {} Logger", 
-			    			channelCollection.size(), channelCollection.getService().getId());
+			    	logger.debug("Configured {} channels for the {} engine", 
+			    			channelCollection.size(), channelCollection.getEngine().getId());
 				}
 			}
 		} catch (Exception e) {
@@ -230,10 +229,10 @@ public class DynamicLogger implements DataLoggerService {
 	@Override
 	public void log(List<LogRecordContainer> containers, long timestamp) {
 		if (containers == null || containers.isEmpty()) {
-			logger.debug("Requested Emoncms logger to log an empty container list");
+			logger.trace("Requested Emoncms logger to log an empty container list");
 			return;
 		}
-		DynamicLoggerCollection loggers = new DynamicLoggerCollection(this);
+		DataLoggerCollection engines = new DataLoggerCollection(this);
 		for (LogRecordContainer container : containers) {
 			if (!handlers.containsKey(container.getChannelId())) {
 				logger.warn("Failed to log record for unconfigured channel \"{}\"", container.getChannelId());
@@ -242,13 +241,13 @@ public class DynamicLogger implements DataLoggerService {
 			try {
 				ChannelHandler channel = handlers.get(container.getChannelId());
 				if (channel.update(container.getRecord())) {
-					loggers.add(channel);
+					engines.add(channel);
 				}
 			} catch (IOException | TypeConversionException e) {
 				logger.warn("Failed to prepare record to log to channel \"{}\": {}", container.getChannelId(), e.getMessage());
 			}
 		}
-		for (ChannelCollection channels : loggers) {
+		for (ChannelCollection channels : engines) {
 			try {
 				channels.log(timestamp);
 				
@@ -269,21 +268,21 @@ public class DynamicLogger implements DataLoggerService {
 		}
 		Channel channel = handlers.get(id);
 		
-		return getLogger(channel).getRecords(channel, startTime, endTime);
+		return getEngine(channel).getRecords(channel, startTime, endTime);
 	}
 
-	protected DynamicLoggerService getLogger(Channel channel) throws IOException {
-		String id = channel.getLogger();
+	protected DataLoggerEngine getEngine(Channel channel) throws IOException {
+		String id = channel.getEngine();
 		if (id == null) {
 			id = DEFAULT;
 		}
-		if (services.containsKey(id)) {
-			return services.get(id);
+		if (engines.containsKey(id)) {
+			return engines.get(id);
 		}
-		else if (services.size() > 0) {
-			return services.values().iterator().next();
+		else if (engines.size() > 0) {
+			return engines.values().iterator().next();
 		}
-		throw new IOException("DataLogger unavailable: "+id);
+		throw new IOException("Engine unavailable: "+id);
 	}
 
 }

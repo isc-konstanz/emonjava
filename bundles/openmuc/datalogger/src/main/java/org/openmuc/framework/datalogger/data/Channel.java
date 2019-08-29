@@ -29,7 +29,7 @@ public interface Channel extends LogChannel {
 	@Override
 	public String getDescription();
 
-    public String getLogger();
+    public String getEngine();
 
     @Deprecated
     @Override
