@@ -65,7 +65,7 @@ public class SqlLogger implements DynamicLoggerService {
         if (config.contains(PREFIX)) {
             prefix = config.getString(PREFIX);
             if (prefix.equals("False") || prefix.equals("false")) {
-            	prefix = "";
+                prefix = "";
             }
         }
         
@@ -83,11 +83,11 @@ public class SqlLogger implements DynamicLoggerService {
         if (config.contains(DATABASE_NAME)) {
             builder.setDatabaseName(config.getString(DATABASE_NAME));
         }
-		if (config.contains(DATABASE_USER) && config.contains(DATABASE_PASSWORD)) {
-			builder.setCredentials(
-					config.getString(DATABASE_USER), 
-					config.getString(DATABASE_PASSWORD));
-		}
+        if (config.contains(DATABASE_USER) && config.contains(DATABASE_PASSWORD)) {
+            builder.setCredentials(
+                    config.getString(DATABASE_USER), 
+                    config.getString(DATABASE_PASSWORD));
+        }
         client = (SqlClient) builder.build();
         client.open();
     }
@@ -95,80 +95,80 @@ public class SqlLogger implements DynamicLoggerService {
     @Override
     public void onConfigure(List<Channel> channels) throws IOException {
         feeds.clear();
-        try {
-        	// TODO: Check necessity. Without this, it seems bound to crash in an InterruptionException.
-			Thread.sleep(1000);
-			
-		} catch (InterruptedException ignore) {}
-        try (Transaction transaction = client.getTransaction()) {
-            for (Channel channel : channels) {
-            	try {
-                	String channelId = channel.getId();
-                    Integer feedId = null;
-                    if (channel.hasSetting(FEED_ID)) {
-                    	feedId = channel.getSetting(FEED_ID).asInt();
-                    }
-                	
-                    String valueType;
-                    switch (channel.getValueType()) {
-                    case STRING:
-                    	Integer maxStrLength =  channel.getValueTypeLength();
-                        if (maxStrLength == null) {
-                            maxStrLength = SqlFeed.TYPE_LENGTH_DEFAULT;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try (Transaction transaction = client.getTransaction()) {
+                    for (Channel channel : channels) {
+                        try {
+                            String channelId = channel.getId();
+                            Integer feedId = null;
+                            if (channel.hasSetting(FEED_ID)) {
+                                feedId = channel.getSetting(FEED_ID).asInt();
+                            }
+                            
+                            String valueType;
+                            switch (channel.getValueType()) {
+                            case STRING:
+                                Integer maxStrLength =  channel.getValueTypeLength();
+                                if (maxStrLength == null) {
+                                    maxStrLength = SqlFeed.TYPE_LENGTH_DEFAULT;
+                                }
+                                valueType = "VARCHAR(" + maxStrLength + ")";
+                            case BYTE_ARRAY:
+                                Integer maxBytesLength = channel.getValueTypeLength();
+                                if (maxBytesLength == null) {
+                                    maxBytesLength = SqlFeed.TYPE_LENGTH_DEFAULT;
+                                }
+                                valueType = "VARBINARY(" + maxBytesLength + ")";
+                            case BYTE:
+                                valueType = "TINYINT";
+                            case BOOLEAN:
+                                valueType = "BIT";
+                            case SHORT:
+                                valueType = "SMALLINT";
+                            case LONG:
+                                valueType = "BIGINT";
+                            case INTEGER:
+                                valueType = "INT";
+                            case FLOAT:
+                                valueType = "REAL";
+                            default:
+                                valueType = "FLOAT";
+                            }
+                            String tableName = prefix;
+                            if (isGeneric) {
+                                if (feedId == null) {
+                                    throw new EmoncmsSyntaxException("Feed id needs to be configured for generic configurations");
+                                }
+                                tableName += feedId;
+                            }
+                            else {
+                                tableName += channelId;
+                            }
+                            feeds.put(channelId, SqlFeed.connect(client, transaction, feedId, tableName, valueType, false));
+                            
+                        } catch (EmoncmsSyntaxException e) {
+                            logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
+                                    channel.getId(), e.getMessage());
                         }
-                        valueType = "VARCHAR(" + maxStrLength + ")";
-                    case BYTE_ARRAY:
-                        Integer maxBytesLength = channel.getValueTypeLength();
-                        if (maxBytesLength == null) {
-                            maxBytesLength = SqlFeed.TYPE_LENGTH_DEFAULT;
-                        }
-                        valueType = "VARBINARY(" + maxBytesLength + ")";
-                    case BYTE:
-                        valueType = "TINYINT";
-                    case BOOLEAN:
-                        valueType = "BIT";
-                    case SHORT:
-                        valueType = "SMALLINT";
-                    case LONG:
-                        valueType = "BIGINT";
-                    case INTEGER:
-                        valueType = "INT";
-                    case FLOAT:
-                        valueType = "REAL";
-                    default:
-                    	valueType = "FLOAT";
                     }
-                    String tableName = prefix;
-                	if (isGeneric) {
-                		if (feedId == null) {
-                            throw new EmoncmsSyntaxException("Feed id needs to be configured for generic configurations");
-                		}
-                		tableName += feedId;
-                	}
-                	else {
-                		tableName += channelId;
-                    }
-                    feeds.put(channelId, SqlFeed.connect(client, transaction, feedId, tableName, valueType, false));
-    			    
-    			} catch (EmoncmsSyntaxException e) {
-    				logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
-    						channel.getId(), e.getMessage());
-    			}
+                } catch (Exception e) {
+                    logger.warn("Error while configuring SQL channels: {}", e);
+                }
             }
-        } catch (Exception e) {
-			throw new SqlException(e);
-		}
+        }).start();
     }
 
     @Override
     public void doLog(Channel channel, long timestamp) throws IOException {
-    	if (!isValid(channel)) {
-    		return;
-    	}
-    	Long time = channel.getTime();
-    	if (time == null) {
-    		time = timestamp;
-    	}
+        if (!isValid(channel)) {
+            return;
+        }
+        Long time = channel.getTime();
+        if (time == null) {
+            time = timestamp;
+        }
         feeds.get(channel.getId()).insertData(new Timevalue(time, channel.getValue().asDouble()));
     }
 
@@ -176,34 +176,34 @@ public class SqlLogger implements DynamicLoggerService {
     public void doLog(List<Channel> channels, long timestamp) throws IOException {
         try (Transaction transaction = client.getTransaction()) {
             for (Channel channel : channels) {
-            	doLog(transaction, channel, timestamp);
+                doLog(transaction, channel, timestamp);
             }
         } catch (Exception e) {
-			throw new SqlException(e);
-		}
+            throw new SqlException(e);
+        }
     }
 
     private void doLog(Transaction transaction, Channel channel, long timestamp) throws IOException {
-    	if (!isValid(channel)) {
-    		return;
-    	}
-    	Long time = channel.getTime();
-    	if (time == null) {
-    		time = timestamp;
-    	}
+        if (!isValid(channel)) {
+            return;
+        }
+        Long time = channel.getTime();
+        if (time == null) {
+            time = timestamp;
+        }
         feeds.get(channel.getId()).insertData(transaction, timestamp, channel.getValue().asDouble());
     }
 
-	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
-		if (!channel.isValid()) {
-			logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}",
-					channel.getId(), channel.getFlag());
-			
-			return false;
-		}
-		logger.trace("Preparing record to log for channel {}", channel);
-		return true;
-	}
+    private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
+        if (!channel.isValid()) {
+            logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}",
+                    channel.getId(), channel.getFlag());
+            
+            return false;
+        }
+        logger.trace("Preparing record to log for channel {}", channel);
+        return true;
+    }
 
     @Override
     public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {

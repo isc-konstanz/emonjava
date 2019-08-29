@@ -86,9 +86,9 @@ public class SqlClient implements Emoncms, SqlCallbacks {
     public void open() throws EmoncmsUnavailableException {
         logger.info("Initializing emoncms SQL connection \"{}\"", url);
         try {
-        	if (source != null) {
-        		source.close();
-        	}
+            if (source != null) {
+                source.close();
+            }
             source = new ComboPooledDataSource();
             source.setDriverClass(driver);
             source.setJdbcUrl(url);
@@ -115,20 +115,20 @@ public class SqlClient implements Emoncms, SqlCallbacks {
         throw new UnsupportedOperationException("Unsupported for type "+getType());
     }
 
-	@Override
-	public Connection getConnection() throws SqlException {
-		try {
-			return source.getConnection(user, password);
-			
-		} catch (SQLException e) {
-			throw new SqlException(e);
-		}
-	}
+    @Override
+    public Connection getConnection() throws SqlException {
+        try {
+            return source.getConnection(user, password);
+            
+        } catch (SQLException e) {
+            throw new SqlException(e);
+        }
+    }
 
-	@Override
-	public Transaction getTransaction() throws SqlException {
-		return new Transaction(getConnection());
-	}
+    @Override
+    public Transaction getTransaction() throws SqlException {
+        return new Transaction(getConnection());
+    }
 
 //  private static final String INSERT = "INSERT INTO (?) (time, data) VALUES((?),(?))";
 //

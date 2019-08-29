@@ -53,7 +53,7 @@ public class SqlFeed implements Feed {
     private final SqlCallbacks callbacks;
 
     public static SqlFeed connect(SqlCallbacks callbacks, Transaction transaction, Integer id, 
-    		String table, String type, boolean empty) throws EmoncmsException {
+            String table, String type, boolean empty) throws EmoncmsException {
         if (callbacks == null) {
             throw new EmoncmsUnavailableException("MySQL connection to emoncms database invalid");
         }
@@ -64,11 +64,11 @@ public class SqlFeed implements Feed {
             type = TYPE_DEFAULT;
         }
         else if (!Arrays.asList(TYPES).contains(type) && 
-        		!type.startsWith("VARCHAR(") && !type.startsWith("VARBINARY(")) {
+                !type.startsWith("VARCHAR(") && !type.startsWith("VARBINARY(")) {
             throw new EmoncmsException("Value type not allowed: "+type);
         }
         if (!empty) {
-        	type += TYPE_NOT_NULL;
+            type += TYPE_NOT_NULL;
         }
         String query = String.format(QUERY_CREATE, table, type);
         logger.debug("Query  {}", query);
@@ -78,18 +78,18 @@ public class SqlFeed implements Feed {
     }
 
     public static SqlFeed connect(SqlCallbacks callbacks, Integer id, 
-    		String table, String type, boolean empty) throws EmoncmsException {
-    	
+            String table, String type, boolean empty) throws EmoncmsException {
+        
         try (Transaction transaction = callbacks.getTransaction()) {
-        	return connect(callbacks, transaction, id, table, type, false);
-        	
+            return connect(callbacks, transaction, id, table, type, false);
+            
         } catch (Exception e) {
-			throw new SqlException(e);
-		}
+            throw new SqlException(e);
+        }
     }
 
     public static SqlFeed connect(SqlCallbacks callbacks, Integer id, 
-    		String table, String type) throws EmoncmsException {
+            String table, String type) throws EmoncmsException {
         return connect(callbacks, id, table, type, false);
     }
 
@@ -118,41 +118,35 @@ public class SqlFeed implements Feed {
 
     @Override
     public Double getLatestValue() throws EmoncmsException {
-		// TODO Auto-generated method stub
+        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unsupported for type "+getType());
     }
 
-	@Override
-	public Timevalue getLatestTimevalue() throws EmoncmsException {
-		// TODO Auto-generated method stub
+    @Override
+    public Timevalue getLatestTimevalue() throws EmoncmsException {
+        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unsupported for type "+getType());
-	}
+    }
 
     @Override
     public LinkedList<Timevalue> getData(long start, long end, int interval) throws EmoncmsException {
-    	String query = String.format(QUERY_SELECT, table, start, end);
-		logger.debug("Query {}", query);
-		
+        String query = String.format(QUERY_SELECT, table, start, end);
+        logger.debug("Query {}", query);
+        
         LinkedList<Timevalue> timevalues = new LinkedList<Timevalue>();
-        Connection connection = callbacks.getConnection();
-        Statement statement = null;
-        try {
-            statement = connection.createStatement();
-            ResultSet result = statement.executeQuery(query);
-            while (result.next()) {
-                long time = result.getLong(COLUMN_TIME)*1000;
-                double value = result.getInt(COLUMN_DATA);
-                
-                timevalues.add(new Timevalue(time, value));
+        try (Connection connection = callbacks.getConnection()) {
+            try (Statement statement = connection.createStatement()) {
+                try (ResultSet result = statement.executeQuery(query)) {
+                    while (result.next()) {
+                        long time = result.getLong(COLUMN_TIME)*1000;
+                        double value = result.getInt(COLUMN_DATA);
+                        
+                        timevalues.add(new Timevalue(time, value));
+                    }
+                }
             }
         } catch (SQLException e) {
             throw new SqlException(e);
-		}
-        finally {
-            if (statement != null) try {
-                statement.close();
-            }
-            catch (SQLException ignore) {}
         }
         return timevalues;
     }
@@ -161,17 +155,17 @@ public class SqlFeed implements Feed {
     public void insertData(Timevalue timevalue) throws EmoncmsException {
         try (Transaction transaction = callbacks.getTransaction()) {
             insertData(transaction, timevalue.getTime(), timevalue.getValue());
-        	
+            
         } catch (Exception e) {
-			throw new SqlException(e);
-		}
+            throw new SqlException(e);
+        }
     }
 
     public void insertData(Transaction transaction, long timestamp, double data) throws EmoncmsException {
         int time = (int) Math.round((double) timestamp/1000.0);
-    	String query = String.format(QUERY_INSERT, table, time, data);
-		logger.debug("Query {}", query);
-		
+        String query = String.format(QUERY_INSERT, table, time, data);
+        logger.debug("Query {}", query);
+        
         transaction.execute(query);
     }
 
