@@ -68,7 +68,7 @@ public class HibernateFeed implements Feed {
 		}
 	}
 	
-	protected void loadMappingTemplate() {
+	protected synchronized void  loadMappingTemplate() {
 		String configPath = System.getProperty(CONFIG_PATH, DEFAULT_CONFIG_PATH);
 		String mappingTemplateFile = System.getProperty(MAPPING_TEMPLATE_FILE, DEFAULT_MAPPING_TEMPLATE);
 		String templateFileStr = configPath + mappingTemplateFile;

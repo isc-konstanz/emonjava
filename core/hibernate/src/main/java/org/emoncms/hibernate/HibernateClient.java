@@ -61,6 +61,7 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 	private final String password;
 	
 	private final File hibernatePropsFile;
+	private final String hibernatePropsFilePath;
 
 	private SessionFactory factory;
 	private Map<String, HibernateFeed> feedMap;
@@ -76,7 +77,7 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 		
 		String configPath = System.getProperty(CONFIG_PATH, DEFAULT_CONFIG_PATH);
 		String hibernateConfigFile = System.getProperty(HIBERNATE_CONFIG, DEFAULT_HIBERNATE_CONFIG);
-		String hibernatePropsFilePath = configPath + hibernateConfigFile;
+		hibernatePropsFilePath = configPath + hibernateConfigFile;
 		hibernatePropsFile = new File(hibernatePropsFilePath);
 	}
 
@@ -117,7 +118,7 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 		this.feedMap = feedMap;
 	}
 
-	private void initialize() {
+	private void initialize() throws EmoncmsUnavailableException {
         Configuration config = new Configuration().configure(hibernatePropsFile);
         config = config.setProperty("hibernate.connection.driver_class", connectionDriverClass);
         config = config.setProperty("hibernate.connection.url", connectionUrl);

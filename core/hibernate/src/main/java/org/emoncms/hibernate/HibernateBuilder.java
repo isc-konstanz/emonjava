@@ -28,7 +28,7 @@ public class HibernateBuilder {
 
 	private static final List<HibernateClient> sqlSingletons = new ArrayList<HibernateClient>();
 
-	protected String connectionDriverClass = "com.mysql.jdbc.Driver";
+	protected String connectionDriverClass = "com.mysql.cj.jdbc.Driver";
 	protected String address = "127.0.0.1";
 	protected int port = 3306;
 	protected String databaseName = "openmuc"; 
