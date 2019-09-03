@@ -2,20 +2,28 @@ package org.openmuc.framework.datalogger.emoncms;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsSyntaxException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.data.Timevalue;
+import org.emoncms.redis.RedisBuilder;
+import org.emoncms.redis.RedisClient;
+import org.emoncms.redis.RedisUnavailableException;
 import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
 import org.emoncms.sql.SqlException;
 import org.emoncms.sql.SqlFeed;
 import org.emoncms.sql.Transaction;
+import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Record;
+import org.openmuc.framework.data.Value;
 import org.openmuc.framework.datalogger.data.Channel;
 import org.openmuc.framework.datalogger.data.Configuration;
+import org.openmuc.framework.datalogger.data.Settings;
 import org.openmuc.framework.datalogger.engine.DataLoggerEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +43,14 @@ public class SqlEngine implements DataLoggerEngine {
     protected final static String DATABASE_USER = "user";
     protected final static String DATABASE_PASSWORD = "password";
 
-    protected final static String PREFIX = "prefix";
+    protected final static String REDIS_ENABLED = "redis.enabled";
+    protected final static String REDIS_HOST = "redis.host";
+    protected final static String REDIS_PORT = "redis.port";
+    protected final static String REDIS_AUTH = "redis.auth";
+    protected final static String REDIS_PREFIX = "redis.prefix";
+
     protected final static String GENERIC = "generic";
+    protected final static String PREFIX = "prefix";
 
     private boolean isGeneric = true;
     private String prefix = "feed_";
@@ -88,6 +102,22 @@ public class SqlEngine implements DataLoggerEngine {
                     config.getString(DATABASE_USER), 
                     config.getString(DATABASE_PASSWORD));
         }
+        if (config.getBoolean(REDIS_ENABLED, true)) {
+        	RedisBuilder redis = RedisBuilder.create();
+            if (config.contains(REDIS_HOST)) {
+                redis.setHost(config.getString(REDIS_HOST));
+            }
+            if (config.contains(REDIS_PORT)) {
+                redis.setPort(config.getInteger(REDIS_PORT));
+            }
+            if (config.contains(REDIS_AUTH)) {
+                redis.setAuthentication(config.getString(REDIS_AUTH));
+            }
+            if (config.contains(REDIS_PREFIX)) {
+                redis.setPrefix(config.getString(REDIS_PREFIX));
+            }
+            builder.setCache((RedisClient) redis.build());
+        }
         client = (SqlClient) builder.build();
         client.open();
     }
@@ -100,12 +130,10 @@ public class SqlEngine implements DataLoggerEngine {
             public void run() {
                 try (Transaction transaction = client.getTransaction()) {
                     for (Channel channel : channels) {
+                        Settings settings = channel.getSettings();
                         try {
                             String channelId = channel.getId();
-                            Integer feedId = null;
-                            if (channel.hasSetting(FEED_ID)) {
-                                feedId = channel.getSetting(FEED_ID).asInt();
-                            }
+                            Integer feedId = settings.getInteger(FEED_ID);
                             
                             String valueType;
                             switch (channel.getValueType()) {
@@ -136,17 +164,11 @@ public class SqlEngine implements DataLoggerEngine {
                             default:
                                 valueType = "FLOAT";
                             }
-                            String tableName = prefix;
-                            if (isGeneric) {
-                                if (feedId == null) {
-                                    throw new EmoncmsSyntaxException("Feed id needs to be configured for generic configurations");
-                                }
-                                tableName += feedId;
-                            }
-                            else {
-                                tableName += channelId;
-                            }
-                            feeds.put(channelId, SqlFeed.connect(client, transaction, feedId, tableName, valueType, false));
+                            String tableName = parseTable(feedId, channelId);
+                            SqlFeed feed = SqlFeed.create(client, client.getCache(), transaction, 
+                                    feedId, tableName, valueType, false);
+                            
+                            feeds.put(channelId, feed);
                             
                         } catch (EmoncmsSyntaxException e) {
                             logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
@@ -169,29 +191,37 @@ public class SqlEngine implements DataLoggerEngine {
         if (time == null) {
             time = timestamp;
         }
-        feeds.get(channel.getId()).insertData(new Timevalue(time, channel.getValue().asDouble()));
+        SqlFeed sqlFeed = feeds.get(channel.getId());
+        sqlFeed.insertData(new Timevalue(time, channel.getValue().asDouble()));
     }
 
     @Override
     public void doLog(List<Channel> channels, long timestamp) throws IOException {
-        try (Transaction transaction = client.getTransaction()) {
+        try (redis.clients.jedis.Transaction redis = client.cacheTransaction();
+                org.emoncms.sql.Transaction sql = client.getTransaction()) {
+            
             for (Channel channel : channels) {
-                doLog(transaction, channel, timestamp);
+                if (!isValid(channel)) {
+                    return;
+                }
+                Long time = channel.getTime();
+                if (time == null) {
+                    time = timestamp;
+                }
+                Double value = channel.getValue().asDouble();
+                try {
+                    SqlFeed sqlFeed = feeds.get(channel.getId());
+                    sqlFeed.insertData(sql, timestamp, value);
+                    sqlFeed.cacheData(redis, timestamp, value);
+                }
+                catch (RedisUnavailableException ignore) {}
+            }
+            if (redis != null) {
+                redis.exec();
             }
         } catch (Exception e) {
             throw new SqlException(e);
         }
-    }
-
-    private void doLog(Transaction transaction, Channel channel, long timestamp) throws IOException {
-        if (!isValid(channel)) {
-            return;
-        }
-        Long time = channel.getTime();
-        if (time == null) {
-            time = timestamp;
-        }
-        feeds.get(channel.getId()).insertData(transaction, timestamp, channel.getValue().asDouble());
     }
 
     private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
@@ -207,7 +237,41 @@ public class SqlEngine implements DataLoggerEngine {
 
     @Override
     public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        List<Record> records = new LinkedList<Record>();
+        List<Timevalue> values = getFeed(channel).getData(startTime, endTime, 1);
+        for (Timevalue timevalue : values) {
+            Value value = new DoubleValue(timevalue.getValue());
+            Record record = new Record(value, timevalue.getTime());
+            records.add(record);
+        }
+        return records;
     }
+
+    private SqlFeed getFeed(Channel channel) throws EmoncmsException {
+        SqlFeed feed = feeds.get(channel.getId());
+        if (feed == null) {
+            Settings settings = channel.getSettings();
+            String channelId = channel.getId();
+            Integer feedId = settings.getInteger(FEED_ID);
+            
+            feed = SqlFeed.connect(client, client.getCache(), feedId, parseTable(feedId, channelId));
+            feeds.put(channelId, feed);
+        }
+        return feed;
+    }
+
+    private String parseTable(Integer feedId, String channelId) throws EmoncmsSyntaxException {
+        String tableName = prefix;
+        if (isGeneric) {
+            if (feedId == null) {
+                throw new EmoncmsSyntaxException("Feed id needs to be configured for generic configurations");
+            }
+            tableName += feedId;
+        }
+        else {
+            tableName += channelId;
+        }
+        return tableName;
+    }
+
 }

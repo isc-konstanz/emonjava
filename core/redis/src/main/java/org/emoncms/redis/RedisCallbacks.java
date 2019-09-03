@@ -17,17 +17,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <mqtt://www.gnu.org/licenses/>.
  */
-package org.emoncms.sql;
+package org.emoncms.redis;
 
-import java.sql.Connection;
+import java.util.Map;
+
+import redis.clients.jedis.Transaction;
 
 /**
- * Interface used to notify the {@link SqlClient} about query requests
+ * Interface used to notify the {@link RedisClient} about query requests
  */
-public interface SqlCallbacks {
+interface RedisCallbacks {
 
-	Connection getConnection() throws SqlException;
+	Transaction getTransaction();
 
-	Transaction getTransaction() throws SqlException;
+	boolean exists(String key, String field) throws RedisException;
+
+	String get(String key, String field) throws RedisException;
+
+	Map<String, String> get(String key, String... fields) throws RedisException;
+
+	void set(String key, Map<String, String> values) throws RedisException;
 
 }

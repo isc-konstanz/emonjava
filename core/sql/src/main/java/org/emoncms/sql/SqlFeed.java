@@ -11,7 +11,9 @@ import org.emoncms.EmoncmsException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.EmoncmsUnavailableException;
 import org.emoncms.data.Timevalue;
+import org.emoncms.redis.RedisClient;
 import org.emoncms.redis.RedisFeed;
+import org.emoncms.redis.RedisUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,14 +54,10 @@ public class SqlFeed extends RedisFeed {
      */
     private final SqlCallbacks callbacks;
 
-    public static SqlFeed connect(SqlCallbacks callbacks, Transaction transaction, Integer id, 
+    public static SqlFeed create(SqlCallbacks callbacks, RedisClient redis, Transaction transaction, Integer id, 
             String table, String type, boolean empty) throws EmoncmsException {
-        if (callbacks == null) {
-            throw new EmoncmsUnavailableException("MySQL connection to emoncms database invalid");
-        }
-        if (id != null && id < 1) {
-            throw new EmoncmsException("Invalid feed id: "+id);
-        }
+        
+        SqlFeed feed = connect(callbacks, redis, id, table);
         if (type == null) {
             type = TYPE_DEFAULT;
         }
@@ -74,41 +72,46 @@ public class SqlFeed extends RedisFeed {
         logger.debug("Query  {}", query);
         
         transaction.execute(query);
-        return new SqlFeed(callbacks, id, table);
+        return feed;
     }
 
-    public static SqlFeed connect(SqlCallbacks callbacks, Integer id, 
+    public static SqlFeed create(SqlCallbacks callbacks, RedisClient redis, Integer id, 
             String table, String type, boolean empty) throws EmoncmsException {
         
         try (Transaction transaction = callbacks.getTransaction()) {
-            return connect(callbacks, transaction, id, table, type, false);
+            return create(callbacks, redis, transaction, id, table, type, false);
             
         } catch (Exception e) {
             throw new SqlException(e);
         }
     }
 
-    public static SqlFeed connect(SqlCallbacks callbacks, Integer id, 
+    public static SqlFeed create(SqlCallbacks callbacks, RedisClient redis, Integer id, 
             String table, String type) throws EmoncmsException {
-        return connect(callbacks, id, table, type, false);
+        return create(callbacks, redis, id, table, type, false);
     }
 
-    public static SqlFeed connect(SqlCallbacks callbacks, Integer id) throws EmoncmsException {
-        return connect(callbacks, id, null, null, false);
+    public static SqlFeed create(SqlCallbacks callbacks, RedisClient redis, Integer id) 
+            throws EmoncmsException {
+        return create(callbacks, redis, id, null, null, false);
     }
 
-    protected SqlFeed(SqlCallbacks callbacks, Integer id, String table) throws EmoncmsException {
-    	super(id);
-        this.callbacks = callbacks;
-        this.table = table;
-    }
-
-    @Override
-    public int getId() {
-        if (id != null) {
-            return id;
+    public static SqlFeed connect(SqlCallbacks callbacks, RedisClient redis, Integer id, 
+            String table) throws EmoncmsException {
+        
+        if (callbacks == null) {
+            throw new EmoncmsUnavailableException("MySQL connection to emoncms database invalid");
         }
-        throw new UnsupportedOperationException("Unconfigured feedid for table " + table);
+        if (id != null && id < 1) {
+            throw new EmoncmsException("Invalid feed id: "+id);
+        }
+        return new SqlFeed(callbacks, redis, id, table);
+    }
+
+    protected SqlFeed(SqlCallbacks callbacks, RedisClient redis, Integer id, String table) throws EmoncmsException {
+        super(redis, id);
+        this.table = table;
+        this.callbacks = callbacks;
     }
 
     @Override
@@ -147,6 +150,10 @@ public class SqlFeed extends RedisFeed {
         } catch (Exception e) {
             throw new SqlException(e);
         }
+        try {
+            super.insertData(timevalue);
+        }
+        catch (RedisUnavailableException ignore) {}
     }
 
     public void insertData(Transaction transaction, long timestamp, double data) throws EmoncmsException {

@@ -45,9 +45,12 @@ public class SqlClient implements Emoncms, SqlCallbacks {
     private final String user;
     private final String password;
 
+    private final RedisClient redis;
+
     private ComboPooledDataSource source = null;
 
-    public SqlClient(String driver, String url, String user, String password) {
+    protected SqlClient(RedisClient redis, String driver, String url, String user, String password) {
+        this.redis = redis;
         this.driver = driver;
         
         this.url = url;
@@ -65,6 +68,10 @@ public class SqlClient implements Emoncms, SqlCallbacks {
 
     public String getPassword() {
         return password;
+    }
+
+    public RedisClient getCache() {
+        return redis;
     }
 
     @Override
@@ -127,8 +134,15 @@ public class SqlClient implements Emoncms, SqlCallbacks {
     }
 
     @Override
-    public Transaction getTransaction() throws SqlException {
+    public org.emoncms.sql.Transaction getTransaction() throws SqlException {
         return new Transaction(getConnection());
+    }
+
+    public redis.clients.jedis.Transaction cacheTransaction() {
+        if (redis == null) {
+            return null;
+        }
+        return redis.getTransaction();
     }
 
 //  private static final String INSERT = "INSERT INTO (?) (time, data) VALUES((?),(?))";

@@ -64,7 +64,7 @@ public class DynamicLogger implements DataLoggerService {
     		getPackage().getName().toLowerCase() + ".config", "conf" + File.separator + "emoncms.conf");
 
     private static final String DEFAULT = System.getProperty(DynamicLogger.class.
-    		getPackage().getName().toLowerCase() + ".default", "MQTT");
+    		getPackage().getName().toLowerCase() + ".default", "HTTP");
 
 	protected final Map<String, DataLoggerEngine> engines = new LinkedHashMap<String, DataLoggerEngine>();
 
@@ -81,8 +81,8 @@ public class DynamicLogger implements DataLoggerService {
 	protected void activate(ComponentContext context) {
 		try {
 			Ini config = new Ini(new File(CONFIG));
-			activate(config, EmoncmsType.MQTT);
 			activate(config, EmoncmsType.HTTP);
+			activate(config, EmoncmsType.MQTT);
 			activate(config, EmoncmsType.SQL);
 			
 		} catch (Exception e) {
@@ -96,7 +96,7 @@ public class DynamicLogger implements DataLoggerService {
 			if (config.containsKey(type.toString())) {
 				section = config.get(type.toString());
 			}
-			else if (config.keySet().size() == 1) {
+			else if (config.keySet().size() == 1 && type == EmoncmsType.valueOf(DEFAULT)) {
 	    		section = config.get("Emoncms");
 			}
 			else {
@@ -112,11 +112,11 @@ public class DynamicLogger implements DataLoggerService {
 			try {
 				DataLoggerEngine engine;
 				switch(type) {
-				case MQTT:
-					engine = new MqttEngine();
-					break;
 				case HTTP:
 					engine = new HttpEngine();
+					break;
+				case MQTT:
+					engine = new MqttEngine();
 					break;
 				case SQL:
 					engine = new SqlEngine();

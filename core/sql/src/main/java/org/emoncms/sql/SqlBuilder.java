@@ -20,6 +20,7 @@
 package org.emoncms.sql;
 
 import org.emoncms.Emoncms;
+import org.emoncms.redis.RedisClient;
 
 /**
  * Builds and opens a {@link SqlClient} instance as an {@link Emoncms} implementation.
@@ -36,6 +37,8 @@ public class SqlBuilder {
 
 	private String user = "root";
 	private String password = "";
+
+	private RedisClient redis = null;
 
 	private SqlBuilder() {
 	}
@@ -83,8 +86,13 @@ public class SqlBuilder {
 		return this;
 	}
 
+	public SqlBuilder setCache(RedisClient redis) {
+		this.redis = redis;
+		return this;
+	}
+
 	public Emoncms build() {
-		return new SqlClient(driver, type+"://"+host+":"+port+"/"+name+"?autoReconnect=true&useSSL=false", user, password);
+		return new SqlClient(redis, driver, type+"://"+host+":"+port+"/"+name+"?autoReconnect=true&useSSL=false", user, password);
 	}
 
 }

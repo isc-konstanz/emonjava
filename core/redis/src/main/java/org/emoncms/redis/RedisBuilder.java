@@ -27,18 +27,18 @@ import org.emoncms.Emoncms;
  */
 public class RedisBuilder {
 
-	private String host = "localhost";
-	private int port = 6379;
-	
-	private String prefix = "emoncms";
-	private String authentication = "";
+    private String host = "localhost";
+    private int port = 6379;
 
-	private RedisBuilder() {
-	}
+    private String password = null;
+    private String prefix = "emoncms";
 
-	private RedisBuilder(String host) {
-		this.host = host;
-	}
+    private RedisBuilder() {
+    }
+
+    private RedisBuilder(String host) {
+        this.host = host;
+    }
 
     public static RedisBuilder create() {
         return new RedisBuilder();
@@ -48,28 +48,28 @@ public class RedisBuilder {
         return new RedisBuilder(address);
     }
 
-	public RedisBuilder setHost(String host) {
-		this.host = host;
-		return this;
-	}
+    public RedisBuilder setHost(String host) {
+        this.host = host;
+        return this;
+    }
 
-	public RedisBuilder setPort(int port) {
-		this.port = port;
-		return this;
-	}
+    public RedisBuilder setPort(int port) {
+        this.port = port;
+        return this;
+    }
 
-	public RedisBuilder setPrefix(String prefix) {
-		this.prefix = prefix;
-		return this;
-	}
+    public RedisBuilder setAuthentication(String password) {
+        this.password = password;
+        return this;
+    }
 
-	public RedisBuilder setAuthentication(String authentication) {
-		this.authentication = authentication;
-		return this;
-	}
+    public RedisBuilder setPrefix(String prefix) {
+        this.prefix = prefix;
+        return this;
+    }
 
-	public Emoncms build() {
-		return new RedisClient();
-	}
+    public Emoncms build() {
+        return new RedisClient(host, port, password, prefix);
+    }
 
 }

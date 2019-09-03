@@ -17,31 +17,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-archivesBaseName = 'emoncms-sql'
-def projectName = 'EmoncmsSQL'
-def projectFullName = 'Emoncms Java - SQL'
-def projectDescription = 'Emoncms SQL client implementation'
+package org.emoncms.redis;
 
-def c3poVersion = '0.9.5.4'
-def mchangeVersion = '0.2.16'
+public class RedisUnavailableException extends RedisException {
+	private static final long serialVersionUID = 8129168028731226398L;
 
-dependencies {
-  api project(':redis')
+	public RedisUnavailableException() {
+		super();
+	}
 
-  implementation group: 'com.mchange', name: 'c3p0', version: c3poVersion
-  implementation group: 'com.mchange', name: 'mchange-commons-java', version: mchangeVersion
-}
+    public RedisUnavailableException(String s) {
+        super(s);
+    }
 
-eclipse {
-  project {
-    name = projectName
-  }
-}
+    public RedisUnavailableException(Throwable cause) {
+        super(cause);
+    }
 
-jar {
-  manifest {
-    attributes('Bundle-Name':        projectFullName,
-               'Bundle-Description': projectDescription,
-	           'Export-Package':     '')
-  }
+    public RedisUnavailableException(String s, Throwable cause) {
+        super(s, cause);
+    }
+
 }
