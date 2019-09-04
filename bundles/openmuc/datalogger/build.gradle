@@ -33,15 +33,21 @@ def pahoJar = 'org.eclipse.paho.client.mqttv3-'+pahoVersion+'.jar'
 def hibernateVersion = '5.2.10.Final'
 def hibernateJar = 'hibernate-core-'+hibernateVersion+'.jar'
 
+def hibernateC3p0Jar = 'hibernate-c3p0-'+hibernateVersion+'.jar'
+
 def hibernateJpaVersion = '1.0.0.Final'
 def hibernateJpaJar = 'hibernate-jpa-2.1-api-'+hibernateJpaVersion+'.jar'
 
 def hibernateAnnotationsVersion = '5.0.1.Final'
 def hibernateAnnotationsJar = 'hibernate-commons-annotations-'+hibernateAnnotationsVersion+'.jar'
 
-def hibernateC3p0Jar = 'hibernate-c3p0-'+hibernateVersion+'.jar'
+def c3p0Version = '0.9.5.4'
+def c3p0Jar = 'c3p0-'+c3p0Version+'.jar'
 
-def mysqlConnectorVersion = '5.1.6'
+def mchangeVersion = '0.2.16'
+def mchangeJar = 'mchange-commons-java-'+mchangeVersion+'.jar'
+
+def mysqlConnectorVersion = '8.0.11'
 def mysqlConnectorJar = 'mysql-connector-java-'+mysqlConnectorVersion+'.jar'
 
 def jbossLoggingVersion = '3.3.0.Final'
@@ -66,11 +72,14 @@ dependencies {
   implementation group: 'org.osgi', name: 'osgi.core', version: '7.0.0'
   implementation group: 'org.osgi', name: 'org.osgi.service.component.annotations', version: '1.4.0'
   implementation group: 'org.apache.felix', name: 'org.apache.felix.scr', version: '2.1.14'
-
+  
   implementation group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
 
   implementation project(':http'), project(':mqtt'), project(':hibernate')
 
+  implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlConnectorVersion
+
+//  implementation group: 'com.fasterxml', name: 'classmate', version: classmateVersion
   testCompile group: 'org.hibernate', name: 'hibernate-core', version: hibernateVersion
 }
 
@@ -83,8 +92,8 @@ eclipse {
 jar {
   into('libs') {
     from(configurations.default) {
-      include apiJar, httpJar, mqttJar, sqlJar, ini4jJar, gsonJar, pahoJar, hibernateJar, hibernateJpaJar, jbossLoggingJar,
-      		  jbossTransactionJar, dom4jJar, hibernateAnnotationsJar, classmateJar, mysqlConnectorJar, hibernateC3p0Jar
+      include apiJar, httpJar, mqttJar, sqlJar, ini4jJar, gsonJar, pahoJar, hibernateJar, hibernateJpaJar, hibernateAnnotationsJar, 
+      		  jbossLoggingJar, jbossTransactionJar, dom4jJar, mysqlConnectorJar, classmateJar, hibernateC3p0Jar, c3p0Jar, mchangeJar
     }
   }
   manifest {
@@ -103,32 +112,32 @@ jar {
                                        'libs/'+jbossLoggingJar+',' +
                                        'libs/'+jbossTransactionJar+',' +
                                        'libs/'+dom4jJar+',' +
-                                       'libs/'+classmateJar+',' +
                                        'libs/'+mysqlConnectorJar+',' +
-                                       'libs/'+hibernateC3p0Jar,
+                                       'libs/'+mchangeJar+',' +
+                                       'libs/'+hibernateC3p0Jar+',' +
+                                       'libs/'+c3p0Jar+',' +
+                                       'libs/'+classmateJar,
                'Import-Package':      '!org.emoncms.*,' +
                                       '!org.ini4j.*,' +
                                       '!com.google.gson.*,' +
                                       '!org.eclipse.paho.*,' +
                                       '!org.hibernate.*,' +
-                                      '!javax.persistence.*,' +
                                       '!org.jboss.logging.*,' +
                                       '!javax.transaction.*,' +
                                       '!org.dom4j.*,' +
-                                      '!com.fasterxml.classmate.*,' +
-                                      '!com.mysql.jdbc.*,' +
-                                      '!org.gjt.mm.mysql.*,' +
+                                      '!com.mchange.*,' +
+                                      '!com.mysql.*,' +
+                                      '!com.fasterxml.*,' +
                                        'org.osgi.*;version=0,' +
                                        'org.slf4j;version=0,' +
-                                       'javax.net;version=0,' +
-                                       'javax.net.ssl;version=0,' +
-                                       'javax.naming.*;version=0,' +
-                                       'org.w3c.dom;version=0,' +
+                                       'javax.sql.*;version=0,' +
+                                       'javax.net.*;version=0,' +
                                        'javax.xml.*;version=0,' +
+                                       'javax.naming.*;version=0,' +
+                                       'javax.management.*;version=0,' +
                                        'org.xml.sax;version=0,' +
-                                       'org.openmuc.framework.*;version=0,' +
-                                       'javax.management.*;version=0',
-                                       
+                                       'org.w3c.dom.*;version=0,' +
+                                       'org.openmuc.framework.*;version=0',
                'Export-Package':     '')
   }
 }

@@ -37,16 +37,11 @@ public class SqlLogger implements DynamicLoggerService {
 	protected final static String CONNECTION_ADDRESS = "address";
 	protected final static String CONNECTION_ADDRESS_DEFAULT = "127.0.0.1";
 	protected final static String CONNECTION_PORT = "port";
-	protected final static int    CONNECTION_PORT_DEFAULT = 3306;
 	protected final static String CONNECTION_DB_NAME = "databaseName";
-	protected final static String CONNECTION_DB_NAME_DEFAULT = "openmuc";
 	protected final static String CONNECTION_DB_TYPE = "databaseType";
-	protected final static String CONNECTION_DB_TYPE_DEFAULT = "jdbc:mysql";
 	protected final static String CONNECTION_DRIVER_CLASS = "connectionDriverClass";
-	protected final static String CONNECTION_DRIVER_CLASS_DEFAULT = "com.mysql.jdbc.Driver";
 
 	protected final static String DB_DIALECT = "databaseDialect";
-	protected final static String DB_DIALECT_DEFAULT = "org.hibernate.dialect.MariaDBDialect";
 
 	protected final static String USER = "user";
 	protected final static String PASSWORD = "password";
@@ -79,19 +74,19 @@ public class SqlLogger implements DynamicLoggerService {
 		String connectionUrl = config.getString(CONNECTION_ADDRESS, CONNECTION_ADDRESS_DEFAULT);
 		HibernateBuilder builder = HibernateBuilder.create(connectionUrl);
 		if (config.contains(CONNECTION_DRIVER_CLASS)) {
-			builder.setConnectionDriverClass(config.getString(CONNECTION_DRIVER_CLASS, CONNECTION_DRIVER_CLASS_DEFAULT));
+			builder.setConnectionDriverClass(config.getString(CONNECTION_DRIVER_CLASS));
 		}
 		if (config.contains(CONNECTION_PORT)) {
-			builder.setPort(config.getInteger(CONNECTION_PORT, CONNECTION_PORT_DEFAULT));
+			builder.setPort(config.getInteger(CONNECTION_PORT));
 		}
 		if (config.contains(CONNECTION_DB_NAME)) {
-			builder.setDatabaseName(config.getString(CONNECTION_DB_NAME, CONNECTION_DB_NAME_DEFAULT));
+			builder.setDatabaseName(config.getString(CONNECTION_DB_NAME));
 		}
 		if (config.contains(CONNECTION_DB_TYPE)) {
-			builder.setDatabaseType(config.getString(CONNECTION_DB_TYPE, CONNECTION_DB_TYPE_DEFAULT));
+			builder.setDatabaseType(config.getString(CONNECTION_DB_TYPE));
 		}
 		if (config.contains(DB_DIALECT)) {
-			builder.setDatabaseDialect(config.getString(DB_DIALECT, DB_DIALECT_DEFAULT));
+			builder.setDatabaseDialect(config.getString(DB_DIALECT));
 		}
 		if (config.contains(USER) && config.contains(PASSWORD)) {
 			builder.setCredentials(config.getString(USER), config.getString(PASSWORD));

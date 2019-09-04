@@ -39,6 +39,11 @@ import org.openmuc.framework.datalogger.spi.LogChannel;
  */
 public class TestSqlLogger {
 	
+	private static final String CONFIG_PATH = "hibernate.configPath";
+	
+	private static final int CONNECTION_PORT_DEFAULT = 3306;
+	private static final String CONNECTION_DB_NAME_DEFAULT = "openmuc"; 
+
 	SqlLogger logger = new SqlLogger();
 
 	@Test
@@ -197,11 +202,12 @@ public class TestSqlLogger {
 	private void onActivateLogger() throws IOException {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put(SqlLogger.CONNECTION_ADDRESS, SqlLogger.CONNECTION_ADDRESS_DEFAULT);
-		map.put(SqlLogger.CONNECTION_PORT, Integer.toString(SqlLogger.CONNECTION_PORT_DEFAULT));
-		map.put(SqlLogger.CONNECTION_DB_NAME, SqlLogger.CONNECTION_DB_NAME_DEFAULT);
+		map.put(SqlLogger.CONNECTION_PORT, Integer.toString(CONNECTION_PORT_DEFAULT));
+		map.put(SqlLogger.CONNECTION_DB_NAME, CONNECTION_DB_NAME_DEFAULT);
 		map.put(SqlLogger.USER, "root");
 		map.put(SqlLogger.PASSWORD, "");
-		
+
+		System.setProperty(CONFIG_PATH, "src/test/resources/");
 		Configuration config = new Configuration(map);
 		logger.onActivate(config);
 	}

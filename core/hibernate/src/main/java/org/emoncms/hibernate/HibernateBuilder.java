@@ -90,7 +90,7 @@ public class HibernateBuilder {
 		if (!databaseType.endsWith(":")) databaseType += ":";
 		
 		connectionUrl = databaseType + "//" + address + ":" + port + "/" + 
-					databaseName + "?useSSL=false";
+					databaseName + "?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC";
 
 		for (HibernateClient emoncms : sqlSingletons) {
 					

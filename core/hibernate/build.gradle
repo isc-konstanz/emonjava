@@ -28,6 +28,7 @@ dependencies {
   api project(':api')
 
   implementation group: 'org.hibernate', name: 'hibernate-core', version: hibernateVersion
+  implementation group: 'org.hibernate', name: 'hibernate-c3p0', version: hibernateVersion
 
   implementation group: 'com.mchange', name: 'c3p0', version: '0.9.5.4'
   implementation group: 'com.mchange', name: 'mchange-commons-java', version: '0.2.16'
