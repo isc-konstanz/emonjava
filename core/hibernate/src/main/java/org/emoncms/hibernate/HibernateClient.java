@@ -63,6 +63,7 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 	private final File hibernatePropsFile;
 	private final String hibernatePropsFilePath;
 
+	private Configuration config;
 	private SessionFactory factory;
 	private Map<String, HibernateFeed> feedMap;
 
@@ -114,17 +115,28 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 		initialize();
 	}
 
-	public void setFeedMap(Map<String, HibernateFeed> feedMap) {
-		this.feedMap = feedMap;
-	}
+	public void openWithoutFeeds() throws EmoncmsUnavailableException {
+		logger.info("Initializing emoncms SQL connection without Feeds \"{}\"", connectionUrl);
 
-	private void initialize() throws EmoncmsUnavailableException {
-        Configuration config = new Configuration().configure(hibernatePropsFile);
+        config = new Configuration().configure(hibernatePropsFile);
         config = config.setProperty("hibernate.connection.driver_class", connectionDriverClass);
         config = config.setProperty("hibernate.connection.url", connectionUrl);
         if (user !=  null) config = config.setProperty("hibernate.connection.username", user);
         if (password != null) config = config.setProperty("hibernate.connection.password", password);
         config = config.setProperty("hibernate.dialect", dialect);
+
+		factory = config.buildSessionFactory();
+	}
+
+	public void setFeedMap(Map<String, HibernateFeed> feedMap) {
+		this.feedMap = feedMap;
+	}
+
+	public Map<String, HibernateFeed> getFeedMap() {
+		return this.feedMap;
+	}
+
+	private void initialize() throws EmoncmsUnavailableException {
         if (feedMap == null) return;
 		for (HibernateFeed feed : feedMap.values()) {
             if (logger.isTraceEnabled()) {
@@ -135,9 +147,6 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 	        }            
         	InputStream inputStream = feed.createMappingInputStream();
     		config.addInputStream(inputStream);
-		}
-		if (!isClosed()) {
-			close();
 		}
 		
 		if (userType !=  null) {

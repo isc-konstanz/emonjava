@@ -58,6 +58,7 @@ public class HibernateFeed implements Feed {
 	protected String entityName;
 	protected HibernateFactoryGetter factoryGetter;
 	protected String type;
+	protected boolean isInitialized = false;
 	
 	public HibernateFeed(HibernateFactoryGetter factoryGetter, String entityName) {
 		this.entityName = entityName;
@@ -68,15 +69,26 @@ public class HibernateFeed implements Feed {
 		}
 	}
 	
+	public boolean isInitialized() {
+		return isInitialized;
+	}
+
+	public void setInitialized(boolean isInitialized) {
+		this.isInitialized = isInitialized;
+	}
+
 	protected synchronized void  loadMappingTemplate() {
 		String configPath = System.getProperty(CONFIG_PATH, DEFAULT_CONFIG_PATH);
 		String mappingTemplateFile = System.getProperty(MAPPING_TEMPLATE_FILE, DEFAULT_MAPPING_TEMPLATE);
 		String templateFileStr = configPath + mappingTemplateFile;
-		try {
-			MAPPING_TEMPLATE = new String(Files.readAllBytes(Paths.get(templateFileStr)));
-		} 
-		catch (IOException e) {
-			throw new RuntimeException(e);
+		while (MAPPING_TEMPLATE == null) {
+			try {
+				MAPPING_TEMPLATE = new String(Files.readAllBytes(Paths.get(templateFileStr)));
+			} 
+			catch (IOException e) {
+				logger.error(e.getMessage());
+				//throw new RuntimeException(e);
+			}
 		}
 	}
 	
@@ -158,6 +170,7 @@ public class HibernateFeed implements Feed {
 	public void deleteData(long time) throws EmoncmsException {
 		logger.debug("Requesting to delete value at time: {} for feed with entity: {}", time, entityName);
 
+		if (!isInitialized) return;
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
@@ -182,6 +195,7 @@ public class HibernateFeed implements Feed {
 	public void deleteDataRange(long start, long end) throws EmoncmsException {
 		logger.debug("Requesting to delete values from {} to {} for feed with entity: {}", start, end, entityName);
 
+		if (!isInitialized) return;
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
@@ -201,6 +215,7 @@ public class HibernateFeed implements Feed {
 	public LinkedList<Timevalue> getData(long start, long end, int interval) throws EmoncmsException {
 		logger.debug("Requesting to fetch data from {} to {} for feed with entity: {}", start, end, entityName);
 
+		if (!isInitialized) return new LinkedList<Timevalue>();
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
@@ -238,6 +253,7 @@ public class HibernateFeed implements Feed {
 	public Timevalue getLatestTimevalue() throws EmoncmsException {
 		logger.debug("Requesting to get latest timevalue for feed with entity: {}", entityName);
 
+		if (!isInitialized) return null;
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
@@ -259,7 +275,6 @@ public class HibernateFeed implements Feed {
 		return timeValue;
 	}
 
-	@SuppressWarnings("deprecation")
 	protected Double getValue(Object val) {
 		Double value = null;
 		if (val instanceof Boolean) value = new Double(((Boolean)val) == false ? 0 : 1);
@@ -277,6 +292,7 @@ public class HibernateFeed implements Feed {
 	public Double getLatestValue() throws EmoncmsException {
 		logger.debug("Requesting to get latest value for feed with entity: {}", entityName);
 		
+		if (!isInitialized) return null;
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		
@@ -313,6 +329,7 @@ public class HibernateFeed implements Feed {
 	}
 
 	protected void setData(Long time, double value) throws EmoncmsException {
+		if (!isInitialized) return;
 		Session session = getFactory().openSession();
 		Transaction t = session.beginTransaction();
 		

@@ -100,7 +100,10 @@ public class SqlLogger implements DynamicLoggerService {
 		
 		
 		client = (HibernateClient) builder.build();
-//		client.open();
+//		long time = System.currentTimeMillis(); 
+		client.openWithoutFeeds();
+//		time = System.currentTimeMillis() - time;  
+//		System.out.println("ExecutionTime: "  + time);
 	}
 
 	@Override
@@ -111,20 +114,37 @@ public class SqlLogger implements DynamicLoggerService {
 	@Override 
 	public void onConfigure(List<Channel> channels) throws IOException {
 		logger.info("Configuring Emoncms SQL Logger");
-		Map<String, HibernateFeed> feedMap = new HashMap<String, HibernateFeed>(channels.size());
-		for (Channel channel : channels) {
+		Thread initThread = new Thread() {
+			@Override
+			public void run() {
+				try {
+//					long time = System.currentTimeMillis(); 
+					Map<String, HibernateFeed> feedMap = new HashMap<String, HibernateFeed>(channels.size());
+					for (Channel channel : channels) {
 
-            if (logger.isTraceEnabled()) {
-                logger.trace("channel.getId() " + channel.getId());
-            }
-            
-            String entityName = getEntityName(channel);
-            HibernateFeed feed = new HibernateFeed(client, entityName);
-            feed.setValueType(channel.getValueType().toString());
-	        feedMap.put(entityName, feed);
-		}
-		client.setFeedMap(feedMap);
-		client.open();
+			            if (logger.isTraceEnabled()) {
+			                logger.trace("channel.getId() " + channel.getId());
+			            }
+			            
+			            String entityName = getEntityName(channel);
+			            HibernateFeed feed = new HibernateFeed(client, entityName);
+			            feed.setValueType(channel.getValueType().toString());
+				        feedMap.put(entityName, feed);
+					}
+					client.setFeedMap(feedMap);
+					client.open();
+					for (HibernateFeed feed : feedMap.values()) {
+						feed.setInitialized(true);
+					}
+					logger.info("Hibernate is initialized");
+//					time = System.currentTimeMillis() - time;  
+//					System.out.println("ExecutionTime: "  + time);
+				} catch (IOException e) {
+					logger.warn("Error while configuring channels:", e);
+				}
+			}
+		};
+		initThread.start();
 	}
 
 	@Override
