@@ -96,6 +96,7 @@ jar {
                                       '!com.mchange.*,' + 
                                       '!com.mysql.*,' +
                                        'javax.sql.*;version=0,' +
+                                       'javax.net.*;version=0,' +
                                        'javax.xml.*;version=0,' +
                                        'javax.naming.*;version=0,' +
                                        'javax.management*;version=0,' +

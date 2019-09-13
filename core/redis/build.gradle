@@ -27,7 +27,7 @@ def jedisVersion = '3.1.0'
 dependencies {
   api project(':api')
 
-  implementation group: 'redis.clients', name: 'jedis', version: jedisVersion
+  api group: 'redis.clients', name: 'jedis', version: jedisVersion
 }
 
 eclipse {

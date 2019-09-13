@@ -102,6 +102,9 @@ public class SqlClient implements Emoncms, SqlCallbacks {
             source.setJdbcUrl(url);
             source.setUser(user);
             source.setPassword(password);
+            if (redis != null) {
+            	redis.open();
+            }
             
         } catch (PropertyVetoException e) {
             throw new EmoncmsUnavailableException(e);

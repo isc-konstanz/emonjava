@@ -102,7 +102,7 @@ public class SqlEngine implements DataLoggerEngine {
                     config.getString(DATABASE_USER), 
                     config.getString(DATABASE_PASSWORD));
         }
-        if (config.getBoolean(REDIS_ENABLED, true)) {
+        if (config.getBoolean(REDIS_ENABLED, false)) {
         	RedisBuilder redis = RedisBuilder.create();
             if (config.contains(REDIS_HOST)) {
                 redis.setHost(config.getString(REDIS_HOST));
