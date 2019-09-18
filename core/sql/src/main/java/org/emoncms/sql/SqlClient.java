@@ -94,6 +94,11 @@ public class SqlClient implements Emoncms, SqlCallbacks {
     public void open() throws EmoncmsUnavailableException {
         logger.info("Initializing emoncms SQL connection \"{}\"", url);
         try {
+            if (redis != null && 
+        		redis.isClosed()) {
+            	
+            	redis.open();
+            }
             if (source != null) {
                 source.close();
             }
@@ -102,9 +107,6 @@ public class SqlClient implements Emoncms, SqlCallbacks {
             source.setJdbcUrl(url);
             source.setUser(user);
             source.setPassword(password);
-            if (redis != null) {
-            	redis.open();
-            }
             
         } catch (PropertyVetoException e) {
             throw new EmoncmsUnavailableException(e);

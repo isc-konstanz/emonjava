@@ -28,8 +28,6 @@ import redis.clients.jedis.Transaction;
  */
 interface RedisCallbacks {
 
-	Transaction getTransaction();
-
 	boolean exists(String key, String field) throws RedisException;
 
 	String get(String key, String field) throws RedisException;
@@ -37,5 +35,9 @@ interface RedisCallbacks {
 	Map<String, String> get(String key, String... fields) throws RedisException;
 
 	void set(String key, Map<String, String> values) throws RedisException;
+
+	void set(Transaction transaction, String key, Map<String, String> values) throws RedisException;
+
+	Transaction getTransaction();
 
 }

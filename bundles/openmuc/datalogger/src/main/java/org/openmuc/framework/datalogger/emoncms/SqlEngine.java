@@ -17,6 +17,7 @@ import org.emoncms.sql.SqlBuilder;
 import org.emoncms.sql.SqlClient;
 import org.emoncms.sql.SqlException;
 import org.emoncms.sql.SqlFeed;
+import org.emoncms.sql.SqlInput;
 import org.emoncms.sql.Transaction;
 import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Record;
@@ -32,6 +33,7 @@ public class SqlEngine implements DataLoggerEngine {
     private final static Logger logger = LoggerFactory.getLogger(SqlEngine.class);
 
     protected final static String FEED_ID = "feedid";
+    protected final static String INPUT_ID = "inputid";
 
     protected final static String DRIVER = "driver";
     protected final static String TYPE = "type";
@@ -58,6 +60,7 @@ public class SqlEngine implements DataLoggerEngine {
     private SqlClient client;
 
     private final Map<String, SqlFeed> feeds = new HashMap<String, SqlFeed>();
+    private final Map<String, SqlInput> inputs = new HashMap<String, SqlInput>();
 
     @Override
     public String getId() {
@@ -168,6 +171,12 @@ public class SqlEngine implements DataLoggerEngine {
                             SqlFeed feed = SqlFeed.create(client, client.getCache(), transaction, 
                                     feedId, tableName, valueType, false);
                             
+                            if (settings.contains(INPUT_ID)) {
+                            	SqlInput input  = SqlInput.connect(client, client.getCache(),
+                            			settings.getInteger(INPUT_ID));
+                            	
+                            	inputs.put(channelId, input);
+                            }
                             feeds.put(channelId, feed);
                             
                         } catch (EmoncmsSyntaxException e) {
@@ -213,6 +222,9 @@ public class SqlEngine implements DataLoggerEngine {
                     SqlFeed sqlFeed = feeds.get(channel.getId());
                     sqlFeed.insertData(sql, timestamp, value);
                     sqlFeed.cacheData(redis, timestamp, value);
+                    
+                    SqlInput sqlInput = inputs.get(channel.getId());
+                    sqlInput.cache(redis, timestamp, value);
                 }
                 catch (RedisUnavailableException ignore) {}
             }

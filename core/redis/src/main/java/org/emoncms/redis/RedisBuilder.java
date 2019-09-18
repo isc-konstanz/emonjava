@@ -31,7 +31,7 @@ public class RedisBuilder {
     private int port = 6379;
 
     private String password = null;
-    private String prefix = "emoncms";
+    private String prefix = "emoncms:";
 
     private RedisBuilder() {
     }

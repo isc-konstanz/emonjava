@@ -61,7 +61,7 @@ public class HttpEngine implements DataLoggerEngine {
 	private final static String FEED_ID = "feedid";
 
 	private final static String API_KEY = "apikey";
-	private final static String API_AUTH = "authorization";
+	private final static String API_AUTH = "api";
 
 	private HttpConnection connection;
 

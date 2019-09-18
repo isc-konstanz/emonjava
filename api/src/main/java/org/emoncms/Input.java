@@ -25,9 +25,9 @@ public interface Input {
 
 	public EmoncmsType getType();
 
-	public String getNode();
+	public String getNode() throws EmoncmsException;
 
-	public String getName();
+	public String getName() throws EmoncmsException;
 
 	public default String getDescription() throws EmoncmsException {
 		return null;

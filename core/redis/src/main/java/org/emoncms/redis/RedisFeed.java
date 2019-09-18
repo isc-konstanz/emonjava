@@ -102,24 +102,21 @@ public class RedisFeed implements Feed {
             throw new RedisException("No value cached yet for id:"+id);
         }
         Map<String, String> values = new HashMap<String, String>();
-    	values.put("time", String.valueOf(timestamp));
+    	values.put("time", String.valueOf((int) Math.round((double) timestamp/1000.0)));
     	values.put("value", String.valueOf(data));
     	
         callbacks.set(key, values);
     }
 
     public void cacheData(Transaction transaction, long timestamp, double data) throws EmoncmsException {
-        if (transaction == null) {
-            throw new RedisUnavailableException();
-        }
         String key = parseKey();
         logger.debug("Caching value {}:{}", key, data);
         
         Map<String, String> values = new HashMap<String, String>();
-    	values.put("time", String.valueOf(timestamp));
+    	values.put("time", String.valueOf((int) Math.round((double) timestamp/1000.0)));
     	values.put("value", String.valueOf(data));
     	
-    	transaction.hmset(key, values);
+    	callbacks.set(transaction, key, values);
     }
 
     private String parseKey() throws RedisUnavailableException {

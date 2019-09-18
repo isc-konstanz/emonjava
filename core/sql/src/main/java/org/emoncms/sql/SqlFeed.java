@@ -42,12 +42,12 @@ public class SqlFeed extends RedisFeed {
             + ") ENGINE=MYISAM";
     private static String QUERY_SELECT = "SELECT * FROM %s WHERE time >= %s AND time <= %s";
     private static String QUERY_INSERT = "INSERT INTO %s (time,data) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE data=VALUES(data)";
+//  private static String QUERY_UPDATE = "UPDATE feeds SET time = %s, value = %s WHERE id = %i";
 
     private static String COLUMN_TIME = "time";
     private static String COLUMN_DATA = "data";
 
     protected String table;
-    protected Integer id;
 
     /**
      * The Feeds' current callback object, which is notified of query events
@@ -151,13 +151,16 @@ public class SqlFeed extends RedisFeed {
             throw new SqlException(e);
         }
         try {
-            super.insertData(timevalue);
+        	cacheData(timevalue.getTime(), timevalue.getValue());
         }
         catch (RedisUnavailableException ignore) {}
     }
 
     public void insertData(Transaction transaction, long timestamp, double data) throws EmoncmsException {
         int time = (int) Math.round((double) timestamp/1000.0);
+//      if (id != null) {
+//          transaction.execute(String.format(QUERY_UPDATE, time, data, id));
+//      }
         String query = String.format(QUERY_INSERT, table, time, data);
         logger.debug("Query {}", query);
         

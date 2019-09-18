@@ -67,7 +67,10 @@ public class RedisClient implements Emoncms, RedisCallbacks {
 
     @Override
     public boolean isClosed() {
-        return jedis.isConnected();
+    	if (jedis == null) {
+        	return true;
+    	}
+        return !jedis.isConnected();
     }
 
     @Override
@@ -148,6 +151,14 @@ public class RedisClient implements Emoncms, RedisCallbacks {
 		} catch(JedisException e) {
 			throw new RedisException(e);
 		}
+	}
+
+	@Override
+	public void set(Transaction transaction, String key, Map<String, String> values) throws RedisException {
+        if (transaction == null) {
+            throw new RedisUnavailableException();
+        }
+    	transaction.hmset(prefix+key, values);
 	}
 
 }
