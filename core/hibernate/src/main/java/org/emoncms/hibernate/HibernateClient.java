@@ -20,7 +20,6 @@
 package org.emoncms.hibernate;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -40,65 +39,66 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.metamodel.internal.EntityTypeImpl;
-import org.hibernate.type.BasicType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HibernateClient implements Emoncms, HibernateFactoryGetter {
+public class HibernateClient implements Emoncms, HibernateCallbacks {
 	private static final Logger logger = LoggerFactory.getLogger(HibernateClient.class);
 
 	public static final String SCALE_INTEGER_TYPE = "ScaleInteger";
-	
-	private static final String CONFIG_PATH = "hibernate.configPath";
-	private static final String DEFAULT_CONFIG_PATH = "conf/";
-	private static final String HIBERNATE_CONFIG = "hibernate.config.file";
-	private static final String DEFAULT_HIBERNATE_CONFIG = "hibernate.cfg.xml";
 
-	private final String connectionDriverClass;
-	private final String connectionUrl;
+	private static final String CONFIG_PATH = "hibernate.configPath";
+	private static final String CONFIG_PATH_DEFAULT = "conf/";
+
+	private static final String CONFIG = "hibernate.config.file";
+	private static final String CONFIG_DEFAULT = "hibernate.cfg.xml";
+
+	private final String driver;
+	private final String address;
 	private final String dialect;
 	private final String user;
 	private final String password;
-	
-	private final File hibernatePropsFile;
-	private final String hibernatePropsFilePath;
 
+	private final File properties;
 	private Configuration config;
 	private SessionFactory factory;
-	private Map<String, HibernateFeed> feedMap;
 
-	protected BasicType userType;
+	private Map<String, HibernateFeed> feeds;
 
-	protected HibernateClient(String connectionDriverClass, String connectionUrl, String dialect, String user, String password) {
-		this.connectionDriverClass = connectionDriverClass;
-		this.connectionUrl = connectionUrl;
+	protected HibernateClient(String driver, String address, String dialect, String user, String password) {
+		this.driver = driver;
+		this.address = address;
 		this.dialect = dialect;
+		
 		this.user = user;
 		this.password = password;
 		
-		String configPath = System.getProperty(CONFIG_PATH, DEFAULT_CONFIG_PATH);
-		String hibernateConfigFile = System.getProperty(HIBERNATE_CONFIG, DEFAULT_HIBERNATE_CONFIG);
-		hibernatePropsFilePath = configPath + hibernateConfigFile;
-		hibernatePropsFile = new File(hibernatePropsFilePath);
+		String configPath = System.getProperty(CONFIG_PATH, CONFIG_PATH_DEFAULT);
+		String configFile = System.getProperty(CONFIG, CONFIG_DEFAULT);
+		properties = new File(configPath + configFile);
 	}
 
-	public HibernateClient(HibernateBuilder sqlBuilder) {
-		this(sqlBuilder.connectionDriverClass, sqlBuilder.connectionUrl, sqlBuilder.databaseDialect, 
-				sqlBuilder.user, sqlBuilder.password);
+	protected HibernateClient(HibernateBuilder builder) {
+		this(builder.driverClass, builder.databaseUrl, builder.databaseDialect, 
+				builder.user, builder.password);
 	}
 
-	@Override
-	public void close() {
-		logger.info("Shutting emoncms SQL connection \"{}\" down", connectionUrl);
-		if (factory != null) {
-			factory.close();
-			factory = null;
-		}
+	public String getAddress() {
+		return address;
 	}
 
 	@Override
 	public EmoncmsType getType() {
 		return EmoncmsType.SQL;
+	}
+
+	@Override
+	public void close() {
+		logger.info("Shutting emoncms SQL connection \"{}\" down", address);
+		if (factory != null) {
+			factory.close();
+			factory = null;
+		}
 	}
 
 	@Override
@@ -111,81 +111,55 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 
 	@Override
 	public void open() throws EmoncmsUnavailableException {
-		logger.info("Initializing emoncms SQL connection \"{}\"", connectionUrl);
+		logger.info("Initializing emoncms SQL connection \"{}\"", address);
 		initialize();
 	}
 
-	public void openWithoutFeeds() throws EmoncmsUnavailableException {
-		logger.info("Initializing emoncms SQL connection without Feeds \"{}\"", connectionUrl);
-
-        config = new Configuration().configure(hibernatePropsFile);
-        config = config.setProperty("hibernate.connection.driver_class", connectionDriverClass);
-        config = config.setProperty("hibernate.connection.url", connectionUrl);
-        if (user !=  null) config = config.setProperty("hibernate.connection.username", user);
-        if (password != null) config = config.setProperty("hibernate.connection.password", password);
-        config = config.setProperty("hibernate.dialect", dialect);
-
-		factory = config.buildSessionFactory();
-	}
-
-	public void setFeedMap(Map<String, HibernateFeed> feedMap) {
-		this.feedMap = feedMap;
-	}
-
-	public Map<String, HibernateFeed> getFeedMap() {
-		return this.feedMap;
-	}
-
 	private void initialize() throws EmoncmsUnavailableException {
-        if (feedMap == null) return;
-		for (HibernateFeed feed : feedMap.values()) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Entity of feed " + feed.getEntityName());
-            }
-	        if (feed.containsUserType(SCALE_INTEGER_TYPE)) {
-	        	userType = ScaleIntegerType.INSTANCE;
-	        }            
-        	InputStream inputStream = feed.createMappingInputStream();
-    		config.addInputStream(inputStream);
-		}
+        config = new Configuration().configure(properties);
+        config = config.setProperty("hibernate.connection.driver_class", driver);
+        config = config.setProperty("hibernate.connection.url", address);
+        if (user !=  null && password != null) {
+        	config = config.setProperty("hibernate.connection.username", user);
+        	config = config.setProperty("hibernate.connection.password", password);
+        }
+        config = config.setProperty("hibernate.dialect", dialect);
 		
-		if (userType !=  null) {
-			config.registerTypeContributor( (typeContributions, serviceRegistry) -> {
-					typeContributions.contributeType(userType, SCALE_INTEGER_TYPE);
-			} );
-		}
-		
+        if (feeds != null) {
+    		for (HibernateFeed feed : feeds.values()) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Entity of feed " + feed.getEntityName());
+                }
+    	        if (feed.containsUserType(SCALE_INTEGER_TYPE)) {
+        			config.registerTypeContributor((typeContributions, serviceRegistry) -> {
+        					typeContributions.contributeType(ScaleIntegerType.INSTANCE, SCALE_INTEGER_TYPE);
+        			});
+        			break;
+    	        }
+        		config.addInputStream(feed.getMapping());
+    		}
+        }
 		factory = config.buildSessionFactory();
 	}
-	
-	public BasicType getUserType() {
-		return userType;
-	}
-	
-	@Override
-	public SessionFactory getSessionFactory() {
-		return factory;
-	}
-	
-	public Feed getFeed(String entityName) throws EmoncmsException {
-		logger.debug("Requesting feed with entity: {}", entityName);
+
+	public Feed getFeed(String table) throws EmoncmsException {
+		logger.debug("Requesting feed with entity: {}", table);
 		
-		Feed feed = feedMap.get(entityName);
-		
+		HibernateFeed feed = feeds.get(table);
 		if (feed != null) {
-			if (factory == null || !feedExists(entityName)) {
-				throw new EmoncmsException("Feed with entity: " + entityName + " not found!");
+			if (factory == null || !feedExists(table)) {
+				throw new EmoncmsException("Feed with entity: " + table + " not found!");
 			}
 		}
 		else {
-			feed = new HibernateFeed(this, entityName);
-			feedMap.put(entityName, (HibernateFeed) feed);
+			feed = new HibernateFeed(this, table);
+			feeds.put(table, feed);
 		}
-		return feed;		
+		return feed;
 	}
 
 	private boolean feedExists(String entityName) {
-		//TODO EntityTypeImpl is deprecated and needs to be handled better than to use internal hibernate classes
+		//TODO: EntityTypeImpl is deprecated and needs to be handled better than to use internal hibernate classes
 		Session session = factory.openSession();
 		Iterator<EntityType<?>> it = session.getMetamodel().getEntities().iterator();
 		while (it.hasNext()) {
@@ -208,7 +182,7 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 		}
 		return map;
 	}
-	
+
 	@Override
 	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
 		throw new UnsupportedOperationException("Unsupported for type "+getType());
@@ -224,8 +198,12 @@ public class HibernateClient implements Emoncms, HibernateFactoryGetter {
 		throw new UnsupportedOperationException("Unsupported for type "+getType());
 	}
 
-	public String getConnectionUrl() {
-		return connectionUrl;
+	@Override
+	public Session getSession() throws EmoncmsUnavailableException {
+		if (factory == null || factory.isClosed()) {
+			throw new EmoncmsUnavailableException("Hibernate session factory not available");
+		}
+		return factory.openSession();
 	}
 
 }

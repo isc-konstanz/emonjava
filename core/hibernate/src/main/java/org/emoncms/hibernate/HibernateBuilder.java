@@ -26,15 +26,16 @@ import org.emoncms.Emoncms;
 
 public class HibernateBuilder {
 
-	private static final List<HibernateClient> sqlSingletons = new ArrayList<HibernateClient>();
+	private static final List<HibernateClient> clients = new ArrayList<HibernateClient>();
 
-	protected String connectionDriverClass = "com.mysql.cj.jdbc.Driver";
+	protected String driverClass = "com.mysql.cj.jdbc.Driver";
 	protected String address = "127.0.0.1";
 	protected int port = 3306;
+
+	protected String databaseUrl;
 	protected String databaseName = "openmuc"; 
 	protected String databaseType = "jdbc:mysql";
 	protected String databaseDialect = "org.hibernate.dialect.MariaDBDialect";
-	protected String connectionUrl;
 
 	protected String user = null;
 	protected String password = null;
@@ -54,8 +55,8 @@ public class HibernateBuilder {
         return new HibernateBuilder(address);
     }
 
-	public HibernateBuilder setDatabaseDialect(String databaseDialect) {
-		this.databaseDialect = databaseDialect;
+	public HibernateBuilder setDriverClass(String connectionDriverClass) {
+		this.driverClass = connectionDriverClass;
 		return this;
 	}
 
@@ -69,8 +70,8 @@ public class HibernateBuilder {
 		return this;
 	}
 
-	public HibernateBuilder setConnectionDriverClass(String connectionDriverClass) {
-		this.connectionDriverClass = connectionDriverClass;
+	public HibernateBuilder setDatabaseDialect(String databaseDialect) {
+		this.databaseDialect = databaseDialect;
 		return this;
 	}
 
@@ -86,24 +87,17 @@ public class HibernateBuilder {
 	}
 
 	public Emoncms build() {
-		HibernateClient sqlClient = null;
 		if (!databaseType.endsWith(":")) databaseType += ":";
 		
-		connectionUrl = databaseType + "//" + address + ":" + port + "/" + 
-					databaseName + "?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC";
-
-		for (HibernateClient emoncms : sqlSingletons) {
-					
-			if (emoncms.getConnectionUrl().equals(connectionUrl)) {
-				sqlClient = emoncms;
-				break;
+		databaseUrl = databaseType + "//" + address + ":" + port + "/" + databaseName + "?useSSL=false"; //&useLegacyDatetimeCode=false&serverTimezone=UTC";
+		for (HibernateClient client : clients) {
+			if (client.getAddress().equals(databaseUrl)) {
+				return client;
 			}
 		}
-		if (sqlClient == null) {
-			sqlClient = new HibernateClient(this);
-			sqlSingletons.add(sqlClient);
-		}
-		return sqlClient;
+		HibernateClient client = new HibernateClient(this);
+		clients.add(client);
+		return client;
 	}
 
 }

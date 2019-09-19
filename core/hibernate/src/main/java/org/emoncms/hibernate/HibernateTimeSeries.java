@@ -28,13 +28,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * ****************************************************************
- * Attention: this class is a copy of the OpenMuc hibernate project
- * ****************************************************************
- * @author gb
- *
- */
 public class HibernateTimeSeries {
 
 	protected static final String VALUE_COLUMN = "value"; 
@@ -85,11 +78,8 @@ public class HibernateTimeSeries {
 		case "BYTE":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
 			break;
-		case "DOUBLE":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Double");
-			break;
-		case "FLOAT":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
+		case "SHORT":
+			mapping = mapping.replace("java.lang.Object", "java.lang.Short");
 			break;
 		case "INTEGER":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
@@ -97,11 +87,11 @@ public class HibernateTimeSeries {
 		case "LONG":
 			mapping = mapping.replace("java.lang.Object", "java.lang.Long");
 			break;
-		case "SHORT":
-			mapping = mapping.replace("java.lang.Object", "java.lang.Short");
+		case "FLOAT":
+			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
 			break;
-		case "STRING":
-			mapping = mapping.replace("java.lang.Object", "java.lang.String");
+		case "DOUBLE":
+			mapping = mapping.replace("java.lang.Object", "java.lang.Double");
 			break;
 		default:
 			mapping = mapping.replace("java.lang.Object", "java.lang.String");
@@ -116,28 +106,25 @@ public class HibernateTimeSeries {
         map.put(TIME_COLUMN, timestamp);
         switch (type) {
 		case "BOOLEAN":
-			map.put(VALUE_COLUMN, (Boolean)value);
+			map.put(VALUE_COLUMN, (Boolean) value);
 			break;
 		case "BYTE":
-			map.put(VALUE_COLUMN, (Byte)value);
-			break;
-		case "DOUBLE":
-			map.put(VALUE_COLUMN, (Double)value);
-			break;
-		case "FLOAT":
-			map.put(VALUE_COLUMN, (Float)value);
-			break;
-		case "INTEGER":
-			map.put(VALUE_COLUMN, (Integer)value);
-			break;
-		case "LONG":
-			map.put(VALUE_COLUMN, (Long)value);
+			map.put(VALUE_COLUMN, (Byte) value);
 			break;
 		case "SHORT":
-			map.put(VALUE_COLUMN, (Short)value);
+			map.put(VALUE_COLUMN, (Short) value);
 			break;
-		case "STRING":
-			map.put(VALUE_COLUMN, String.valueOf(value));
+		case "INTEGER":
+			map.put(VALUE_COLUMN, (Integer) value);
+			break;
+		case "LONG":
+			map.put(VALUE_COLUMN, (Long) value);
+			break;
+		case "FLOAT":
+			map.put(VALUE_COLUMN, (Float) value);
+			break;
+		case "DOUBLE":
+			map.put(VALUE_COLUMN, (Double) value);
 			break;
 		default:
 			map.put(VALUE_COLUMN, String.valueOf(value));

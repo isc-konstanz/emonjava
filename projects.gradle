@@ -32,8 +32,9 @@ project.ext {
     it.getPath() == ':api' ||
     it.getPath() == ':http' ||
     it.getPath() == ':mqtt' ||
-    it.getPath() == ':redis' ||
     it.getPath() == ':sql' ||
+    it.getPath() == ':hibernate' ||
+    it.getPath() == ':redis' ||
     it.getPath() == ':bundle'
   }
 
@@ -41,8 +42,9 @@ project.ext {
     it.getPath() == ':api' ||
     it.getPath() == ':http' ||
     it.getPath() == ':mqtt' ||
-    it.getPath() == ':redis' ||
-    it.getPath() == ':sql'
+    it.getPath() == ':sql' ||
+    it.getPath() == ':hibernate' ||
+    it.getPath() == ':redis'
   }
 
 }

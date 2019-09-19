@@ -25,16 +25,12 @@ import org.hibernate.type.descriptor.java.ImmutableMutabilityPlan;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 
 public class ScaleIntegerDescriptor extends AbstractTypeDescriptor<Long> {
-
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = -4711264359790671417L;
-	
-	private static final String FACTOR = "Factor";
+
 	// Factor should be greater or equal 1000 and of type Integer. Factor 1000 converts
 	// milliseconds in seconds. 
-	private static final String DEFAULT_FACTOR = "1000";
+	private static final String FACTOR_DEFAULT = "1000";
+	private static final String FACTOR = "Factor";
 
 	public static final JavaTypeDescriptor<Long> INSTANCE = 
     	      new ScaleIntegerDescriptor();
@@ -44,7 +40,7 @@ public class ScaleIntegerDescriptor extends AbstractTypeDescriptor<Long> {
 	@SuppressWarnings("unchecked")
 	protected ScaleIntegerDescriptor() {
 		super(Long.class, ImmutableMutabilityPlan.INSTANCE);
-		int intFactor = Integer.valueOf(System.getProperty(FACTOR, DEFAULT_FACTOR));
+		int intFactor = Integer.valueOf(System.getProperty(FACTOR, FACTOR_DEFAULT));
 		if (intFactor < 1000) intFactor = 1000;
 		factor = Double.valueOf(intFactor);
 	}
@@ -72,11 +68,7 @@ public class ScaleIntegerDescriptor extends AbstractTypeDescriptor<Long> {
 	public <X> Long wrap(X value, WrapperOptions options) {
 		if (value == null) return null;
 		if (Integer.class.isInstance(value)) {
-			
-			@SuppressWarnings("deprecation")
-			Long newValue = new Long((Integer)value);
-			newValue = (long) Math.round(newValue * factor);
-			return newValue;
+			return (long) Math.round((Long) value * factor);
 		}
 		throw unknownWrap(value.getClass());
 	}

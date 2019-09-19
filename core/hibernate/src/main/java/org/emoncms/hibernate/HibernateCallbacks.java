@@ -19,9 +19,11 @@
  */
 package org.emoncms.hibernate;
 
-import org.hibernate.SessionFactory;
+import org.emoncms.EmoncmsUnavailableException;
+import org.hibernate.Session;
 
-public interface HibernateFactoryGetter {
+public interface HibernateCallbacks {
 
-	public SessionFactory getSessionFactory();
+	public Session getSession() throws EmoncmsUnavailableException;
+
 }

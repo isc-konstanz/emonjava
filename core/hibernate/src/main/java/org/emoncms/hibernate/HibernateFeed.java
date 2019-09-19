@@ -35,7 +35,6 @@ import org.emoncms.EmoncmsType;
 import org.emoncms.Feed;
 import org.emoncms.data.Timevalue;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 import org.hibernate.type.BasicType;
@@ -45,45 +44,46 @@ import org.slf4j.LoggerFactory;
 public class HibernateFeed implements Feed {
 	private static final Logger logger = LoggerFactory.getLogger(HibernateFeed.class);
 
-	protected static final String CONFIG_PATH = "hibernate.configPath";
-	protected static final String DEFAULT_CONFIG_PATH = "conf/";
-	protected static final String MAPPING_TEMPLATE_FILE = "hibernate.record.template";
-	protected static final String DEFAULT_MAPPING_TEMPLATE = "hibernate.record.hbm.xml";
-
 	protected static final String VALUE_COLUMN = "value"; 
 	protected static final String TIME_COLUMN = "timestamp"; 
 
-	protected static String MAPPING_TEMPLATE = null;
+	protected static final String CONFIG_PATH = "hibernate.configPath";
+	protected static final String CONFIG_PATH_DEFAULT = "conf/";
+	protected static final String MAPPING_TEMPLATE = "hibernate.record.template";
+	protected static final String MAPPING_TEMPLATE_DEFAULT = "hibernate.record.hbm.xml";
 
-	protected String entityName;
-	protected HibernateFactoryGetter factoryGetter;
+	protected static String template = null;
+
+	protected String name;
 	protected String type;
-	protected boolean isInitialized = false;
-	
-	public HibernateFeed(HibernateFactoryGetter factoryGetter, String entityName) {
-		this.entityName = entityName;
-		this.factoryGetter = factoryGetter;
 
-		if (MAPPING_TEMPLATE == null) {
+	protected boolean initialized = false;
+
+	protected HibernateCallbacks callbacks;
+	
+	public HibernateFeed(HibernateCallbacks callbacks, String table) {
+		this.callbacks = callbacks;
+		this.name = table;
+		
+		if (template == null) {
 			loadMappingTemplate();
 		}
 	}
 	
 	public boolean isInitialized() {
-		return isInitialized;
+		return initialized;
 	}
 
 	public void setInitialized(boolean isInitialized) {
-		this.isInitialized = isInitialized;
+		this.initialized = isInitialized;
 	}
 
 	protected synchronized void  loadMappingTemplate() {
-		String configPath = System.getProperty(CONFIG_PATH, DEFAULT_CONFIG_PATH);
-		String mappingTemplateFile = System.getProperty(MAPPING_TEMPLATE_FILE, DEFAULT_MAPPING_TEMPLATE);
-		String templateFileStr = configPath + mappingTemplateFile;
-		while (MAPPING_TEMPLATE == null) {
+		String configPath = System.getProperty(CONFIG_PATH, CONFIG_PATH_DEFAULT);
+		String templateFile = System.getProperty(MAPPING_TEMPLATE, MAPPING_TEMPLATE_DEFAULT);
+		while (template == null) {
 			try {
-				MAPPING_TEMPLATE = new String(Files.readAllBytes(Paths.get(templateFileStr)));
+				template = new String(Files.readAllBytes(Paths.get(configPath + templateFile)));
 			} 
 			catch (IOException e) {
 				logger.error(e.getMessage());
@@ -91,71 +91,29 @@ public class HibernateFeed implements Feed {
 			}
 		}
 	}
-	
+
 	public void setValueType(String type) {
 		this.type = type;
 	}
-	
-	public InputStream createMappingInputStream() {
-		String mapping = MAPPING_TEMPLATE.replace("entity-name=\"entity\"", "entity-name=\""+entityName+"\"");
-		if (type != null) {
-			switch (type) {
-			case "BOOLEAN":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Boolean");
-				break;
-			case "BYTE":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
-				break;
-			case "DOUBLE":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Double");
-				break;
-			case "FLOAT":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Float");
-				break;
-			case "INTEGER":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
-				break;
-			case "LONG":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Long");
-				break;
-			case "SHORT":
-				mapping = mapping.replace("java.lang.Object", "java.lang.Short");
-				break;
-			case "STRING":
-				mapping = mapping.replace("java.lang.Object", "java.lang.String");
-				break;
-			default:
-				mapping = mapping.replace("java.lang.Object", "java.lang.String");
-				break;
-			}
-		}
-		else {
-			// Use hard coded float if type is not set. Normally type will be set by emoncms 
-			// datalogger SqlLogger
-			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
-			type = "FLOAT";
-		}
-		return new ByteArrayInputStream(StandardCharsets.UTF_16.encode(mapping).array());		
-	}
-	
+
 	public boolean containsUserType(String type) {
-		return MAPPING_TEMPLATE.contains(type); 
+		return template.contains(type); 
 	}
 
 	public String getEntityName() {
-		return entityName;
+		return name;
 	}
 	
 	@Override
 	public int getId() {
 		throw new UnsupportedOperationException("SqlFeed has no id");
 	}
-	
+
 	@Override
 	public EmoncmsType getType() {
 		return EmoncmsType.SQL;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.emoncms.Feed#delete()
 	 * Drop Table from DataBase
@@ -168,59 +126,53 @@ public class HibernateFeed implements Feed {
 
 	@Override
 	public void deleteData(long time) throws EmoncmsException {
-		logger.debug("Requesting to delete value at time: {} for feed with entity: {}", time, entityName);
-
-		if (!isInitialized) return;
-		Session session = getFactory().openSession();
-		Transaction t = session.beginTransaction();
+		logger.debug("Requesting to delete value at time: {} for feed with entity: {}", time, name);
 		
-		String hql = "delete " + entityName + " where " + TIME_COLUMN + " = :time";
+		if (!initialized) return;
+		Session session = callbacks.getSession();
+		Transaction transaction = session.beginTransaction();
+		
+		String hql = "delete " + name + " where " + TIME_COLUMN + " = :time";
 		Query<?> query = session.createQuery(hql).setParameter("time", time);
 		int deletedRecs = query.executeUpdate();
 		if (deletedRecs == 0) {
-			logger.debug("No value found at time: {} for feed with entity: {}", time, entityName);
+			logger.debug("No value found at time: {} for feed with entity: {}", time, name);
 		}
 		
-		t.commit();
+		transaction.commit();
 		session.close();		
-	}
-
-	private SessionFactory getFactory() throws EmoncmsException {
-		SessionFactory factory = factoryGetter.getSessionFactory();
-		if (factory == null || factory.isClosed()) throw new EmoncmsException("Sql Client is not opened!");
-		return factory;
 	}
 
 	@Override
 	public void deleteDataRange(long start, long end) throws EmoncmsException {
-		logger.debug("Requesting to delete values from {} to {} for feed with entity: {}", start, end, entityName);
+		logger.debug("Requesting to delete values from {} to {} for feed with entity: {}", start, end, name);
 
-		if (!isInitialized) return;
-		Session session = getFactory().openSession();
-		Transaction t = session.beginTransaction();
+		if (!initialized) return;
+		Session session = callbacks.getSession();
+		Transaction transaction = session.beginTransaction();
 		
-		String hql = "delete " + entityName + " where " + TIME_COLUMN + " <= :start and " +
+		String hql = "delete " + name + " where " + TIME_COLUMN + " <= :start and " +
 							TIME_COLUMN + " >= :end";
 		Query<?> query = session.createQuery(hql).setParameter("start", start).setParameter("end", end);
 		int deletedRecs = query.executeUpdate();
 		if (deletedRecs == 0) {
-			logger.debug("No values found from {} to {} for feed with entity: {}", start, end, entityName);
+			logger.debug("No values found from {} to {} for feed with entity: {}", start, end, name);
 		}
 		
-		t.commit();
+		transaction.commit();
 		session.close();		
 	}
 	
 	@Override
 	public LinkedList<Timevalue> getData(long start, long end, int interval) throws EmoncmsException {
-		logger.debug("Requesting to fetch data from {} to {} for feed with entity: {}", start, end, entityName);
+		logger.debug("Requesting to fetch data from {} to {} for feed with entity: {}", start, end, name);
 
-		if (!isInitialized) return new LinkedList<Timevalue>();
-		Session session = getFactory().openSession();
-		Transaction t = session.beginTransaction();
+		if (!initialized) return new LinkedList<Timevalue>();
+		Session session = callbacks.getSession();
+		Transaction transaction = session.beginTransaction();
 		
 		//TODO implement interval to get only data with start-i*interval 
-		Query<?> query = session.createQuery("from " + entityName + 
+		Query<?> query = session.createQuery("from " + name + 
 				" where " + TIME_COLUMN + " <= :start and " +
 							TIME_COLUMN + " >= :end");
 		BasicType userType = null;
@@ -243,7 +195,7 @@ public class HibernateFeed implements Feed {
 			timeValuesList.add(timeValue);
 		}
 		
-		t.commit();
+		transaction.commit();
 		session.close();		
 		
 		return timeValuesList;
@@ -251,13 +203,13 @@ public class HibernateFeed implements Feed {
 
 	@Override
 	public Timevalue getLatestTimevalue() throws EmoncmsException {
-		logger.debug("Requesting to get latest timevalue for feed with entity: {}", entityName);
+		logger.debug("Requesting to get latest timevalue for feed with entity: {}", name);
 
-		if (!isInitialized) return null;
-		Session session = getFactory().openSession();
-		Transaction t = session.beginTransaction();
+		if (!initialized) return null;
+		Session session = callbacks.getSession();
+		Transaction transaction = session.beginTransaction();
 		
-		Query<?> query = session.createQuery("from " + entityName + " order by " + TIME_COLUMN);
+		Query<?> query = session.createQuery("from " + name + " order by " + TIME_COLUMN);
 		query.setMaxResults(1);
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		List<Map> list = (List<Map>) query.list();
@@ -269,7 +221,7 @@ public class HibernateFeed implements Feed {
 			double value = getValue(firstMap.get(VALUE_COLUMN));
 			timeValue = new Timevalue(time, value);
 		}
-		t.commit();
+		transaction.commit();
 		session.close();		
 
 		return timeValue;
@@ -277,26 +229,27 @@ public class HibernateFeed implements Feed {
 
 	protected Double getValue(Object val) {
 		Double value = null;
-		if (val instanceof Boolean) value = new Double(((Boolean)val) == false ? 0 : 1);
-		else if (val instanceof Byte) value = new Double((Byte)val);
-		else if (val instanceof Double) value = new Double((Double)val);
-		else if (val instanceof Float) value = new Double((Float)val);
-		else if (val instanceof Integer) value = new Double((Integer)val);
-		else if (val instanceof Long) value = new Double((Long)val);
-		else if (val instanceof Short) value = new Double((Short)val);
-		else if (val instanceof String) value = new Double((String)val);
+		if (val instanceof String) {
+			value = Double.parseDouble((String) val);
+		}
+		else if (val instanceof Boolean) {
+			value = ((Boolean) val) ? 1.0 : 0.0;
+		}
+		else {
+			value = (Double) val;
+		}
 		return value;
 	}
 
 	@Override
 	public Double getLatestValue() throws EmoncmsException {
-		logger.debug("Requesting to get latest value for feed with entity: {}", entityName);
+		logger.debug("Requesting to get latest value for feed with entity: {}", name);
 		
-		if (!isInitialized) return null;
-		Session session = getFactory().openSession();
-		Transaction t = session.beginTransaction();
+		if (!initialized) return null;
+		Session session = callbacks.getSession();
+		Transaction transaction = session.beginTransaction();
 		
-		Query<?> query = session.createQuery("from " + entityName + " order by " + TIME_COLUMN);
+		Query<?> query = session.createQuery("from " + name + " order by " + TIME_COLUMN);
 		query.setMaxResults(1);
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		List<Map> list = (List<Map>) query.list();
@@ -306,7 +259,7 @@ public class HibernateFeed implements Feed {
 			Map firstMap = list.get(0);
 			value = getValue(firstMap.get(VALUE_COLUMN));
 		}
-		t.commit();
+		transaction.commit();
 		session.close();
 		
 		return value;
@@ -315,7 +268,7 @@ public class HibernateFeed implements Feed {
 	@Override
 	public void insertData(Timevalue timevalue) throws EmoncmsException {
 		logger.debug("Requesting to insert value: {}, time: {} for feed with entity: {}",
-				timevalue.getValue(), timevalue.getTime(), entityName);
+				timevalue.getValue(), timevalue.getTime(), name);
 
 		setData(timevalue.getTime(), timevalue.getValue());
 	}
@@ -323,24 +276,16 @@ public class HibernateFeed implements Feed {
 	@Override
 	public void updateData(Timevalue timevalue) throws EmoncmsException {
 		logger.debug("Requesting to update value: {} at time: {} for feed with entity: {}",
-				timevalue.getValue(), timevalue.getTime(), entityName);
+				timevalue.getValue(), timevalue.getTime(), name);
 
 		setData(timevalue.getTime(), timevalue.getValue());
 	}
 
 	protected void setData(Long time, double value) throws EmoncmsException {
-		if (!isInitialized) return;
-		Session session = getFactory().openSession();
-		Transaction t = session.beginTransaction();
+		if (!initialized) return;
+		Session session = callbacks.getSession();
+		Transaction transaction = session.beginTransaction();
 		
-        Map<String, Object> map = buildMap(time, value);
-    	session.saveOrUpdate(entityName, map);
-		
-		t.commit();
-		session.close();		
-	}
-
-	protected Map<String, Object> buildMap(Long time, double value) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put(TIME_COLUMN, time);
 		switch (type) {
@@ -373,7 +318,48 @@ public class HibernateFeed implements Feed {
 				map.put(VALUE_COLUMN, ((Double)value).toString());
 				break;
 		}
-		return map;
+    	session.saveOrUpdate(name, map);
+		
+		transaction.commit();
+		session.close();		
+	}
+
+	protected InputStream getMapping() {
+		String mapping = template.replace("entity-name=\"entity\"", "entity-name=\""+name+"\"");
+		if (type != null) {
+			switch (type) {
+			case "BOOLEAN":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Boolean");
+				break;
+			case "BYTE":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Byte");
+				break;
+			case "SHORT":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Short");
+				break;
+			case "INTEGER":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Integer");
+				break;
+			case "LONG":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Long");
+				break;
+			case "FLOAT":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Float");
+				break;
+			case "DOUBLE":
+				mapping = mapping.replace("java.lang.Object", "java.lang.Double");
+				break;
+			default:
+				mapping = mapping.replace("java.lang.Object", "java.lang.String");
+				break;
+			}
+		}
+		else {
+			// Use hard coded float if type is not specified.
+			mapping = mapping.replace("java.lang.Object", "java.lang.Float");
+			type = "FLOAT";
+		}
+		return new ByteArrayInputStream(StandardCharsets.UTF_16.encode(mapping).array());		
 	}
 
 }
