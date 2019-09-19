@@ -23,14 +23,15 @@ def projectFullName = 'Emoncms Java - Hibernate'
 def projectDescription = 'Emoncms Hibernate client implementation'
 
 def hibernateVersion = '5.2.10.Final'
-def mysqlVersion = '5.1.6'
 
 dependencies {
   api project(':api')
 
-  implementation group: 'org.hibernate', name: 'hibernate-c3p0', version: hibernateVersion
   implementation group: 'org.hibernate', name: 'hibernate-core', version: hibernateVersion
-  implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
+  implementation group: 'org.hibernate', name: 'hibernate-c3p0', version: hibernateVersion
+
+  implementation group: 'com.mchange', name: 'c3p0', version: '0.9.5.4'
+  implementation group: 'com.mchange', name: 'mchange-commons-java', version: '0.2.16'
 }
 
 eclipse {
