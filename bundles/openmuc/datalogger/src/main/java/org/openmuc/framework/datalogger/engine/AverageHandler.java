@@ -22,6 +22,7 @@ package org.openmuc.framework.datalogger.engine;
 import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Flag;
 import org.openmuc.framework.data.Record;
+import org.openmuc.framework.data.Value;
 import org.openmuc.framework.dataaccess.RecordListener;
 import org.openmuc.framework.datalogger.data.Settings;
 import org.openmuc.framework.datalogger.spi.LogChannel;
@@ -83,9 +84,10 @@ public class AverageHandler extends DynamicHandler implements RecordListener {
 				id, record.toString());
 		
 		Long time = record.getTimestamp();
-		if (this.lastTime == null || this.lastTime < time) {
+		Value value = record.getValue();
+		if (value != null && time != null && (this.lastTime == null || this.lastTime < time)) {
 			synchronized (listening) {
-				valueSum += record.getValue().asDouble();
+				valueSum += value.asDouble();
 				valueCount++;
 			}
 			lastTime = time;
