@@ -1,4 +1,4 @@
-package org.openmuc.framework.datalogger.emoncms;
+package org.openmuc.framework.datalogger.emoncms.sql;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,18 +22,13 @@ import org.emoncms.sql.Transaction;
 import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.Value;
-import org.openmuc.framework.datalogger.data.Channel;
-import org.openmuc.framework.datalogger.data.Configuration;
-import org.openmuc.framework.datalogger.data.Settings;
-import org.openmuc.framework.datalogger.engine.DataLoggerEngine;
+import org.openmuc.framework.datalogger.emoncms.Configuration;
+import org.openmuc.framework.datalogger.emoncms.Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SqlEngine implements DataLoggerEngine {
+public class SqlEngine implements Engine<SqlChannel> {
     private final static Logger logger = LoggerFactory.getLogger(SqlEngine.class);
-
-    protected final static String FEED_ID = "feedid";
-    protected final static String INPUT_ID = "inputid";
 
     protected final static String DRIVER = "driver";
     protected final static String TYPE = "type";
@@ -63,8 +58,8 @@ public class SqlEngine implements DataLoggerEngine {
     private final Map<String, SqlInput> inputs = new HashMap<String, SqlInput>();
 
     @Override
-    public String getId() {
-        return EmoncmsType.SQL.name();
+    public EmoncmsType getType() {
+        return EmoncmsType.SQL;
     }
 
     @Override
@@ -126,17 +121,16 @@ public class SqlEngine implements DataLoggerEngine {
     }
 
     @Override
-    public void onConfigure(List<Channel> channels) throws IOException {
+    public void onConfigure(List<SqlChannel> channels) throws IOException {
         feeds.clear();
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try (Transaction transaction = client.getTransaction()) {
-                    for (Channel channel : channels) {
-                        Settings settings = channel.getSettings();
+                    for (SqlChannel channel : channels) {
                         try {
+                            int feedId = channel.getFeed();
                             String channelId = channel.getId();
-                            Integer feedId = settings.getInteger(FEED_ID);
                             
                             String valueType;
                             switch (channel.getValueType()) {
@@ -171,11 +165,8 @@ public class SqlEngine implements DataLoggerEngine {
                             SqlFeed feed = SqlFeed.create(client, client.getCache(), transaction, 
                                     feedId, tableName, valueType, false);
                             
-                            if (settings.contains(INPUT_ID)) {
-                            	SqlInput input  = SqlInput.connect(client, client.getCache(),
-                            			settings.getInteger(INPUT_ID));
-                            	
-                            	inputs.put(channelId, input);
+                            if (channel.hasInput()) {
+                            	inputs.put(channelId, SqlInput.connect(client, client.getCache(), channel.getInput()));
                             }
                             feeds.put(channelId, feed);
                             
@@ -185,46 +176,36 @@ public class SqlEngine implements DataLoggerEngine {
                         }
                     }
                 } catch (Exception e) {
-                    logger.warn("Error while configuring SQL channels: {}", e);
+                    logger.warn("Error while configuring SQL channels: {}", e.getMessage());
                 }
             }
         }).start();
     }
 
     @Override
-    public void doLog(Channel channel, long timestamp) throws IOException {
-        if (!isValid(channel)) {
-            return;
-        }
-        Long time = channel.getTime();
-        if (time == null) {
-            time = timestamp;
-        }
-        SqlFeed sqlFeed = feeds.get(channel.getId());
-        sqlFeed.insertData(new Timevalue(time, channel.getValue().asDouble()));
-    }
-
-    @Override
-    public void doLog(List<Channel> channels, long timestamp) throws IOException {
+    public void onWrite(List<SqlChannel> channels, long timestamp) throws IOException {
         try (redis.clients.jedis.Transaction redis = client.cacheTransaction();
                 org.emoncms.sql.Transaction sql = client.getTransaction()) {
             
-            for (Channel channel : channels) {
-                if (!isValid(channel)) {
-                    return;
+            for (SqlChannel channel : channels) {
+                if (!channel.isValid()) {
+                    continue;
                 }
+            	String id = channel.getId();
                 Long time = channel.getTime();
                 if (time == null) {
                     time = timestamp;
                 }
                 Double value = channel.getValue().asDouble();
                 try {
-                    SqlFeed sqlFeed = feeds.get(channel.getId());
+                    SqlFeed sqlFeed = feeds.get(id);
                     sqlFeed.insertData(sql, timestamp, value);
                     sqlFeed.cacheData(redis, timestamp, value);
                     
-                    SqlInput sqlInput = inputs.get(channel.getId());
-                    sqlInput.cache(redis, timestamp, value);
+                    if (inputs.containsKey(id)) {
+                        SqlInput sqlInput = inputs.get(id);
+                        sqlInput.cache(redis, timestamp, value);
+                    }
                 }
                 catch (RedisUnavailableException ignore) {}
             }
@@ -236,19 +217,8 @@ public class SqlEngine implements DataLoggerEngine {
         }
     }
 
-    private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
-        if (!channel.isValid()) {
-            logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}",
-                    channel.getId(), channel.getFlag());
-            
-            return false;
-        }
-        logger.trace("Preparing record to log for channel {}", channel);
-        return true;
-    }
-
     @Override
-    public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
+    public List<Record> onRead(SqlChannel channel, long startTime, long endTime) throws IOException {
         List<Record> records = new LinkedList<Record>();
         List<Timevalue> values = getFeed(channel).getData(startTime, endTime, 1);
         for (Timevalue timevalue : values) {
@@ -259,12 +229,11 @@ public class SqlEngine implements DataLoggerEngine {
         return records;
     }
 
-    private SqlFeed getFeed(Channel channel) throws EmoncmsException {
+    private SqlFeed getFeed(SqlChannel channel) throws EmoncmsException {
         SqlFeed feed = feeds.get(channel.getId());
         if (feed == null) {
-            Settings settings = channel.getSettings();
             String channelId = channel.getId();
-            Integer feedId = settings.getInteger(FEED_ID);
+            Integer feedId = channel.getFeed();
             
             feed = SqlFeed.connect(client, client.getCache(), feedId, parseTable(feedId, channelId));
             feeds.put(channelId, feed);
@@ -275,7 +244,7 @@ public class SqlEngine implements DataLoggerEngine {
     private String parseTable(Integer feedId, String channelId) throws EmoncmsSyntaxException {
         String tableName = prefix;
         if (isGeneric) {
-            if (feedId == null) {
+            if (feedId < 1) {
                 throw new EmoncmsSyntaxException("Feed id needs to be configured for generic configurations");
             }
             tableName += feedId;

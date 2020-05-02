@@ -35,7 +35,7 @@ def javaProjects() {
 }
 
 configure(javaProjects()) {
-  apply plugin: 'maven'
+  apply plugin: 'maven-publish'
   apply plugin: 'java-library'
   apply plugin: 'biz.aQute.bnd.builder'
   apply plugin: 'eclipse'
@@ -55,7 +55,7 @@ configure(javaProjects()) {
 
   jar {
     manifest {
-      version = project.version.replace('-','.');
+      archiveVersion = project.version.replace('-','.');
       attributes('Bundle-Vendor':      projectVendor,
                  'Bundle-DocURL':      projectSite)
     }
@@ -137,7 +137,7 @@ task distribute(type: Tar) {
   dependsOn(javadocAll)
 
   compression = Compression.GZIP
-  archiveName = project.name + '-' + projectVersion + '.tar.gz'
+  archiveFileName = project.name + '-' + projectVersion + '.tar.gz'
 
   into(project.name) {
     from('build') {
@@ -159,5 +159,5 @@ task distribute(type: Tar) {
       }
     }
   }
-  destinationDir = file('build/dist/')
+  destinationDirectory = file('build/dist/')
 }

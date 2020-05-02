@@ -37,12 +37,17 @@ public class HttpCallable implements Callable<HttpResponse> {
 
 	private final static Charset CHARSET = StandardCharsets.UTF_8;
 
+	private final int timeout;
+
 	private final HttpRequest request;
 	private HttpURLConnection connection = null;
 	private InputStream stream = null;
 
-	public HttpCallable(HttpRequest request) {
+	private volatile long start;
+
+	public HttpCallable(HttpRequest request, int timeout) {
 		this.request = request;
+		this.timeout = timeout;
 	}
 
 	public HttpRequest getRequest() {
@@ -51,6 +56,8 @@ public class HttpCallable implements Callable<HttpResponse> {
 
 	@Override
 	public HttpResponse call() throws Exception {
+		start = System.currentTimeMillis();
+		
 		HttpMethod method = request.getMethod();
 		switch (method) {
 		case GET:
@@ -167,6 +174,7 @@ public class HttpCallable implements Callable<HttpResponse> {
 		StringBuilder sb = new StringBuilder();
 		String line;
 		while (!Thread.currentThread().isInterrupted() && 
+				System.currentTimeMillis() - start <= timeout && 
 				(line = reader.readLine()) != null) {
 			
 			sb.append(line);

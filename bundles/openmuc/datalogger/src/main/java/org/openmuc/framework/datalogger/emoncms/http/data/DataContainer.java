@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.emoncms.data;
+package org.openmuc.framework.datalogger.emoncms.http.data;
 
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Authorization;

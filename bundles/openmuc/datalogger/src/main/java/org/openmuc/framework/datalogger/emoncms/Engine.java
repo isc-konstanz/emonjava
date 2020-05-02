@@ -17,18 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.engine;
+package org.openmuc.framework.datalogger.emoncms;
 
 import java.io.IOException;
 import java.util.List;
 
+import org.emoncms.EmoncmsType;
 import org.openmuc.framework.data.Record;
-import org.openmuc.framework.datalogger.data.Channel;
-import org.openmuc.framework.datalogger.data.Configuration;
 
-public interface DataLoggerEngine {
+public interface Engine<C extends EngineChannel> {
 
-	public String getId();
+	public EmoncmsType getType();
 
 	default boolean isActive() {
 		return true;
@@ -38,7 +37,7 @@ public interface DataLoggerEngine {
 		// Optional method
 	}
 
-	default void onConfigure(List<Channel> channels) throws IOException {
+	default void onConfigure(List<C> channels) throws IOException {
 		// Optional method
 	}
 
@@ -46,10 +45,8 @@ public interface DataLoggerEngine {
 		// Optional method
 	}
 
-	public void doLog(Channel channel, long timestamp) throws IOException;
+	public void onWrite(List<C> channels, long timestamp) throws IOException;
 
-	public void doLog(List<Channel> channels, long timestamp) throws IOException;
-
-	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException;
+	public List<Record> onRead(C channel, long startTime, long endTime) throws IOException;
 
 }

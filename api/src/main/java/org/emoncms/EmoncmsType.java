@@ -21,7 +21,6 @@ package org.emoncms;
 
 public enum EmoncmsType {
 
-	DEFAULT,
 	HTTP,
 	MQTT,
 	REDIS,

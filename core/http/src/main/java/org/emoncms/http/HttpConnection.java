@@ -24,11 +24,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.emoncms.Emoncms;
@@ -47,11 +50,11 @@ import org.emoncms.data.Options;
 import org.emoncms.data.ProcessList;
 import org.emoncms.data.Timevalue;
 import org.emoncms.http.json.Const;
+import org.emoncms.http.json.JsonArrayBuilder;
 import org.emoncms.http.json.JsonFeed;
 import org.emoncms.http.json.JsonInput;
 import org.emoncms.http.json.JsonInputConfig;
 import org.emoncms.http.json.JsonInputList;
-import org.emoncms.http.json.JsonArrayBuilder;
 import org.emoncms.http.json.JsonObjectBuilder;
 import org.emoncms.http.request.HttpCallable;
 import org.emoncms.http.request.HttpCallbacks;
@@ -68,7 +71,8 @@ import com.google.gson.JsonSyntaxException;
 public class HttpConnection implements Emoncms, HttpCallbacks {
 	private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
 
-	private static final int TIMEOUT = 30000;
+	private static final String TIMEOUT = System.getProperty(HttpConnection.class.
+    		getPackage().getName().toLowerCase() + ".timeout", "30000");
 
 	private final String domain;
 	private Authentication authentication;
@@ -130,12 +134,11 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 
 	@Override
 	public void open() throws EmoncmsUnavailableException {
-		logger.info("Initializing emoncms HTTP connection \"{}\"", domain);
-		
 		// The HttpURLConnection implementation is in older JREs somewhat buggy with keeping connections alive. 
 		// To avoid this, the http.keepAlive system property can be set to false. 
 		System.setProperty("http.keepAlive", "false");
 		
+		logger.info("Initializing emoncms HTTP connection \"{}\"", domain);
 		initialize();
 		closed = false;
 	}
@@ -179,7 +182,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 	}
 
 	public void post(String node, Long time, List<Namevalue> namevalues, Authentication authentication) throws EmoncmsException {
-		logger.debug("Requesting to post values for {} inputs", namevalues.size());
+		logger.trace("Requesting to post values for {} inputs", namevalues.size());
 		
 		HttpQuery query = new HttpQuery("input", "post");
 		HttpParameters parameters = new HttpParameters();
@@ -193,6 +196,9 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		
 		JsonObjectBuilder json = new JsonObjectBuilder();
 		for (Namevalue namevalue : namevalues) {
+			logger.debug("Requesting to post value: {} for input \"{}\" of node \"{}\"", 
+					namevalue.getValue(), namevalue.getName(), node);
+			
 			json.addDouble(namevalue.getName(), namevalue.getValue());
 		}
 		parameters.addParameter(Const.FULLJSON, json);
@@ -493,12 +499,13 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Requesting \"{}\"", request.toString());
 		}
+		int timeout = Integer.valueOf(TIMEOUT);
 		long start = System.currentTimeMillis();
 		
-		final HttpCallable task = new HttpCallable(request);
+		final HttpCallable task = new HttpCallable(request, timeout);
 		final Future<HttpResponse> submit = executor.submit(task);
 		try {
-			HttpResponse response = submit.get(TIMEOUT, TimeUnit.MILLISECONDS);
+			HttpResponse response = submit.get(timeout, TimeUnit.MILLISECONDS);
 			if (logger.isTraceEnabled()) {
 				logger.trace("Received response after {}ms: {}", System.currentTimeMillis() - start, response);
 			}
@@ -506,10 +513,9 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 			
 		} catch (JsonSyntaxException e) {
 			throw new EmoncmsException("Received invalid JSON response: " + e);
-		} catch (Exception e) {
-			submit.cancel(true);
-			initialize();
 			
+		} catch (ExecutionException | CancellationException | InterruptedException | TimeoutException e) {
+			submit.cancel(true);
 			throw new EmoncmsException("Request \"" + request.toString() + "\" failed: " + e);
 		}
 	}

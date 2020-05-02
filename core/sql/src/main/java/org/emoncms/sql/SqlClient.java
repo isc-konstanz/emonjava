@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 public class SqlClient implements Emoncms, SqlCallbacks {
-    private static final Logger logger = LoggerFactory.getLogger(RedisClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(SqlClient.class);
 
     private final String driver;
     private final String url;

@@ -17,13 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openmuc.framework.datalogger.emoncms;
+package org.openmuc.framework.datalogger.emoncms.mqtt;
 
 import java.io.IOException;
 import java.util.List;
 
-import org.emoncms.EmoncmsException;
-import org.emoncms.EmoncmsSyntaxException;
 import org.emoncms.EmoncmsType;
 import org.emoncms.data.DataList;
 import org.emoncms.data.Namevalue;
@@ -31,13 +29,12 @@ import org.emoncms.data.Timevalue;
 import org.emoncms.mqtt.MqttBuilder;
 import org.emoncms.mqtt.MqttClient;
 import org.openmuc.framework.data.Record;
-import org.openmuc.framework.datalogger.data.Channel;
-import org.openmuc.framework.datalogger.data.Configuration;
-import org.openmuc.framework.datalogger.engine.DataLoggerEngine;
+import org.openmuc.framework.datalogger.emoncms.Configuration;
+import org.openmuc.framework.datalogger.emoncms.Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MqttEngine implements DataLoggerEngine {
+public class MqttEngine implements Engine<MqttChannel> {
 	private final static Logger logger = LoggerFactory.getLogger(MqttEngine.class);
 
 	private final static String ADDRESS = "address";
@@ -47,13 +44,11 @@ public class MqttEngine implements DataLoggerEngine {
 	private final static String USER = "user";
 	private final static String PASSWORD = "password";
 
-	private final static String NODE = "nodeid";
-
 	private MqttClient client;
 
 	@Override
-	public String getId() {
-		return EmoncmsType.MQTT.name();
+	public EmoncmsType getType() {
+		return EmoncmsType.MQTT;
 	}
 
 	@Override
@@ -83,11 +78,31 @@ public class MqttEngine implements DataLoggerEngine {
 	}
 
 	@Override
-	public void doLog(Channel channel, long timestamp) throws IOException {
-		if (!isValid(channel)) {
+	public void onWrite(List<MqttChannel> channels, long timestamp) throws IOException {
+		if (channels.size() == 1) {
+			onWrite(channels.get(0), timestamp);
 			return;
 		}
-		String node = channel.getSetting(NODE).asString();
+		DataList data = new DataList();
+		for (MqttChannel channel : channels) {
+			if (!channel.isValid()) {
+				continue;
+			}
+			String node = channel.getNode();
+			Long time = channel.getTime();
+			if (time == null) {
+				time = timestamp;
+			}
+			data.add(time, node, new Namevalue(channel.getId(), channel.getValue().asDouble()));
+		}
+		client.post(data);
+	}
+
+	public void onWrite(MqttChannel channel, long timestamp) throws IOException {
+		if (!channel.isValid()) {
+			return;
+		}
+		String node = channel.getNode();
 		Long time = channel.getTime();
 		if (time == null) {
 			time = timestamp;
@@ -96,61 +111,7 @@ public class MqttEngine implements DataLoggerEngine {
 	}
 
 	@Override
-	public void doLog(List<Channel> channels, long timestamp) throws IOException {
-		DataList data = new DataList();
-		for (Channel channel : channels) {
-			try {
-				if (!isValid(channel)) {
-					return;
-				}
-				String node = channel.getSetting(NODE).asString();
-				Long time = channel.getTime();
-				if (time == null) {
-					time = timestamp;
-				}
-				data.add(time, node, new Namevalue(channel.getId(), channel.getValue().asDouble()));
-				
-			} catch (EmoncmsSyntaxException e) {
-				logger.warn("Error preparing record to be logged to Channel \"{}\": {}", 
-						channel.getId(), e.getMessage());
-			}
-		}
-		try {
-			client.post(data);
-			
-		} catch (EmoncmsException e) {
-			logger.warn("Failed to log values: {}", e.getMessage());
-		}
-	}
-
-	private boolean isValid(Channel channel) throws EmoncmsSyntaxException {
-		if (!channel.isValid()) {
-			logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}",
-					channel.getId(), channel.getFlag());
-			
-			return false;
-		}
-		switch(channel.getValueType()) {
-		case DOUBLE:
-		case FLOAT:
-		case LONG:
-		case INTEGER:
-		case SHORT:
-		case BYTE:
-		case BOOLEAN:
-			break;
-		default:
-			throw new EmoncmsSyntaxException("Invalid value type: "+channel.getValueType());
-		}
-        if (!channel.hasSetting(NODE)) {
-			throw new EmoncmsSyntaxException("Node needs to be configured");
-        }
-		logger.trace("Preparing record to log for channel {}", channel);
-		return true;
-	}
-
-	@Override
-	public List<Record> getRecords(Channel channel, long startTime, long endTime) throws IOException {
+	public List<Record> onRead(MqttChannel channel, long startTime, long endTime) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 

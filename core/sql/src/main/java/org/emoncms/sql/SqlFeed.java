@@ -68,7 +68,7 @@ public class SqlFeed extends RedisFeed {
         if (!empty) {
             type += TYPE_NOT_NULL;
         }
-        String query = String.format(QUERY_CREATE, table, type);
+        String query = String.format(QUERY_CREATE, feed.table, type);
         logger.debug("Query  {}", query);
         
         transaction.execute(query);
@@ -110,7 +110,7 @@ public class SqlFeed extends RedisFeed {
 
     protected SqlFeed(SqlCallbacks callbacks, RedisClient redis, Integer id, String table) throws EmoncmsException {
         super(redis, id);
-        this.table = table;
+        this.table = table.toLowerCase().replaceAll("[^a-zA-Z0-9]", "_");
         this.callbacks = callbacks;
     }
 

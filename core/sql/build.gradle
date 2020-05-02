@@ -23,13 +23,11 @@ def projectFullName = 'Emoncms Java - SQL'
 def projectDescription = 'Emoncms SQL client implementation'
 
 def c3poVersion = '0.9.5.4'
-def mchangeVersion = '0.2.16'
 
 dependencies {
   api project(':redis')
 
   implementation group: 'com.mchange', name: 'c3p0', version: c3poVersion
-  implementation group: 'com.mchange', name: 'mchange-commons-java', version: mchangeVersion
 }
 
 eclipse {
@@ -42,6 +40,6 @@ jar {
   manifest {
     attributes('Bundle-Name':        projectFullName,
                'Bundle-Description': projectDescription,
-	           'Export-Package':     '')
+               'Export-Package':     'org.emoncms.sql.*')
   }
 }

@@ -22,31 +22,9 @@ def projectFullName = 'OpenMUC Data Logger - Emoncms Java'
 def projectDescription = 'Emoncms datalogger for the OpenMUC framework.'
 
 def ini4jVersion = '0.5.4'
-def ini4jJar = 'ini4j-'+ini4jVersion+'.jar'
-
-def gsonVersion = '2.8.5'
-def gsonJar = 'gson-'+gsonVersion+'.jar'
-
-def pahoVersion = '1.2.0'
-def pahoJar = 'org.eclipse.paho.client.mqttv3-'+pahoVersion+'.jar'
-
-def jedisVersion = '3.1.0'
-def jedisJar = 'jedis-'+jedisVersion+'.jar'
-
-def c3poVersion = '0.9.5.4'
-def c3piJar = 'c3p0-'+c3poVersion+'.jar'
-
-def mchangeVersion = '0.2.16'
-def mchargeJar = 'mchange-commons-java-'+mchangeVersion+'.jar'
-
 def mysqlVersion = '8.0.17'
-def mysqlJar = 'mysql-connector-java-'+mysqlVersion+'.jar'
 
-def apiJar = 'emoncms-api-'+projectVersion+'.jar'
-def httpJar = 'emoncms-http-'+projectVersion+'.jar'
-def mqttJar = 'emoncms-mqtt-'+projectVersion+'.jar'
-def redisJar = 'emoncms-redis-'+projectVersion+'.jar'
-def sqlJar = 'emoncms-sql-'+projectVersion+'.jar'
+configurations.create('embed')
 
 dependencies {
   implementation fileTree(dir: 'libs/openmuc', include: ['*.jar'])
@@ -55,55 +33,45 @@ dependencies {
   implementation group: 'org.apache.felix', name: 'org.apache.felix.scr', version: '2.1.14'
 
   implementation group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
-  implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
+  embed          group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
 
-  implementation project(':http'), project(':mqtt'), project(':sql'), project(':redis')
+  implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
+  embed          group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
+
+  implementation project(':http'), project(':mqtt'), project(':sql')
+  embed          project(':http'), project(':mqtt'), project(':sql')
+}
+
+def embed = configurations.embed.findAll {
+  !it.getName().matches("(slf4j|protobuf).*")
+}
+
+jar {
+  into('libs') {
+    from embed
+  }
+  manifest {
+    attributes('Bundle-Name':        projectFullName,
+               'Bundle-Description': projectDescription,
+               'Bundle-ClassPath': '.,' + embed.collect { 'libs/'+it.getName() }.join(','),
+               'Import-Package':   '!org.emoncms.*,' +
+                                   '!org.eclipse.paho.*,' +
+                                   '!redis.clients.*,' +
+                                   '!com.mchange.*,' +
+                                   '!com.mysql.*,' +
+                                   '!org.ini4j.*,' +
+                                   '!org.jboss.*,' +
+                                   '!org.apache.log*,' +
+                                   '!com.typesafe.*,' +
+                                   '!net.sf.cglib*,' +
+                                   '!javax.swing.*,' +
+                                   '*;version=0',
+               'Export-Package':   '')
+  }
 }
 
 eclipse {
   project {
     name = archivesBaseName
-  }
-}
-
-jar {
-  into('libs') {
-    from(configurations.default) {
-      include apiJar, httpJar, mqttJar, redisJar, sqlJar, 
-	          ini4jJar, gsonJar, pahoJar, jedisJar, mysqlJar, c3piJar, mchargeJar
-    }
-  }
-  manifest {
-    attributes('Bundle-Name':        projectFullName,
-               'Bundle-Description': projectDescription,
-               'Bundle-ClassPath':   '.,libs/'+apiJar+',' +
-                                       'libs/'+httpJar+',' +
-                                       'libs/'+mqttJar+',' +
-                                       'libs/'+redisJar+',' +
-                                       'libs/'+sqlJar+',' +
-                                       'libs/'+mysqlJar+',' +
-                                       'libs/'+mchargeJar+',' +
-                                       'libs/'+c3piJar+',' +
-                                       'libs/'+jedisJar+',' +
-                                       'libs/'+pahoJar+',' +
-                                       'libs/'+gsonJar+',' +
-                                       'libs/'+ini4jJar,
-               'Import-Package':      '!org.emoncms.*,' +
-                                      '!org.ini4j.*,' +
-                                      '!com.google.gson.*,' +
-                                      '!org.eclipse.paho.*,' +
-									  '!redis.clients.*,' +
-                                      '!com.mchange.*,' + 
-                                      '!com.mysql.*,' +
-                                       'javax.sql.*;version=0,' +
-                                       'javax.net.*;version=0,' +
-                                       'javax.xml.*;version=0,' +
-                                       'javax.naming.*;version=0,' +
-                                       'javax.management*;version=0,' +
-                                       'org.w3c.dom.*;version=0,' +
-                                       'org.osgi.*;version=0,' +
-                                       'org.slf4j;version=0,' +
-                                       'org.openmuc.framework.*;version=0',
-               'Export-Package':      '')
   }
 }

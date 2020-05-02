@@ -139,7 +139,7 @@ public class MqttClient implements Emoncms, MqttCallbacks {
 		json.addProperty(TIME, time);
 		json.addProperty(name, timevalue.getValue());
 		
-		submitRequest(topic, json);
+		publish(topic, json);
 	}
 
 	@Override
@@ -152,7 +152,7 @@ public class MqttClient implements Emoncms, MqttCallbacks {
 		}
 		logger.debug("Sending values for {} inputs {} to topic \"{}\"", namevalues.size(), json.toString(), topic);
 		
-		submitRequest(topic, json);
+		publish(topic, json);
 	}
 
 	@Override
@@ -172,22 +172,18 @@ public class MqttClient implements Emoncms, MqttCallbacks {
 		return TimeUnit.MILLISECONDS.toSeconds(time);
 	}
 
-	private void submitRequest(String topic, JsonObject json) throws EmoncmsException {
+	private void publish(String topic, JsonObject json) throws EmoncmsException {
+		if (isClosed()) {
+			throw new EmoncmsException("Unable to publish for closed connection");
+		}
 		if (logger.isTraceEnabled()) {
 			logger.trace("Requesting \"{}\" for Topic \"{}\"", json.toString(), topic);
 		}
 		try {
-			if (client != null && !client.isConnected()) {
-				client.disconnect();
-				client = null;
-				initialize();
-			}
-						
-			int qos = 1;
-			client.publish(topic, json.toString().getBytes(), qos, true);
+			int quality = 1;
+			client.publish(topic, json.toString().getBytes(), quality, true);
 			
-		} catch (Exception e) {
-			initialize();
+		} catch (MqttException e) {
 			throw new EmoncmsException("Energy Monitoring Content Management communication failed: " + e);
 		}
 	}

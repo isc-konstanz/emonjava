@@ -80,7 +80,7 @@ public class RedisClient implements Emoncms, RedisCallbacks {
 
     @Override
     public void open() throws EmoncmsUnavailableException {
-        logger.info("Initializing emoncms Redis connection \"{}\"", "");
+        logger.info("Initializing emoncms Redis connection \"{}:{}\"", host, port);
 
     	jedis = new Jedis(host, port);
     	if (password != null) {
