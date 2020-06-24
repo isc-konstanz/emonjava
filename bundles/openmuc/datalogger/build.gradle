@@ -21,9 +21,6 @@ archivesBaseName = 'openmuc-datalogger-emoncms'
 def projectFullName = 'OpenMUC Data Logger - Emoncms Java'
 def projectDescription = 'Emoncms datalogger for the OpenMUC framework.'
 
-def ini4jVersion = '0.5.4'
-def mysqlVersion = '8.0.17'
-
 configurations.create('embed')
 
 dependencies {
@@ -32,18 +29,15 @@ dependencies {
   implementation group: 'org.osgi', name: 'org.osgi.service.component.annotations', version: '1.4.0'
   implementation group: 'org.apache.felix', name: 'org.apache.felix.scr', version: '2.1.14'
 
-  implementation group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
-  embed          group: 'org.ini4j', name: 'ini4j', version: ini4jVersion
-
-  implementation group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
-  embed          group: 'mysql', name: 'mysql-connector-java', version: mysqlVersion
+  implementation group: 'org.ini4j', name: 'ini4j', version: '0.5.4'
+  embed          group: 'org.ini4j', name: 'ini4j', version: '0.5.4'
 
   implementation project(':http'), project(':mqtt'), project(':sql')
   embed          project(':http'), project(':mqtt'), project(':sql')
 }
 
 def embed = configurations.embed.findAll {
-  !it.getName().matches("(slf4j|protobuf).*")
+  !it.getName().matches("(slf4j|protobuf|gson).*")
 }
 
 jar {
@@ -58,13 +52,13 @@ jar {
                                    '!org.eclipse.paho.*,' +
                                    '!redis.clients.*,' +
                                    '!com.mchange.*,' +
-                                   '!com.mysql.*,' +
                                    '!org.ini4j.*,' +
                                    '!org.jboss.*,' +
                                    '!org.apache.log*,' +
                                    '!com.typesafe.*,' +
                                    '!net.sf.cglib*,' +
                                    '!javax.swing.*,' +
+                                    'com.mysql.cj.jdbc,' +
                                    '*;version=0',
                'Export-Package':   '')
   }
