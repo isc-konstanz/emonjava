@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-18 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit mqtts://github.com/isc-konstanz/emonjava
@@ -72,6 +72,10 @@ public class SqlClient implements Emoncms, SqlCallbacks {
 
     public RedisClient getCache() {
         return redis;
+    }
+
+    public boolean hasCache() {
+    	return redis != null && !redis.isClosed();
     }
 
     @Override

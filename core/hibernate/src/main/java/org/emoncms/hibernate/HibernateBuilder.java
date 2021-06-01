@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -89,7 +89,7 @@ public class HibernateBuilder {
 	public Emoncms build() {
 		if (!databaseType.endsWith(":")) databaseType += ":";
 		
-		databaseUrl = databaseType + "//" + address + ":" + port + "/" + databaseName + "?useSSL=false"; //&useLegacyDatetimeCode=false&serverTimezone=UTC";
+		databaseUrl = databaseType + "//" + address + ":" + port + "/" + databaseName + "?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC";
 		for (HibernateClient client : clients) {
 			if (client.getAddress().equals(databaseUrl)) {
 				return client;

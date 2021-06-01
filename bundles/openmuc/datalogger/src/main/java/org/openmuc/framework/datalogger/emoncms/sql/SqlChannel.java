@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -19,31 +19,45 @@
  */
 package org.openmuc.framework.datalogger.emoncms.sql;
 
+import org.openmuc.framework.config.ArgumentSyntaxException;
+import org.openmuc.framework.config.option.annotation.Option;
+import org.openmuc.framework.datalogger.annotation.Configure;
 import org.openmuc.framework.datalogger.emoncms.EngineChannel;
-import org.openmuc.framework.options.Setting;
 
 public class SqlChannel extends EngineChannel {
 
-	@Setting(id = {"input", "inputid"}, mandatory = false)
-	private Integer input;
+	@Option(id = {"input", "inputid"}, mandatory = false)
+    private int input = -1;
 
-	@Setting(id = {"feed", "feedid"}, mandatory = false)
-	private Integer feed;
+	@Option(id = {"feed", "feedid"}, mandatory = false)
+    private int feed = -1;
 
-	public boolean hasInput() {
-		return input != null && input > 0;
-	}
+	@Configure
+    public void configure(SqlEngine engine) throws ArgumentSyntaxException {
+        if (engine.client.hasCache()) {
+        	if (input < 0) {
+                throw new ArgumentSyntaxException("Input ID needs to be configured for redis caching");
+        	}
+        	if (feed < 0) {
+                throw new ArgumentSyntaxException("Feed ID needs to be configured for redis caching");
+        	}
+        }
+    }
 
-	public int getInput() {
-		return input;
-	}
+    public boolean hasInput() {
+        return input > 0;
+    }
 
-	public boolean hasFeed() {
-		return feed != null && feed > 0;
-	}
+    public int getInput() {
+        return input;
+    }
 
-	public int getFeed() {
-		return feed;
-	}
+    public boolean hasFeed() {
+        return feed > 0;
+    }
+
+    public int getFeed() {
+        return feed;
+    }
 
 }

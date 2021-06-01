@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -22,75 +22,75 @@ package org.openmuc.framework.datalogger.emoncms.http;
 import org.emoncms.data.Authentication;
 import org.emoncms.data.Authorization;
 import org.openmuc.framework.config.ArgumentSyntaxException;
-import org.openmuc.framework.data.ValueType;
+import org.openmuc.framework.config.option.annotation.Option;
+import org.openmuc.framework.datalogger.annotation.Configure;
 import org.openmuc.framework.datalogger.emoncms.EngineChannel;
-import org.openmuc.framework.options.Setting;
 
 public class HttpChannel extends EngineChannel {
 
-	@Setting(id = {"authorization", "api"}, mandatory = false)
-	private Authorization authorization = Authorization.DEFAULT;
+    @Option(id = {"authorization", "api"}, mandatory = false)
+    private Authorization authorization = Authorization.DEFAULT;
 
-	@Setting(id = {"authentication", "apikey"}, mandatory = false)
-	private String authentication = null;
+    @Option(id = {"authentication", "apikey"}, mandatory = false)
+    private String authentication = null;
 
-	@Setting(id = {"node", "nodeid"})
-	private String node;
+    @Option(id = {"node", "nodeid"})
+    private String node;
 
-	@Setting(id = {"input", "inputid"}, mandatory = false)
-	private int input = -1;
+    @Option(id = {"input", "inputid"}, mandatory = false)
+    private int input = -1;
 
-	@Setting(id = {"feed", "feedid"}, mandatory = false)
-	private int feed = -1;
+    @Option(id = {"feed", "feedid"}, mandatory = false)
+    private int feed = -1;
 
-	protected void onConfigure() throws ArgumentSyntaxException {
-		super.onConfigure();
-		switch(getValueType()) {
-		case DOUBLE:
-		case FLOAT:
-		case LONG:
-		case INTEGER:
-		case SHORT:
-		case BYTE:
-		case BOOLEAN:
-			break;
-		default:
-			throw new ArgumentSyntaxException("Invalid value type: " + getValueType());
-		}
-    	switch(authorization) {
-    	case DEVICE:
-    	case WRITE:
-    	case READ:
-    		if (authentication == null || authentication.isEmpty()) {
-    			throw new ArgumentSyntaxException("Api Key needs to be configured for "+authorization+" access");
-    		}
-    	default:
-    		break;
-    	}
-	}
+    @Configure
+    public void validate() throws ArgumentSyntaxException {
+        switch(getValueType()) {
+        case DOUBLE:
+        case FLOAT:
+        case LONG:
+        case INTEGER:
+        case SHORT:
+        case BYTE:
+        case BOOLEAN:
+            break;
+        default:
+            throw new ArgumentSyntaxException("Invalid value type: " + getValueType());
+        }
+        switch(authorization) {
+        case DEVICE:
+        case WRITE:
+        case READ:
+            if (authentication == null || authentication.isEmpty()) {
+                throw new ArgumentSyntaxException("Api Key needs to be configured for "+authorization+" access");
+            }
+        default:
+            break;
+        }
+    }
 
-	public Authentication getAuthentication() {
-		return new Authentication(authorization, authentication);
-	}
+    public Authentication getAuthentication() {
+        return new Authentication(authorization, authentication);
+    }
 
-	public String getNode() {
-		return node;
-	}
+    public String getNode() {
+        return node;
+    }
 
-	public boolean hasInput() {
-		return input > 0;
-	}
+    public boolean hasInput() {
+        return input > 0;
+    }
 
-	public int getInput() {
-		return input;
-	}
+    public int getInput() {
+        return input;
+    }
 
-	public boolean hasFeed() {
-		return feed > 0;
-	}
+    public boolean hasFeed() {
+        return feed > 0;
+    }
 
-	public int getFeed() {
-		return feed;
-	}
+    public int getFeed() {
+        return feed;
+    }
 
 }

@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -20,32 +20,33 @@
 package org.openmuc.framework.datalogger.emoncms.mqtt;
 
 import org.openmuc.framework.config.ArgumentSyntaxException;
+import org.openmuc.framework.config.option.annotation.Option;
+import org.openmuc.framework.datalogger.annotation.Configure;
 import org.openmuc.framework.datalogger.emoncms.EngineChannel;
-import org.openmuc.framework.options.Setting;
 
 public class MqttChannel extends EngineChannel {
 
-	@Setting(id = {"node", "nodeid"})
-	private String node;
+    @Option(id = {"node", "nodeid"})
+    private String node;
 
-	protected void onConfigure() throws ArgumentSyntaxException {
-		super.onConfigure();
-		switch(getValueType()) {
-		case DOUBLE:
-		case FLOAT:
-		case LONG:
-		case INTEGER:
-		case SHORT:
-		case BYTE:
-		case BOOLEAN:
-			break;
-		default:
-			throw new ArgumentSyntaxException("Invalid value type: " + getValueType());
-		}
-	}
+    @Configure
+    public void configure() throws ArgumentSyntaxException {
+        switch(getValueType()) {
+        case DOUBLE:
+        case FLOAT:
+        case LONG:
+        case INTEGER:
+        case SHORT:
+        case BYTE:
+        case BOOLEAN:
+            break;
+        default:
+            throw new ArgumentSyntaxException("Invalid value type: " + getValueType());
+        }
+    }
 
-	public String getNode() {
-		return node;
-	}
+    public String getNode() {
+        return node;
+    }
 
 }

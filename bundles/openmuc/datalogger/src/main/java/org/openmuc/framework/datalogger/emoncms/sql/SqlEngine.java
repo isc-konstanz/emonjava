@@ -52,7 +52,7 @@ public class SqlEngine implements Engine<SqlChannel> {
     private boolean isGeneric = true;
     private String prefix = "feed_";
 
-    private SqlClient client;
+    protected SqlClient client;
 
     private final Map<String, SqlFeed> feeds = new HashMap<String, SqlFeed>();
     private final Map<String, SqlInput> inputs = new HashMap<String, SqlInput>();
@@ -68,7 +68,7 @@ public class SqlEngine implements Engine<SqlChannel> {
     }
 
     @Override
-    public void onActivate(Configuration config) throws IOException {
+    public void activate(Configuration config) throws IOException {
         logger.info("Activating Emoncms SQL Logger");
         
         if (config.contains(GENERIC)) {
@@ -101,7 +101,7 @@ public class SqlEngine implements Engine<SqlChannel> {
                     config.getString(DATABASE_PASSWORD));
         }
         if (config.getBoolean(REDIS_ENABLED, false)) {
-        	RedisBuilder redis = RedisBuilder.create();
+            RedisBuilder redis = RedisBuilder.create();
             if (config.contains(REDIS_HOST)) {
                 redis.setHost(config.getString(REDIS_HOST));
             }
@@ -121,7 +121,7 @@ public class SqlEngine implements Engine<SqlChannel> {
     }
 
     @Override
-    public void onConfigure(List<SqlChannel> channels) throws IOException {
+    public void configure(List<SqlChannel> channels) throws IOException {
         feeds.clear();
         new Thread(new Runnable() {
             @Override
@@ -129,22 +129,16 @@ public class SqlEngine implements Engine<SqlChannel> {
                 try (Transaction transaction = client.getTransaction()) {
                     for (SqlChannel channel : channels) {
                         try {
-                            int feedId = channel.getFeed();
+                            Integer feedId = channel.getFeed();
                             String channelId = channel.getId();
                             
                             String valueType;
                             switch (channel.getValueType()) {
                             case STRING:
-                                Integer maxStrLength =  channel.getValueTypeLength();
-                                if (maxStrLength == null) {
-                                    maxStrLength = SqlFeed.TYPE_LENGTH_DEFAULT;
-                                }
+                                int maxStrLength =  channel.getValueTypeLength();
                                 valueType = "VARCHAR(" + maxStrLength + ")";
                             case BYTE_ARRAY:
                                 Integer maxBytesLength = channel.getValueTypeLength();
-                                if (maxBytesLength == null) {
-                                    maxBytesLength = SqlFeed.TYPE_LENGTH_DEFAULT;
-                                }
                                 valueType = "VARBINARY(" + maxBytesLength + ")";
                             case BYTE:
                                 valueType = "TINYINT";
@@ -166,7 +160,7 @@ public class SqlEngine implements Engine<SqlChannel> {
                                     feedId, tableName, valueType, false);
                             
                             if (channel.hasInput()) {
-                            	inputs.put(channelId, SqlInput.connect(client, client.getCache(), channel.getInput()));
+                                inputs.put(channelId, SqlInput.connect(client, client.getCache(), channel.getInput()));
                             }
                             feeds.put(channelId, feed);
                             
@@ -183,7 +177,7 @@ public class SqlEngine implements Engine<SqlChannel> {
     }
 
     @Override
-    public void onWrite(List<SqlChannel> channels, long timestamp) throws IOException {
+    public void write(List<SqlChannel> channels, long timestamp) throws IOException {
         try (redis.clients.jedis.Transaction redis = client.cacheTransaction();
                 org.emoncms.sql.Transaction sql = client.getTransaction()) {
             
@@ -191,12 +185,12 @@ public class SqlEngine implements Engine<SqlChannel> {
                 if (!channel.isValid()) {
                     continue;
                 }
-            	String id = channel.getId();
-                Long time = channel.getTime();
+                String id = channel.getId();
+                Long time = channel.getRecord().getTimestamp();
                 if (time == null) {
                     time = timestamp;
                 }
-                Double value = channel.getValue().asDouble();
+                Double value = channel.getRecord().getValue().asDouble();
                 try {
                     SqlFeed sqlFeed = feeds.get(id);
                     sqlFeed.insertData(sql, timestamp, value);
@@ -218,7 +212,7 @@ public class SqlEngine implements Engine<SqlChannel> {
     }
 
     @Override
-    public List<Record> onRead(SqlChannel channel, long startTime, long endTime) throws IOException {
+    public List<Record> read(SqlChannel channel, long startTime, long endTime) throws IOException {
         List<Record> records = new LinkedList<Record>();
         List<Timevalue> values = getFeed(channel).getData(startTime, endTime, 1);
         for (Timevalue timevalue : values) {

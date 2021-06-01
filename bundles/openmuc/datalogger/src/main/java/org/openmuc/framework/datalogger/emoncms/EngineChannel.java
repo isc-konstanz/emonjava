@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -21,48 +21,48 @@ package org.openmuc.framework.datalogger.emoncms;
 
 import org.emoncms.EmoncmsType;
 import org.openmuc.framework.config.ArgumentSyntaxException;
-import org.openmuc.framework.datalogger.Channel;
-import org.openmuc.framework.datalogger.spi.LogChannel;
-import org.openmuc.framework.options.Setting;
+import org.openmuc.framework.config.option.annotation.Option;
+import org.openmuc.framework.datalogger.LoggingChannel;
+import org.openmuc.framework.datalogger.annotation.Configure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EngineChannel extends Channel {
-	private final static Logger logger = LoggerFactory.getLogger(EngineChannel.class);
+public class EngineChannel extends LoggingChannel {
+    private final static Logger logger = LoggerFactory.getLogger(EngineChannel.class);
 
-	@Setting(id = {"engine", "logger"}, mandatory = false)
-	private EmoncmsType engine;
+    public final static String ENGINE = "engine";
+    public final static String LOGGER = "logger";
 
-	protected EngineChannel() {
-	}
+    @Option(id = {ENGINE, LOGGER}, mandatory = false)
+    private EmoncmsType engine;
 
-	EngineChannel(LogChannel channel) throws ArgumentSyntaxException {
-		this.doConfigure(channel);
-	}
-
-    @Override
-    protected void onConfigure() throws ArgumentSyntaxException {
-		try {
-			if (engine == null) {
-				engine = EmoncmsType.valueOf(EngineLogger.DEFAULT);
-			}
-		} catch (IllegalArgumentException e) {
-			throw new ArgumentSyntaxException(e.getMessage());
-		}
+    @Configure
+    public void configure() throws ArgumentSyntaxException {
+        try {
+            if (engine == null) {
+                engine = EmoncmsType.valueOf(EngineLogger.DEFAULT);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new ArgumentSyntaxException(e.getMessage());
+        }
     }
 
-	public EmoncmsType getEngine() {
-		return engine;
-	}
+    final void invokeConfigure(Engine<? extends EngineChannel> engine) throws ArgumentSyntaxException {
+        invokeMethod(Configure.class, this, engine);
+    }
 
-	@Override
-	public boolean isValid() {
-		if (!super.isValid()) {
-			logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}", getId(), getFlag());
-			return false;
-		}
-		logger.trace("Preparing record to log for channel {}", this);
-		return true;
-	}
+    public EmoncmsType getEngine() {
+        return engine;
+    }
+
+    @Override
+    public boolean isValid() {
+        if (!super.isValid()) {
+            logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}", getId(), getRecord().getFlag());
+            return false;
+        }
+        logger.trace("Preparing record to log for channel {}", this);
+        return true;
+    }
 
 }

@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -25,70 +25,82 @@ import java.util.List;
 import java.util.Map;
 
 import org.emoncms.EmoncmsType;
+import org.openmuc.framework.config.ArgumentSyntaxException;
 import org.openmuc.framework.datalogger.emoncms.EngineCollection.ChannelCollection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EngineCollection extends LinkedList<ChannelCollection<? extends EngineChannel>> {
-	private static final long serialVersionUID = -3846829759240096545L;
+    private static final long serialVersionUID = -3846829759240096545L;
 
-	private final Map<EmoncmsType, Engine<?>> engines;
+    private final static Logger logger = LoggerFactory.getLogger(EngineCollection.class);
 
-	EngineCollection(Map<EmoncmsType, Engine<?>> engines) {
-		super();
-		this.engines = engines;
-	}
+    private final Map<EmoncmsType, Engine<?>> engines;
 
-	EngineCollection(Map<EmoncmsType, Engine<?>> engines, List<EngineChannel> channels) throws IOException {
-		this(engines);
-		for (EngineChannel channel : channels) {
-			add(channel);
-		}
-	}
+    EngineCollection(Map<EmoncmsType, Engine<?>> engines) {
+        super();
+        this.engines = engines;
+    }
 
-	void add(EngineChannel channel) throws IOException {
-		Engine<?> engine = engines.get(channel.getEngine());
-		
-		if (engine == null && engines.size() > 0) {
-			engine = engines.values().iterator().next();
-		}
-		if (engine == null) {
-			throw new IOException("Engine unavailable: " + channel.getEngine());
-		}
-		get(engine).add(channel);
-	}
-
-	@SuppressWarnings("unchecked")
-	<C extends EngineChannel> ChannelCollection<C> get(Engine<?> engine) {
-		for (ChannelCollection<? extends EngineChannel> channels : this) {
-			if (channels.getEngine().getType() == engine.getType()) {
-				return (ChannelCollection<C>) channels;
+    EngineCollection(Map<EmoncmsType, Engine<?>> engines, List<EngineChannel> channels) throws IOException {
+        this(engines);
+        for (EngineChannel channel : channels) {
+            try {
+				add(channel);
+				
+			} catch (ArgumentSyntaxException e) {
+                logger.warn("Failed to configure channel \"{}\": {}", channel.getId(), e.getMessage());
 			}
-		}
-		ChannelCollection<C> collection = new ChannelCollection<C>((Engine<C>) engine);
-		add(collection);
-		return collection;
-	}
+        }
+    }
 
-	static class ChannelCollection<C extends EngineChannel> extends LinkedList<C> {
-		private static final long serialVersionUID = -2418938992605046464L;
+    void add(EngineChannel channel) throws IOException, ArgumentSyntaxException {
+        Engine<?> engine = engines.get(channel.getEngine());
+        
+        if (engine == null && engines.size() > 0) {
+            engine = engines.values().iterator().next();
+        }
+        if (engine == null) {
+            throw new IOException("Engine unavailable: " + channel.getEngine());
+        }
+    	channel.invokeConfigure(engine);
+    	
+        get(engine).add(channel);
+    }
 
-		private final Engine<C> engine;
+    @SuppressWarnings("unchecked")
+    <C extends EngineChannel> ChannelCollection<C> get(Engine<?> engine) {
+        for (ChannelCollection<? extends EngineChannel> channels : this) {
+            if (channels.getEngine().getType() == engine.getType()) {
+                return (ChannelCollection<C>) channels;
+            }
+        }
+        ChannelCollection<C> collection = new ChannelCollection<C>((Engine<C>) engine);
+        add(collection);
+        return collection;
+    }
 
-		public ChannelCollection(Engine<C> engine) {
-			super();
-			this.engine = engine;
-		}
+    static class ChannelCollection<C extends EngineChannel> extends LinkedList<C> {
+        private static final long serialVersionUID = -2418938992605046464L;
 
-		public Engine<C> getEngine() {
-			return engine;
-		}
+        private final Engine<C> engine;
 
-		public void doConfigure() throws IOException {
-			engine.onConfigure(this);
-		}
+        public ChannelCollection(Engine<C> engine) {
+            super();
+            this.engine = engine;
+        }
 
-		public void doWrite(long timestamp) throws IOException {
-			engine.onWrite(this, timestamp);
-		}
-	}
+        public Engine<C> getEngine() {
+            return engine;
+        }
+
+        public void configure() throws IOException {
+            engine.configure(this);
+        }
+
+        public void write(long timestamp) throws IOException {
+            engine.write(this, timestamp);
+        }
+    }
 
 }

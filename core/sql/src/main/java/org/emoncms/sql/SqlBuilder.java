@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-20 ISC Konstanz
+ * Copyright 2016-21 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -92,7 +92,8 @@ public class SqlBuilder {
 	}
 
 	public Emoncms build() {
-		return new SqlClient(redis, driver, type+"://"+host+":"+port+"/"+name+"?autoReconnect=true&useSSL=false", user, password);
+		String url = type+"://"+host+":"+port+"/"+name+"?autoReconnect=true&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC";
+		return new SqlClient(redis, driver, url, user, password);
 	}
 
 }
