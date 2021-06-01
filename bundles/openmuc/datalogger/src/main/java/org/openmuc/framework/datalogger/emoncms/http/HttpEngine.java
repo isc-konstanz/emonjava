@@ -89,7 +89,7 @@ public class HttpEngine implements Engine<HttpChannel> {
     @Override
     public void write(List<HttpChannel> channels, long timestamp) throws IOException {
         if (channels.size() == 1) {
-            onWrite(channels.get(0), timestamp);
+            write(channels.get(0), timestamp);
             return;
         }
         List<DataContainer> containers = new ArrayList<DataContainer>();
@@ -145,7 +145,7 @@ public class HttpEngine implements Engine<HttpChannel> {
         }
     }
 
-    public void onWrite(HttpChannel channel, long timestamp) throws IOException {
+    public void write(HttpChannel channel, long timestamp) throws IOException {
         if (!channel.isValid()) {
             return;
         }
