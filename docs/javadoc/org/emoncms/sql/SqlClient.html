@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -224,12 +224,17 @@ implements <a href="../Emoncms.html" title="interface in org.emoncms">Emoncms</a
 </tr>
 <tr class="rowColor" id="i9">
 <td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasCache()">hasCache</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor" id="i10">
+<td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isClosed()">isClosed</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns whether the <a href="../Emoncms.html" title="interface in org.emoncms"><code>Emoncms</code></a> instance holds an open and valid connection</div>
 </td>
 </tr>
-<tr class="altColor" id="i10">
+<tr class="rowColor" id="i11">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#open()">open</a></span>()</code></th>
 <td class="colLast">
@@ -237,7 +242,7 @@ implements <a href="../Emoncms.html" title="interface in org.emoncms">Emoncms</a
  verifications of configured parameters.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i11">
+<tr class="altColor" id="i12">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#post(java.lang.String,java.lang.Long,java.util.List)">post</a></span>&#8203;(java.lang.String&nbsp;node,
     java.lang.Long&nbsp;time,
@@ -246,7 +251,7 @@ implements <a href="../Emoncms.html" title="interface in org.emoncms">Emoncms</a
 <div class="block">Post a list of <a href="../data/Namevalue.html" title="class in org.emoncms.data"><code>Namevalue</code></a>s to a defined <a href="../Input.html" title="interface in org.emoncms"><code>Input</code></a>, identified by their node.</div>
 </td>
 </tr>
-<tr class="altColor" id="i12">
+<tr class="rowColor" id="i13">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#post(java.lang.String,java.lang.String,org.emoncms.data.Timevalue)">post</a></span>&#8203;(java.lang.String&nbsp;node,
     java.lang.String&nbsp;name,
@@ -255,7 +260,7 @@ implements <a href="../Emoncms.html" title="interface in org.emoncms">Emoncms</a
 <div class="block">Post a <a href="../data/Timevalue.html" title="class in org.emoncms.data"><code>Timevalue</code></a> to a defined <a href="../Input.html" title="interface in org.emoncms"><code>Input</code></a>, identified by its node and name.</div>
 </td>
 </tr>
-<tr class="rowColor" id="i13">
+<tr class="altColor" id="i14">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#post(org.emoncms.data.DataList)">post</a></span>&#8203;(<a href="../data/DataList.html" title="class in org.emoncms.data">DataList</a>&nbsp;data)</code></th>
 <td class="colLast">
@@ -353,6 +358,15 @@ implements <a href="../Emoncms.html" title="interface in org.emoncms">Emoncms</a
 <li class="blockList">
 <h4>getCache</h4>
 <pre class="methodSignature">public&nbsp;<a href="../redis/RedisClient.html" title="class in org.emoncms.redis">RedisClient</a>&nbsp;getCache()</pre>
+</li>
+</ul>
+<a id="hasCache()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>hasCache</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;hasCache()</pre>
 </li>
 </ul>
 <a id="getType()">
