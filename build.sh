@@ -18,7 +18,7 @@ if hash gradle 2>/dev/null; then
 else
     gradle=$root_dir"/gradlew"
 fi
-eval $gradle build
+eval $gradle packages
 
 for package in $build_dir/*/ ; do
     cd $package
