@@ -1,0 +1,4 @@
+#!/usr/bin/dh-exec
+bundle /opt/openmuc
+
+conf/*.conf /opt/openmuc/conf/

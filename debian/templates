@@ -1,0 +1,41 @@
+Template: emoncms/address
+Type: string
+Default: http://localhost/
+Description: Emoncms address:
+ Enter the URL of emoncms web server
+
+Template: emoncms/authentication
+Type: string
+Default: 
+Description: Emoncms API Key:
+ Enter the API Key of the emoncms user
+
+Template: openmuc/mysql_host
+Type: string
+Default: 3306
+Description: MySQL host name:
+ Enter the host name of the MySQL database
+
+Template: openmuc/mysql_port
+Type: string
+Default: 3306
+Description: MySQL port:
+ Enter the port of the MySQL database
+
+Template: openmuc/mysql_database
+Type: string
+Default: openmuc
+Description: MySQL database name:
+ Enter the name of the MySQL database
+
+Template: openmuc/mysql_user
+Type: string
+Default: openmuc
+Description: MySQL user name:
+ Enter the name for the user of the MySQL database
+
+Template: openmuc/mysql_password
+Type: password
+Default: 
+Description: MySQL user password:
+ Enter the password for the user of the MySQL database
