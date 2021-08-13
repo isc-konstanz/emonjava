@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-19 ISC Konstanz
+ * Copyright 2016-2021 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -18,31 +18,30 @@
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
 archivesBaseName = 'emoncms-hibernate'
-def projectName = 'EmoncmsHibernate'
-def projectFullName = 'Emoncms Java - Hibernate'
-def projectDescription = 'Emoncms Hibernate client implementation'
-
+project.ext {
+    projectName = 'EmoncmsHibernate'
+    projectFullName = 'Emoncms Java - Hibernate'
+    projectDescription = 'Emoncms Hibernate client implementation'
+}
 def hibernateVersion = '5.2.10.Final'
 
 dependencies {
-  api project(':api')
+    api project(':api')
 
-  implementation group: 'org.hibernate', name: 'hibernate-core', version: hibernateVersion
-  implementation group: 'org.hibernate', name: 'hibernate-c3p0', version: hibernateVersion
+    implementation group: 'org.hibernate', name: 'hibernate-core', version: hibernateVersion
+    implementation group: 'org.hibernate', name: 'hibernate-c3p0', version: hibernateVersion
 
-  implementation group: 'com.mchange', name: 'c3p0', version: '0.9.5.4'
-}
-
-eclipse {
-  project {
-    name = projectName
-  }
+    implementation group: 'com.mchange', name: 'c3p0', version: '0.9.5.4'
 }
 
 jar {
-  manifest {
-    attributes('Bundle-Name':        projectFullName,
-               'Bundle-Description': projectDescription,
-               'Export-Package':     'org.emoncms.hibernate.*')
-  }
+    bnd('Bundle-Name':        projectFullName,
+        'Bundle-Description': projectDescription,
+        'Export-Package':     'org.emoncms.hibernate.*')
+}
+
+eclipse {
+    project {
+         name = projectName
+    }
 }

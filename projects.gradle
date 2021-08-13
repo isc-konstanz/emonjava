@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-19 ISC Konstanz
+ * Copyright 2016-2021 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -11,40 +11,46 @@
  * 
  * Emonjava is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  * 
  * You should have received a copy of the GNU Lesser General Public License
- * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
+ * along with emonjava. If not, see <http://www.gnu.org/licenses/>.
  */
 project.ext {
 
-  projectVersion = '1.5.0'
+    projectVersion = '1.5.0'
 
-  projectGroup = 'org.emoncms'
+    projectGroup = 'org.emoncms'
 
-  projectVendor = 'ISC Konstanz e.V.'
-  projectSite = 'https://github.com/isc-konstanz/emonjava'
+    projectVendor = 'ISC Konstanz e.V.'
+    projectHomepage = 'https://isc-konstanz.de'
+    projectRepository = 'https://github.com/isc-konstanz/OpenMUC'
+    projectMaintainer = 'Adrian Minde <adrian.minde@isc-konstanz.de>'
 
-  copyDependencies = false
+    copyDependencies = false
 
-  distributionProjects = subprojects.findAll {
-    it.getPath() == ':api' ||
-    it.getPath() == ':http' ||
-    it.getPath() == ':mqtt' ||
-    it.getPath() == ':sql' ||
-    it.getPath() == ':hibernate' ||
-    it.getPath() == ':redis' ||
-    it.getPath() == ':bundle'
-  }
+    distributionProjects = subprojects.findAll {
+        it.getPath() == ':api' ||
+        it.getPath() == ':http' ||
+        it.getPath() == ':mqtt' ||
+        it.getPath() == ':sql' ||
+        it.getPath() == ':hibernate' ||
+        it.getPath() == ':redis' ||
+        it.getPath() == ':openmuc-datalogger-emoncms'
+    }
 
-  javadocProjects = distributionProjects.findAll {
-    it.getPath() == ':api' ||
-    it.getPath() == ':http' ||
-    it.getPath() == ':mqtt' ||
-    it.getPath() == ':sql' ||
-    it.getPath() == ':hibernate' ||
-    it.getPath() == ':redis'
-  }
+    debianProjects = subprojects.findAll {
+        it.getPath() == ':openmuc-datalogger-emoncms'
+    }
+
+    javadocProjects = distributionProjects.findAll {
+        it.getPath() == ':api' ||
+        it.getPath() == ':http' ||
+        it.getPath() == ':mqtt' ||
+        it.getPath() == ':sql' ||
+        it.getPath() == ':hibernate' ||
+        it.getPath() == ':redis'
+    }
 
 }

@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-19 ISC Konstanz
+ * Copyright 2016-2021 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -18,28 +18,27 @@
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
 archivesBaseName = 'emoncms-redis'
-def projectName = 'EmoncmsRedis'
-def projectFullName = 'Emoncms Java - Redis'
-def projectDescription = 'Emoncms Redis client implementation'
-
+project.ext {
+    projectName = 'EmoncmsRedis'
+    projectFullName = 'Emoncms Java - Redis'
+    projectDescription = 'Emoncms Redis client implementation'
+}
 def jedisVersion = '3.1.0'
 
 dependencies {
-  api project(':api')
+    api project(':api')
 
-  api group: 'redis.clients', name: 'jedis', version: jedisVersion
-}
-
-eclipse {
-  project {
-    name = projectName
-  }
+    api group: 'redis.clients', name: 'jedis', version: jedisVersion
 }
 
 jar {
-  manifest {
-    attributes('Bundle-Name':        projectFullName,
-               'Bundle-Description': projectDescription,
-               'Export-Package':     'org.emoncms.redis.*')
-  }
+    bnd('Bundle-Name':        projectFullName,
+        'Bundle-Description': projectDescription,
+        'Export-Package':     'org.emoncms.redis.*')
+}
+
+eclipse {
+    project {
+        name = projectName
+    }
 }

@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-19 ISC Konstanz
+ * Copyright 2016-2021 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -18,28 +18,27 @@
  * along with emonjava.  If not, see <http://www.gnu.org/licenses/>.
  */
 archivesBaseName = 'emoncms-sql'
-def projectName = 'EmoncmsSQL'
-def projectFullName = 'Emoncms Java - SQL'
-def projectDescription = 'Emoncms SQL client implementation'
-
+project.ext {
+    projectName = 'EmoncmsSQL'
+    projectFullName = 'Emoncms Java - SQL'
+    projectDescription = 'Emoncms SQL client implementation'
+}
 def c3poVersion = '0.9.5.4'
 
 dependencies {
-  api project(':redis')
+    api project(':redis')
 
-  implementation group: 'com.mchange', name: 'c3p0', version: c3poVersion
-}
-
-eclipse {
-  project {
-    name = projectName
-  }
+    implementation group: 'com.mchange', name: 'c3p0', version: c3poVersion
 }
 
 jar {
-  manifest {
-    attributes('Bundle-Name':        projectFullName,
-               'Bundle-Description': projectDescription,
-               'Export-Package':     'org.emoncms.sql.*')
-  }
+    bnd('Bundle-Name':        projectFullName,
+        'Bundle-Description': projectDescription,
+        'Export-Package':     'org.emoncms.sql.*')
+}
+
+eclipse {
+    project {
+        name = projectName
+    }
 }

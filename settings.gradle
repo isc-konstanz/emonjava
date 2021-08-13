@@ -1,5 +1,5 @@
 /* 
- * Copyright 2016-19 ISC Konstanz
+ * Copyright 2016-2021 ISC Konstanz
  * 
  * This file is part of emonjava.
  * For more information visit https://github.com/isc-konstanz/emonjava
@@ -19,7 +19,7 @@
  */
 rootProject.name = 'emonjava'
 
-include 'api', 'http', 'mqtt', 'sql', 'hibernate', 'redis', 'bundle'
+include 'api', 'http', 'mqtt', 'sql', 'hibernate', 'redis', 'openmuc-datalogger-emoncms'
 
 project(':http').projectDir = file('core/http')
 project(':mqtt').projectDir = file('core/mqtt')
@@ -27,4 +27,4 @@ project(':sql').projectDir = file('core/sql')
 project(':hibernate').projectDir = file('core/hibernate')
 project(':redis').projectDir = file('core/redis')
 
-project(':bundle').projectDir = file('bundles/openmuc/datalogger')
+project(':openmuc-datalogger-emoncms').projectDir = file('bundles/openmuc/datalogger')
