@@ -24,13 +24,13 @@ Description: MySQL port:
 
 Template: openmuc/mysql_database
 Type: string
-Default: openmuc
+Default: emondata
 Description: MySQL database name:
  Enter the name of the MySQL database
 
 Template: openmuc/mysql_user
 Type: string
-Default: openmuc
+Default: emoncms
 Description: MySQL user name:
  Enter the name for the user of the MySQL database
 

@@ -33,17 +33,23 @@ if [ -e $CONFIG_FILE ]; then
     mysql_database_key="database"
     mysql_database_value=`grep -A11 -P "^\[SQL\]$" $CONFIG_FILE | grep -m1 "$mysql_database_key.*=" |\
                           sed "s/.*$mysql_database_key.*=//g" | sed -r "s/\s+//g"`
-    db_set openmuc/mysql_database "$mysql_database_value"
+    if [ "$mysql_database_value" != "MYSQL_DATABASE" ]; then
+        db_set openmuc/mysql_database "$mysql_database_value"
+    fi
 
     mysql_user_key="user"
     mysql_user_value=`grep -A11 -P "^\[SQL\]$" $CONFIG_FILE | grep -m1 "$mysql_user_key.*=" |\
                       sed "s/.*$mysql_user_key.*=//g" | sed -r "s/\s+//g"`
-    db_set openmuc/mysql_user "$mysql_user_value"
+    if [ "$mysql_user_value" != "MYSQL_USER" ]; then
+        db_set openmuc/mysql_user "$mysql_user_value"
+    fi
 
     mysql_password_key="password"
     mysql_password_value=`grep -A11 -P "^\[SQL\]$" $CONFIG_FILE | grep -m1 "$mysql_password_key.*=" |\
                           sed "s/.*$mysql_password_key.*=//g" | sed -r "s/\s+//g"`
-    db_set openmuc/mysql_password "$mysql_password_value"
+    if [ "$mysql_password_value" != "MYSQL_PASSWORD" ]; then
+        db_set openmuc/mysql_password "$mysql_password_value"
+    fi
 fi
 
 db_input medium emoncms/address || true
@@ -73,8 +79,10 @@ if [ -z "$mysql_password_value" ] || [ "$mysql_password_value" = "MYSQL_PASSWORD
     if dpkg -l | grep -e pwgen >/dev/null 2>&1; then
         mysql_password_value=`pwgen -s1 32`
         db_set openmuc/mysql_password "$mysql_password_value"
+        db_input medium openmuc/mysql_password || true
+    else
+        db_input high openmuc/mysql_password || true
     fi
-    db_input high openmuc/mysql_password || true
 else
     db_input medium openmuc/mysql_password || true
 fi
