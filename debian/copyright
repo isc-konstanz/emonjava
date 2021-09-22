@@ -1,5 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Source: https://github.com/isc-konstanz/OpenMUC
+Source: https://github.com/isc-konstanz/emonjava
 
 Files: *
 Copyright: Copyright 2016-2021 ISC Konstanz

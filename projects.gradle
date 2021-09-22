@@ -25,7 +25,7 @@ project.ext {
 
     projectVendor = 'ISC Konstanz e.V.'
     projectHomepage = 'https://isc-konstanz.de'
-    projectRepository = 'https://github.com/isc-konstanz/OpenMUC'
+    projectRepository = 'https://github.com/isc-konstanz/emonjava'
     projectMaintainer = 'Adrian Minde <adrian.minde@isc-konstanz.de>'
 
     copyDependencies = false
