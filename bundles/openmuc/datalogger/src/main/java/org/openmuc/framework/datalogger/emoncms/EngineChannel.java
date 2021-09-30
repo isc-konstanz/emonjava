@@ -24,11 +24,8 @@ import org.openmuc.framework.config.ArgumentSyntaxException;
 import org.openmuc.framework.config.option.annotation.Option;
 import org.openmuc.framework.datalogger.LoggingChannel;
 import org.openmuc.framework.datalogger.annotation.Configure;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EngineChannel extends LoggingChannel {
-    private final static Logger logger = LoggerFactory.getLogger(EngineChannel.class);
 
     public final static String ENGINE = "engine";
     public final static String LOGGER = "logger";
@@ -53,16 +50,6 @@ public class EngineChannel extends LoggingChannel {
 
     public EmoncmsType getEngine() {
         return engine;
-    }
-
-    @Override
-    public boolean isValid() {
-        if (!super.isValid()) {
-            logger.trace("Skipped logging an invalid or empty value for channel \"{}\": {}", getId(), getRecord().getFlag());
-            return false;
-        }
-        logger.trace("Preparing record to log for channel {}", this);
-        return true;
     }
 
 }

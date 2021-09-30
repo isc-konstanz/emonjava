@@ -200,8 +200,10 @@ public class SqlEngine implements Engine<SqlChannel> {
                         SqlInput sqlInput = inputs.get(id);
                         sqlInput.cache(redis, timestamp, value);
                     }
-                }
-                catch (RedisUnavailableException ignore) {}
+                } catch (RedisUnavailableException ignore) {
+	            } catch (IOException e) {
+	                logger.warn("Failed to log value for channel \"{}\": {}", id, e.getMessage());
+	            }
             }
             if (redis != null) {
                 redis.exec();

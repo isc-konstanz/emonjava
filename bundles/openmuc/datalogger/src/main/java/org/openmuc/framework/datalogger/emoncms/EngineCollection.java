@@ -46,11 +46,11 @@ public class EngineCollection extends LinkedList<ChannelCollection<? extends Eng
         this(engines);
         for (EngineChannel channel : channels) {
             try {
-				add(channel);
-				
-			} catch (ArgumentSyntaxException e) {
+                add(channel);
+                
+            } catch (ArgumentSyntaxException e) {
                 logger.warn("Failed to configure channel \"{}\": {}", channel.getId(), e.getMessage());
-			}
+            }
         }
     }
 
@@ -63,9 +63,14 @@ public class EngineCollection extends LinkedList<ChannelCollection<? extends Eng
         if (engine == null) {
             throw new IOException("Engine unavailable: " + channel.getEngine());
         }
-    	channel.invokeConfigure(engine);
-    	
-        get(engine).add(channel);
+        channel.invokeConfigure(engine);
+        
+        add(channel, engine);
+    }
+
+    private <C extends EngineChannel> void add(C channel, Engine<?> engine) {
+        ChannelCollection<C> channelCollection = get(engine);
+        channelCollection.add(channel);
     }
 
     @SuppressWarnings("unchecked")
