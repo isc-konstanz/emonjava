@@ -27,4 +27,4 @@ project(':sql').projectDir = file('core/sql')
 project(':hibernate').projectDir = file('core/hibernate')
 project(':redis').projectDir = file('core/redis')
 
-project(':openmuc-datalogger-emoncms').projectDir = file('bundles/openmuc/datalogger')
+project(':openmuc-datalogger-emoncms').projectDir = file('bundles/openmuc')
