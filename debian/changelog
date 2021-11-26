@@ -1,5 +1,14 @@
 <package> (<version>) stable; urgency=medium
 
+  * Fix DPKG configs and templates
+  * Avoid aborting to post data for single bad record
+  * Use tab indents consequently
+  * Use OpenMUC v0.20.1
+
+ -- <maintainer>  Fri, 26 Nov 2021 14:00:10 +0100
+ 
+ <package> (1.5.0) stable; urgency=medium
+
   * Initial release
 
- -- <maintainer>  Wed, 25 Jul 2021 13:00:00 +0200
+ -- Adrian Minde <adrian.minde@isc-konstanz.de>  Wed, 25 Jul 2021 13:00:00 +0200
