@@ -43,132 +43,132 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpEngine implements Engine<HttpChannel> {
-    private final static Logger logger = LoggerFactory.getLogger(HttpEngine.class);
+	private final static Logger logger = LoggerFactory.getLogger(HttpEngine.class);
 
-    private final static String ADDRESS = "address";
-    private final static String ADDRESS_DEFAULT = "http://localhost/emoncms/";
+	private final static String ADDRESS = "address";
+	private final static String ADDRESS_DEFAULT = "http://localhost/emoncms/";
 
-    private final static String AUTHORIZATION = "authorization";
-    private final static String AUTHENTICATION = "authentication";
+	private final static String AUTHORIZATION = "authorization";
+	private final static String AUTHENTICATION = "authentication";
 
-    private final static String MAX_THREADS = "maxThreads";
+	private final static String MAX_THREADS = "maxThreads";
 
-    private HttpConnection connection;
+	private HttpConnection connection;
 
-    @Override
-    public EmoncmsType getType() {
-        return EmoncmsType.HTTP;
-    }
+	@Override
+	public EmoncmsType getType() {
+		return EmoncmsType.HTTP;
+	}
 
-    @Override
-    public boolean isActive() {
-        return connection != null && !connection.isClosed();
-    }
+	@Override
+	public boolean isActive() {
+		return connection != null && !connection.isClosed();
+	}
 
-    @Override
-    public void activate(Configuration config) throws IOException {
-        logger.info("Activating Emoncms HTTP Logger");
-        
-        String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
-        HttpBuilder builder = HttpBuilder.create(address);
-        if (config.contains(MAX_THREADS)) {
-            builder.setMaxThreads(config.getInteger(MAX_THREADS));
-        }
-        if (config.contains(AUTHORIZATION) && config.contains(AUTHENTICATION)) {
-            builder.setCredentials(config.getString(AUTHORIZATION), config.getString(AUTHENTICATION));
-        }
-        connection = (HttpConnection) builder.build();
-        connection.open();
-    }
+	@Override
+	public void activate(Configuration config) throws IOException {
+		logger.info("Activating Emoncms HTTP Logger");
+		
+		String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
+		HttpBuilder builder = HttpBuilder.create(address);
+		if (config.contains(MAX_THREADS)) {
+			builder.setMaxThreads(config.getInteger(MAX_THREADS));
+		}
+		if (config.contains(AUTHORIZATION) && config.contains(AUTHENTICATION)) {
+			builder.setCredentials(config.getString(AUTHORIZATION), config.getString(AUTHENTICATION));
+		}
+		connection = (HttpConnection) builder.build();
+		connection.open();
+	}
 
-    @Override
-    public void deactivate() {
-        connection.close();
-    }
+	@Override
+	public void deactivate() {
+		connection.close();
+	}
 
-    @Override
-    public void write(List<HttpChannel> channels, long timestamp) throws IOException {
-        if (channels.size() == 1) {
-            write(channels.get(0), timestamp);
-            return;
-        }
-        List<DataContainer> containers = new ArrayList<DataContainer>();
-        for (HttpChannel channel : channels) {
-            if (!channel.isValid()) {
-                continue;
-            }
-            String node = channel.getNode();
-            Long time = channel.getRecord().getTimestamp();
-            if (time == null) {
-                time = timestamp;
-            }
-            
-            Authentication authentication = channel.getAuthentication();
-            DataContainer container = null;
-            for (DataContainer c : containers) {
-                if (c.equals(authentication)) {
-                    container = c;
-                    break;
-                }
-            }
-            if (container == null) {
-                // No input collection for that device exists yet, so it needs to be created
-                container = new DataContainer(authentication);
-                containers.add(container);
-            }
-            container.add(time, node, new Namevalue(channel.getId(), channel.getRecord().getValue().asDouble()));
-        }
-        for (DataContainer container : containers) {
-            logger.debug("Logging {} values with authentication \"{}\"", container.size(), container.getAuthenticator());
-            
-            Authentication authenticator = container.getAuthenticator();
-            if (container.size() == 1) {
-                Data data = container.get(0);
-                
-                // Data time is already in seconds, but needs to be in milliseconds for post()
-                long time = data.getTime()*1000;
-                if (authenticator.isDefault()) {
-                    connection.post(data.getNode(), time, data.getNamevalues());
-                }
-                else {
-                    connection.post(data.getNode(), time, data.getNamevalues(), authenticator);
-                }
-            }
-            else {
-                if (authenticator.isDefault()) {
-                    connection.post(container);
-                }
-                else {
-                    connection.post(container, authenticator);
-                }
-            }
-        }
-    }
+	@Override
+	public void write(List<HttpChannel> channels, long timestamp) throws IOException {
+		if (channels.size() == 1) {
+			write(channels.get(0), timestamp);
+			return;
+		}
+		List<DataContainer> containers = new ArrayList<DataContainer>();
+		for (HttpChannel channel : channels) {
+			if (!channel.isValid()) {
+				continue;
+			}
+			String node = channel.getNode();
+			Long time = channel.getRecord().getTimestamp();
+			if (time == null) {
+				time = timestamp;
+			}
+			
+			Authentication authentication = channel.getAuthentication();
+			DataContainer container = null;
+			for (DataContainer c : containers) {
+				if (c.equals(authentication)) {
+					container = c;
+					break;
+				}
+			}
+			if (container == null) {
+				// No input collection for that device exists yet, so it needs to be created
+				container = new DataContainer(authentication);
+				containers.add(container);
+			}
+			container.add(time, node, new Namevalue(channel.getId(), channel.getRecord().getValue().asDouble()));
+		}
+		for (DataContainer container : containers) {
+			logger.debug("Logging {} values with authentication \"{}\"", container.size(), container.getAuthenticator());
+			
+			Authentication authenticator = container.getAuthenticator();
+			if (container.size() == 1) {
+				Data data = container.get(0);
+				
+				// Data time is already in seconds, but needs to be in milliseconds for post()
+				long time = data.getTime()*1000;
+				if (authenticator.isDefault()) {
+					connection.post(data.getNode(), time, data.getNamevalues());
+				}
+				else {
+					connection.post(data.getNode(), time, data.getNamevalues(), authenticator);
+				}
+			}
+			else {
+				if (authenticator.isDefault()) {
+					connection.post(container);
+				}
+				else {
+					connection.post(container, authenticator);
+				}
+			}
+		}
+	}
 
-    public void write(HttpChannel channel, long timestamp) throws IOException {
-        if (!channel.isValid()) {
-            return;
-        }
-        String node = channel.getNode();
-        Long time = channel.getRecord().getTimestamp();
-        if (time == null) {
-            time = timestamp;
-        }
-        connection.post(node, channel.getId(), new Timevalue(time, channel.getRecord().getValue().asDouble()));
-    }
+	public void write(HttpChannel channel, long timestamp) throws IOException {
+		if (!channel.isValid()) {
+			return;
+		}
+		String node = channel.getNode();
+		Long time = channel.getRecord().getTimestamp();
+		if (time == null) {
+			time = timestamp;
+		}
+		connection.post(node, channel.getId(), new Timevalue(time, channel.getRecord().getValue().asDouble()));
+	}
 
-    @Override
-    public List<Record> read(HttpChannel channel, long startTime, long endTime) throws IOException {
-        if (!channel.hasFeed()) {
-            throw new EmoncmsException("Unable to retrieve values for channel without configured feed: " + channel.getId());
-        }
-        Feed feed = HttpFeed.connect(connection, channel.getFeed());
-        List<Record> records = new LinkedList<Record>();
-        List<Timevalue> data = feed.getData(startTime, endTime, channel.getLoggingInterval());
-        for (Timevalue timevalue : data) {
-            records.add(new Record(new DoubleValue(timevalue.getValue()), timevalue.getTime()));
-        }
-        return records;
-    }
+	@Override
+	public List<Record> read(HttpChannel channel, long startTime, long endTime) throws IOException {
+		if (!channel.hasFeed()) {
+			throw new EmoncmsException("Unable to retrieve values for channel without configured feed: " + channel.getId());
+		}
+		Feed feed = HttpFeed.connect(connection, channel.getFeed());
+		List<Record> records = new LinkedList<Record>();
+		List<Timevalue> data = feed.getData(startTime, endTime, channel.getLoggingInterval());
+		for (Timevalue timevalue : data) {
+			records.add(new Record(new DoubleValue(timevalue.getValue()), timevalue.getTime()));
+		}
+		return records;
+	}
 
 }

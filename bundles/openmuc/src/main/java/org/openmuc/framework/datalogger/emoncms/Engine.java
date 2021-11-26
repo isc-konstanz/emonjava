@@ -27,26 +27,26 @@ import org.openmuc.framework.data.Record;
 
 public interface Engine<C extends EngineChannel> {
 
-    public EmoncmsType getType();
+	public EmoncmsType getType();
 
-    default boolean isActive() {
-        return true;
-    }
+	default boolean isActive() {
+		return true;
+	}
 
-    default void activate(Configuration config) throws IOException {
-        // Optional method
-    }
+	default void activate(Configuration config) throws IOException {
+		// Optional method
+	}
 
-    default void configure(List<C> channels) throws IOException {
-        // Optional method
-    }
+	default void configure(List<C> channels) throws IOException {
+		// Optional method
+	}
 
-    default void deactivate() {
-        // Optional method
-    }
+	default void deactivate() {
+		// Optional method
+	}
 
-    public void write(List<C> channels, long timestamp) throws IOException;
+	public void write(List<C> channels, long timestamp) throws IOException;
 
-    public List<Record> read(C channel, long startTime, long endTime) throws IOException;
+	public List<Record> read(C channel, long startTime, long endTime) throws IOException;
 
 }

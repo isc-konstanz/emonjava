@@ -35,24 +35,24 @@ import redis.clients.jedis.Transaction;
 public class RedisInput implements Input {
 	private static final Logger logger = LoggerFactory.getLogger(RedisInput.class);
 
-    protected static final String INPUT_PREFIX = "input:";
+	protected static final String INPUT_PREFIX = "input:";
 
-    protected final RedisCallbacks callbacks;
+	protected final RedisCallbacks callbacks;
 
-    protected final Integer id;
+	protected final Integer id;
 
-    public static RedisInput connect(RedisCallbacks redis, Integer id) 
-            throws EmoncmsException {
-        if (id != null && id < 1) {
-            throw new EmoncmsException("Invalid input id: "+id);
-        }
-        return new RedisInput(redis, id);
-    }
+	public static RedisInput connect(RedisCallbacks redis, Integer id) 
+			throws EmoncmsException {
+		if (id != null && id < 1) {
+			throw new EmoncmsException("Invalid input id: "+id);
+		}
+		return new RedisInput(redis, id);
+	}
 
-    protected RedisInput(RedisCallbacks callbacks, Integer id) throws EmoncmsException {
-        this.callbacks = callbacks;
-        this.id = id;
-    }
+	protected RedisInput(RedisCallbacks callbacks, Integer id) throws EmoncmsException {
+		this.callbacks = callbacks;
+		this.id = id;
+	}
 
 	@Override
 	public Integer getId() {
@@ -62,7 +62,7 @@ public class RedisInput implements Input {
 	@Override
 	public EmoncmsType getType() {
 		return EmoncmsType.REDIS;
-    }
+	}
 
 	@Override
 	public String getNode() throws EmoncmsException {
@@ -75,12 +75,12 @@ public class RedisInput implements Input {
 	}
 
 	protected String getField(String field) throws EmoncmsException {
-        String key = parseKey();
-        logger.debug("Retrieving cached {} for {}", field, key);
-        if (!callbacks.exists(key, field)) {
-            throw new RedisException("Nothing cached yet for id:"+id);
-        }
-        return callbacks.get(key, field);
+		String key = parseKey();
+		logger.debug("Retrieving cached {} for {}", field, key);
+		if (!callbacks.exists(key, field)) {
+			throw new RedisException("Nothing cached yet for id:"+id);
+		}
+		return callbacks.get(key, field);
 	}
 
 	@Override
@@ -94,43 +94,43 @@ public class RedisInput implements Input {
 		cache(timevalue.getTime(), timevalue.getValue());
 	}
 
-    public void cache(long timestamp, double value) throws EmoncmsException {
-        String key = parseKey("lastvalue:");
-        logger.debug("Caching value {}:{}", key, value);
-        
-        if (!callbacks.exists(key, "time")) {
-            throw new RedisException("No value cached yet for id:"+id);
-        }
-        Map<String, String> values = new HashMap<String, String>();
-    	values.put("time", String.valueOf((int) Math.round((double) timestamp/1000.0)));
-    	values.put("value", String.valueOf(value));
-    	
-        callbacks.set(key, values);
-    }
+	public void cache(long timestamp, double value) throws EmoncmsException {
+		String key = parseKey("lastvalue:");
+		logger.debug("Caching value {}:{}", key, value);
+		
+		if (!callbacks.exists(key, "time")) {
+			throw new RedisException("No value cached yet for id:"+id);
+		}
+		Map<String, String> values = new HashMap<String, String>();
+		values.put("time", String.valueOf((int) Math.round((double) timestamp/1000.0)));
+		values.put("value", String.valueOf(value));
+		
+		callbacks.set(key, values);
+	}
 
-    public void cache(Transaction transaction, long timestamp, double value) throws EmoncmsException {
-        String key = parseKey("lastvalue:");
-        logger.debug("Caching value {}:{}", key, value);
-        
-        Map<String, String> values = new HashMap<String, String>();
-    	values.put("time", String.valueOf((int) Math.round((double) timestamp/1000.0)));
-    	values.put("value", String.valueOf(value));
-    	
-    	callbacks.set(transaction, key, values);
-    }
+	public void cache(Transaction transaction, long timestamp, double value) throws EmoncmsException {
+		String key = parseKey("lastvalue:");
+		logger.debug("Caching value {}:{}", key, value);
+		
+		Map<String, String> values = new HashMap<String, String>();
+		values.put("time", String.valueOf((int) Math.round((double) timestamp/1000.0)));
+		values.put("value", String.valueOf(value));
+		
+		callbacks.set(transaction, key, values);
+	}
 
-    private String parseKey(String path) throws RedisUnavailableException {
-        if (callbacks == null) {
-            throw new RedisUnavailableException();
-        }
-        if (id == null) {
-            throw new RedisUnavailableException("No inputid configured");
-        }
-        return INPUT_PREFIX+path+String.valueOf(id);
-    }
+	private String parseKey(String path) throws RedisUnavailableException {
+		if (callbacks == null) {
+			throw new RedisUnavailableException();
+		}
+		if (id == null) {
+			throw new RedisUnavailableException("No inputid configured");
+		}
+		return INPUT_PREFIX+path+String.valueOf(id);
+	}
 
-    private String parseKey() throws RedisUnavailableException {
-    	return parseKey("");
-    }
+	private String parseKey() throws RedisUnavailableException {
+		return parseKey("");
+	}
 
 }

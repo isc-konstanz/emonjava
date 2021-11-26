@@ -72,7 +72,7 @@ public class HttpConnection implements Emoncms, HttpCallbacks {
 	private static final Logger logger = LoggerFactory.getLogger(HttpConnection.class);
 
 	private static final String TIMEOUT = System.getProperty(HttpConnection.class.
-    		getPackage().getName().toLowerCase() + ".timeout", "30000");
+			getPackage().getName().toLowerCase() + ".timeout", "30000");
 
 	private final String domain;
 	private Authentication authentication;

@@ -35,84 +35,84 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MqttEngine implements Engine<MqttChannel> {
-    private final static Logger logger = LoggerFactory.getLogger(MqttEngine.class);
+	private final static Logger logger = LoggerFactory.getLogger(MqttEngine.class);
 
-    private final static String ADDRESS = "address";
-    private final static String ADDRESS_DEFAULT = "tcp://localhost";
-    private final static String PORT = "port";
+	private final static String ADDRESS = "address";
+	private final static String ADDRESS_DEFAULT = "tcp://localhost";
+	private final static String PORT = "port";
 
-    private final static String USER = "user";
-    private final static String PASSWORD = "password";
+	private final static String USER = "user";
+	private final static String PASSWORD = "password";
 
-    private MqttClient client;
+	private MqttClient client;
 
-    @Override
-    public EmoncmsType getType() {
-        return EmoncmsType.MQTT;
-    }
+	@Override
+	public EmoncmsType getType() {
+		return EmoncmsType.MQTT;
+	}
 
-    @Override
-    public boolean isActive() {
-        return client != null && !client.isClosed();
-    }
+	@Override
+	public boolean isActive() {
+		return client != null && !client.isClosed();
+	}
 
-    @Override
-    public void activate(Configuration config) throws IOException {
-        logger.info("Activating Emoncms MQTT Logger");
-        
-        String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
-        MqttBuilder builder = MqttBuilder.create(address);
-        if (config.contains(PORT)) {
-            builder.setPort(config.getInteger(PORT));
-        }
-        if (config.contains(USER) && config.contains(PASSWORD)) {
-            builder.setCredentials(config.getString(USER), config.getString(PASSWORD));
-        }
-        client = (MqttClient) builder.build();
-        client.open();
-    }
+	@Override
+	public void activate(Configuration config) throws IOException {
+		logger.info("Activating Emoncms MQTT Logger");
+		
+		String address = config.getString(ADDRESS, ADDRESS_DEFAULT);
+		MqttBuilder builder = MqttBuilder.create(address);
+		if (config.contains(PORT)) {
+			builder.setPort(config.getInteger(PORT));
+		}
+		if (config.contains(USER) && config.contains(PASSWORD)) {
+			builder.setCredentials(config.getString(USER), config.getString(PASSWORD));
+		}
+		client = (MqttClient) builder.build();
+		client.open();
+	}
 
-    @Override
-    public void deactivate() {
-        client.close();
-    }
+	@Override
+	public void deactivate() {
+		client.close();
+	}
 
-    @Override
-    public void write(List<MqttChannel> channels, long timestamp) throws IOException {
-        if (channels.size() == 1) {
-            write(channels.get(0), timestamp);
-            return;
-        }
-        DataList data = new DataList();
-        for (MqttChannel channel : channels) {
-            if (!channel.isValid()) {
-                continue;
-            }
-            String node = channel.getNode();
-            Long time = channel.getRecord().getTimestamp();
-            if (time == null) {
-                time = timestamp;
-            }
-            data.add(time, node, new Namevalue(channel.getId(), channel.getRecord().getValue().asDouble()));
-        }
-        client.post(data);
-    }
+	@Override
+	public void write(List<MqttChannel> channels, long timestamp) throws IOException {
+		if (channels.size() == 1) {
+			write(channels.get(0), timestamp);
+			return;
+		}
+		DataList data = new DataList();
+		for (MqttChannel channel : channels) {
+			if (!channel.isValid()) {
+				continue;
+			}
+			String node = channel.getNode();
+			Long time = channel.getRecord().getTimestamp();
+			if (time == null) {
+				time = timestamp;
+			}
+			data.add(time, node, new Namevalue(channel.getId(), channel.getRecord().getValue().asDouble()));
+		}
+		client.post(data);
+	}
 
-    public void write(MqttChannel channel, long timestamp) throws IOException {
-        if (!channel.isValid()) {
-            return;
-        }
-        String node = channel.getNode();
-        Long time = channel.getRecord().getTimestamp();
-        if (time == null) {
-            time = timestamp;
-        }
-        client.post(node, channel.getId(), new Timevalue(time, channel.getRecord().getValue().asDouble()));
-    }
+	public void write(MqttChannel channel, long timestamp) throws IOException {
+		if (!channel.isValid()) {
+			return;
+		}
+		String node = channel.getNode();
+		Long time = channel.getRecord().getTimestamp();
+		if (time == null) {
+			time = timestamp;
+		}
+		client.post(node, channel.getId(), new Timevalue(time, channel.getRecord().getValue().asDouble()));
+	}
 
-    @Override
-    public List<Record> read(MqttChannel channel, long startTime, long endTime) throws IOException {
-        throw new UnsupportedOperationException();
-    }
+	@Override
+	public List<Record> read(MqttChannel channel, long startTime, long endTime) throws IOException {
+		throw new UnsupportedOperationException();
+	}
 
 }

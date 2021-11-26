@@ -52,13 +52,13 @@ public class MqttBuilder {
 		this.domain = domain;
 	}
 
-    public static MqttBuilder create() {
-        return new MqttBuilder();
-    }
+	public static MqttBuilder create() {
+		return new MqttBuilder();
+	}
 
-    public static MqttBuilder create(String address) {
-        return new MqttBuilder(address);
-    }
+	public static MqttBuilder create(String address) {
+		return new MqttBuilder(address);
+	}
 
 	public MqttBuilder setPort(int port) {
 		this.port = port;

@@ -27,29 +27,29 @@ import org.openmuc.framework.datalogger.annotation.Configure;
 
 public class EngineChannel extends LoggingChannel {
 
-    public final static String ENGINE = "engine";
-    public final static String LOGGER = "logger";
+	public final static String ENGINE = "engine";
+	public final static String LOGGER = "logger";
 
-    @Option(id = {ENGINE, LOGGER}, mandatory = false)
-    private EmoncmsType engine;
+	@Option(id = {ENGINE, LOGGER}, mandatory = false)
+	private EmoncmsType engine;
 
-    @Configure
-    public void configure() throws ArgumentSyntaxException {
-        try {
-            if (engine == null) {
-                engine = EmoncmsType.valueOf(EngineLogger.DEFAULT);
-            }
-        } catch (IllegalArgumentException e) {
-            throw new ArgumentSyntaxException(e.getMessage());
-        }
-    }
+	@Configure
+	public void configure() throws ArgumentSyntaxException {
+		try {
+			if (engine == null) {
+				engine = EmoncmsType.valueOf(EngineLogger.DEFAULT);
+			}
+		} catch (IllegalArgumentException e) {
+			throw new ArgumentSyntaxException(e.getMessage());
+		}
+	}
 
-    final void invokeConfigure(Engine<? extends EngineChannel> engine) throws ArgumentSyntaxException {
-        invokeMethod(Configure.class, this, engine);
-    }
+	final void invokeConfigure(Engine<? extends EngineChannel> engine) throws ArgumentSyntaxException {
+		invokeMethod(Configure.class, this, engine);
+	}
 
-    public EmoncmsType getEngine() {
-        return engine;
-    }
+	public EmoncmsType getEngine() {
+		return engine;
+	}
 
 }

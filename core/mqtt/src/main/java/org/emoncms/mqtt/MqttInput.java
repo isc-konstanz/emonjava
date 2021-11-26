@@ -33,15 +33,15 @@ import org.slf4j.LoggerFactory;
 public class MqttInput implements Input {
 	private static final Logger logger = LoggerFactory.getLogger(MqttInput.class);
 
-    /**
-     * Interface used by {@link MqttInput} to notify the {@link MqttClient} about events
-     */
-    public interface MqttCallbacks {
+	/**
+	 * Interface used by {@link MqttInput} to notify the {@link MqttClient} about events
+	 */
+	public interface MqttCallbacks {
 
-    	void post(String topic, String name, Timevalue timevalue) throws EmoncmsException;
+		void post(String topic, String name, Timevalue timevalue) throws EmoncmsException;
 
-    	void post(DataList data) throws EmoncmsException;
-    }
+		void post(DataList data) throws EmoncmsException;
+	}
 
 	/**
 	 * The Inputs' current callback object, which is notified of request events

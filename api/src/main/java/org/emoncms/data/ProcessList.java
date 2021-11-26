@@ -74,7 +74,7 @@ public class ProcessList extends LinkedHashMap<Process, String> {
 	
 	@Override
 	public String toString() {
-        StringBuilder processListBuilder = new StringBuilder();
+		StringBuilder processListBuilder = new StringBuilder();
 
 		Iterator<Map.Entry<Process, String>> iteratorProcessList = super.entrySet().iterator();
 		while (iteratorProcessList.hasNext()) {
@@ -84,11 +84,11 @@ public class ProcessList extends LinkedHashMap<Process, String> {
 			processListBuilder.append(':');
 			processListBuilder.append(parameter.getValue());
 
-        	if (iteratorProcessList.hasNext()) {
-        		processListBuilder.append(',');
-        	}
+			if (iteratorProcessList.hasNext()) {
+				processListBuilder.append(',');
+			}
 		}
-        
-        return processListBuilder.toString();
+		
+		return processListBuilder.toString();
 	}
 }

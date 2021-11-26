@@ -26,16 +26,16 @@ public class RedisUnavailableException extends RedisException {
 		super();
 	}
 
-    public RedisUnavailableException(String s) {
-        super(s);
-    }
+	public RedisUnavailableException(String s) {
+		super(s);
+	}
 
-    public RedisUnavailableException(Throwable cause) {
-        super(cause);
-    }
+	public RedisUnavailableException(Throwable cause) {
+		super(cause);
+	}
 
-    public RedisUnavailableException(String s, Throwable cause) {
-        super(s, cause);
-    }
+	public RedisUnavailableException(String s, Throwable cause) {
+		super(s, cause);
+	}
 
 }

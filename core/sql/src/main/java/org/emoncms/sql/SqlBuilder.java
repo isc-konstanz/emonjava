@@ -47,13 +47,13 @@ public class SqlBuilder {
 		this.host = host;
 	}
 
-    public static SqlBuilder create() {
-        return new SqlBuilder();
-    }
+	public static SqlBuilder create() {
+		return new SqlBuilder();
+	}
 
-    public static SqlBuilder create(String host) {
-        return new SqlBuilder(host);
-    }
+	public static SqlBuilder create(String host) {
+		return new SqlBuilder(host);
+	}
 
 	public SqlBuilder setHost(String host) {
 		this.host = host;

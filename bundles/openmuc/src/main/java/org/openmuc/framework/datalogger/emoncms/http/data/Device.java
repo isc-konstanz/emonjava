@@ -24,37 +24,37 @@ import org.emoncms.data.Namevalue;
 import org.emoncms.data.Timevalue;
 
 public class Device extends DataContainer {
-    private static final long serialVersionUID = -7256569692637391935L;
+	private static final long serialVersionUID = -7256569692637391935L;
 
-    private final String node;
+	private final String node;
 
-    public Device(String node, Authentication authenticator) {
-        super(authenticator);
-        this.node = node;
-    }
+	public Device(String node, Authentication authenticator) {
+		super(authenticator);
+		this.node = node;
+	}
 
-    public Device(String node) {
-        this(node, new Authentication());
-    }
+	public Device(String node) {
+		this(node, new Authentication());
+	}
 
-    public String getNode() {
-        return node;
-    }
+	public String getNode() {
+		return node;
+	}
 
-    public boolean add(Long time, Namevalue namevalue) {
-        return super.add(time, node, namevalue);
-    }
+	public boolean add(Long time, Namevalue namevalue) {
+		return super.add(time, node, namevalue);
+	}
 
-    @Override
-    @Deprecated
-    public boolean add(Long time, String node, Namevalue namevalue) {
-        return false;
-    }
+	@Override
+	@Deprecated
+	public boolean add(Long time, String node, Namevalue namevalue) {
+		return false;
+	}
 
-    @Override
-    @Deprecated
-    public boolean add(String node, String name, Timevalue timevalue) {
-        return false;
-    }
+	@Override
+	@Deprecated
+	public boolean add(String node, String name, Timevalue timevalue) {
+		return false;
+	}
 
 }

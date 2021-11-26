@@ -102,9 +102,9 @@ public class HibernateTimeSeries {
 	}
 	
 	protected Map<String, Object> buildMap(long timestamp, Object value, byte code) {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(TIME_COLUMN, timestamp);
-        switch (type) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put(TIME_COLUMN, timestamp);
+		switch (type) {
 		case "BOOLEAN":
 			map.put(VALUE_COLUMN, (Boolean) value);
 			break;
@@ -129,8 +129,8 @@ public class HibernateTimeSeries {
 		default:
 			map.put(VALUE_COLUMN, String.valueOf(value));
 			break;
-        }
-        map.put(FLAG_COLUMN, code);
+		}
+		map.put(FLAG_COLUMN, code);
 		return map;
 	}
 	

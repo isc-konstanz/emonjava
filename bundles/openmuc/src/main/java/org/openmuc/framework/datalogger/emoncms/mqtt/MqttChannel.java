@@ -26,27 +26,27 @@ import org.openmuc.framework.datalogger.emoncms.EngineChannel;
 
 public class MqttChannel extends EngineChannel {
 
-    @Option(id = {"node", "nodeid"})
-    private String node;
+	@Option(id = {"node", "nodeid"})
+	private String node;
 
-    @Configure
-    public void configure() throws ArgumentSyntaxException {
-        switch(getValueType()) {
-        case DOUBLE:
-        case FLOAT:
-        case LONG:
-        case INTEGER:
-        case SHORT:
-        case BYTE:
-        case BOOLEAN:
-            break;
-        default:
-            throw new ArgumentSyntaxException("Invalid value type: " + getValueType());
-        }
-    }
+	@Configure
+	public void configure() throws ArgumentSyntaxException {
+		switch(getValueType()) {
+		case DOUBLE:
+		case FLOAT:
+		case LONG:
+		case INTEGER:
+		case SHORT:
+		case BYTE:
+		case BOOLEAN:
+			break;
+		default:
+			throw new ArgumentSyntaxException("Invalid value type: " + getValueType());
+		}
+	}
 
-    public String getNode() {
-        return node;
-    }
+	public String getNode() {
+		return node;
+	}
 
 }

@@ -27,152 +27,152 @@ import org.openmuc.framework.data.TypeConversionException;
 import org.openmuc.framework.data.Value;
 
 public class Configuration extends HashMap<String, Value> {
-    private static final long serialVersionUID = -8674845221937360045L;
+	private static final long serialVersionUID = -8674845221937360045L;
 
-    protected Configuration() {
-    }
+	protected Configuration() {
+	}
 
-    public Configuration(Map<String, String> map) {
-        for (Entry<String, String> entry : map.entrySet()) {
-            put(entry.getKey(), new StringValue(entry.getValue()));
-        }
-    }
+	public Configuration(Map<String, String> map) {
+		for (Entry<String, String> entry : map.entrySet()) {
+			put(entry.getKey(), new StringValue(entry.getValue()));
+		}
+	}
 
-    public boolean contains(String key) {
-        return containsKey(key);
-    }
+	public boolean contains(String key) {
+		return containsKey(key);
+	}
 
-    public Boolean getBoolean(String key) {
-        if (contains(key)) {
-            return get(key).asBoolean();
-        }
-        return null;
-    }
+	public Boolean getBoolean(String key) {
+		if (contains(key)) {
+			return get(key).asBoolean();
+		}
+		return null;
+	}
 
-    public boolean getBoolean(String key, boolean def) {
-        try {
-            if (contains(key)) {
-                return get(key).asBoolean();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public boolean getBoolean(String key, boolean def) {
+		try {
+			if (contains(key)) {
+				return get(key).asBoolean();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public Byte getByte(String key) {
-        if (contains(key)) {
-            return get(key).asByte();
-        }
-        return null;
-    }
+	public Byte getByte(String key) {
+		if (contains(key)) {
+			return get(key).asByte();
+		}
+		return null;
+	}
 
-    public byte getByte(String key, byte def) {
-        try {
-            if (contains(key)) {
-                return get(key).asByte();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public byte getByte(String key, byte def) {
+		try {
+			if (contains(key)) {
+				return get(key).asByte();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public Short getShort(String key) {
-        if (contains(key)) {
-            return get(key).asShort();
-        }
-        return null;
-    }
+	public Short getShort(String key) {
+		if (contains(key)) {
+			return get(key).asShort();
+		}
+		return null;
+	}
 
-    public short getShort(String key, short def) {
-        try {
-            if (contains(key)) {
-                return get(key).asShort();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public short getShort(String key, short def) {
+		try {
+			if (contains(key)) {
+				return get(key).asShort();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public Integer getInteger(String key) {
-        if (contains(key)) {
-            return get(key).asInt();
-        }
-        return null;
-    }
+	public Integer getInteger(String key) {
+		if (contains(key)) {
+			return get(key).asInt();
+		}
+		return null;
+	}
 
-    public int getInteger(String key, int def) {
-        try {
-            if (contains(key)) {
-                return get(key).asInt();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public int getInteger(String key, int def) {
+		try {
+			if (contains(key)) {
+				return get(key).asInt();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public Long getLong(String key) {
-        if (contains(key)) {
-            return get(key).asLong();
-        }
-        return null;
-    }
+	public Long getLong(String key) {
+		if (contains(key)) {
+			return get(key).asLong();
+		}
+		return null;
+	}
 
-    public long getLong(String key, long def) {
-        try {
-            if (contains(key)) {
-                return get(key).asLong();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public long getLong(String key, long def) {
+		try {
+			if (contains(key)) {
+				return get(key).asLong();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public Float getFloat(String key) {
-        if (contains(key)) {
-            return get(key).asFloat();
-        }
-        return null;
-    }
+	public Float getFloat(String key) {
+		if (contains(key)) {
+			return get(key).asFloat();
+		}
+		return null;
+	}
 
-    public float getFloat(String key, float def) {
-        try {
-            if (contains(key)) {
-                return get(key).asFloat();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public float getFloat(String key, float def) {
+		try {
+			if (contains(key)) {
+				return get(key).asFloat();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public Double getDouble(String key) {
-        if (contains(key)) {
-            return get(key).asDouble();
-        }
-        return null;
-    }
+	public Double getDouble(String key) {
+		if (contains(key)) {
+			return get(key).asDouble();
+		}
+		return null;
+	}
 
-    public double getDouble(String key, double def) {
-        try {
-            if (contains(key)) {
-                return get(key).asDouble();
-            }
-        } catch (TypeConversionException e) {
-        }
-        return def;
-    }
+	public double getDouble(String key, double def) {
+		try {
+			if (contains(key)) {
+				return get(key).asDouble();
+			}
+		} catch (TypeConversionException e) {
+		}
+		return def;
+	}
 
-    public String getString(String key) {
-        if (contains(key)) {
-            return get(key).asString();
-        }
-        return null;
-    }
+	public String getString(String key) {
+		if (contains(key)) {
+			return get(key).asString();
+		}
+		return null;
+	}
 
-    public String getString(String key, String def) {
-        if (contains(key)) {
-            return get(key).asString();
-        }
-        return def;
-    }
+	public String getString(String key, String def) {
+		if (contains(key)) {
+			return get(key).asString();
+		}
+		return def;
+	}
 
 }

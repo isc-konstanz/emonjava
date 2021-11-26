@@ -31,81 +31,81 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EngineCollection extends LinkedList<ChannelCollection<? extends EngineChannel>> {
-    private static final long serialVersionUID = -3846829759240096545L;
+	private static final long serialVersionUID = -3846829759240096545L;
 
-    private final static Logger logger = LoggerFactory.getLogger(EngineCollection.class);
+	private final static Logger logger = LoggerFactory.getLogger(EngineCollection.class);
 
-    private final Map<EmoncmsType, Engine<?>> engines;
+	private final Map<EmoncmsType, Engine<?>> engines;
 
-    EngineCollection(Map<EmoncmsType, Engine<?>> engines) {
-        super();
-        this.engines = engines;
-    }
+	EngineCollection(Map<EmoncmsType, Engine<?>> engines) {
+		super();
+		this.engines = engines;
+	}
 
-    EngineCollection(Map<EmoncmsType, Engine<?>> engines, List<EngineChannel> channels) throws IOException {
-        this(engines);
-        for (EngineChannel channel : channels) {
-            try {
-                add(channel);
-                
-            } catch (ArgumentSyntaxException e) {
-                logger.warn("Failed to configure channel \"{}\": {}", channel.getId(), e.getMessage());
-            }
-        }
-    }
+	EngineCollection(Map<EmoncmsType, Engine<?>> engines, List<EngineChannel> channels) throws IOException {
+		this(engines);
+		for (EngineChannel channel : channels) {
+			try {
+				add(channel);
+				
+			} catch (ArgumentSyntaxException e) {
+				logger.warn("Failed to configure channel \"{}\": {}", channel.getId(), e.getMessage());
+			}
+		}
+	}
 
-    void add(EngineChannel channel) throws IOException, ArgumentSyntaxException {
-        Engine<?> engine = engines.get(channel.getEngine());
-        
-        if (engine == null && engines.size() > 0) {
-            engine = engines.values().iterator().next();
-        }
-        if (engine == null) {
-            throw new IOException("Engine unavailable: " + channel.getEngine());
-        }
-        channel.invokeConfigure(engine);
-        
-        add(channel, engine);
-    }
+	void add(EngineChannel channel) throws IOException, ArgumentSyntaxException {
+		Engine<?> engine = engines.get(channel.getEngine());
+		
+		if (engine == null && engines.size() > 0) {
+			engine = engines.values().iterator().next();
+		}
+		if (engine == null) {
+			throw new IOException("Engine unavailable: " + channel.getEngine());
+		}
+		channel.invokeConfigure(engine);
+		
+		add(channel, engine);
+	}
 
-    private <C extends EngineChannel> void add(C channel, Engine<?> engine) {
-        ChannelCollection<C> channelCollection = get(engine);
-        channelCollection.add(channel);
-    }
+	private <C extends EngineChannel> void add(C channel, Engine<?> engine) {
+		ChannelCollection<C> channelCollection = get(engine);
+		channelCollection.add(channel);
+	}
 
-    @SuppressWarnings("unchecked")
-    <C extends EngineChannel> ChannelCollection<C> get(Engine<?> engine) {
-        for (ChannelCollection<? extends EngineChannel> channels : this) {
-            if (channels.getEngine().getType() == engine.getType()) {
-                return (ChannelCollection<C>) channels;
-            }
-        }
-        ChannelCollection<C> collection = new ChannelCollection<C>((Engine<C>) engine);
-        add(collection);
-        return collection;
-    }
+	@SuppressWarnings("unchecked")
+	<C extends EngineChannel> ChannelCollection<C> get(Engine<?> engine) {
+		for (ChannelCollection<? extends EngineChannel> channels : this) {
+			if (channels.getEngine().getType() == engine.getType()) {
+				return (ChannelCollection<C>) channels;
+			}
+		}
+		ChannelCollection<C> collection = new ChannelCollection<C>((Engine<C>) engine);
+		add(collection);
+		return collection;
+	}
 
-    static class ChannelCollection<C extends EngineChannel> extends LinkedList<C> {
-        private static final long serialVersionUID = -2418938992605046464L;
+	static class ChannelCollection<C extends EngineChannel> extends LinkedList<C> {
+		private static final long serialVersionUID = -2418938992605046464L;
 
-        private final Engine<C> engine;
+		private final Engine<C> engine;
 
-        public ChannelCollection(Engine<C> engine) {
-            super();
-            this.engine = engine;
-        }
+		public ChannelCollection(Engine<C> engine) {
+			super();
+			this.engine = engine;
+		}
 
-        public Engine<C> getEngine() {
-            return engine;
-        }
+		public Engine<C> getEngine() {
+			return engine;
+		}
 
-        public void configure() throws IOException {
-            engine.configure(this);
-        }
+		public void configure() throws IOException {
+			engine.configure(this);
+		}
 
-        public void write(long timestamp) throws IOException {
-            engine.write(this, timestamp);
-        }
-    }
+		public void write(long timestamp) throws IOException {
+			engine.write(this, timestamp);
+		}
+	}
 
 }

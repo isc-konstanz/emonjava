@@ -24,30 +24,30 @@ import org.emoncms.data.Authorization;
 import org.emoncms.data.DataList;
 
 public class DataContainer extends DataList {
-    private static final long serialVersionUID = 1720223912529518324L;
+	private static final long serialVersionUID = 1720223912529518324L;
 
-    private final Authentication authenticator;
+	private final Authentication authenticator;
 
-    public DataContainer(Authentication authenticator) {
-        this.authenticator = authenticator;
-    }
+	public DataContainer(Authentication authenticator) {
+		this.authenticator = authenticator;
+	}
 
-    public DataContainer() {
-        this(new Authentication());
-    }
+	public DataContainer() {
+		this(new Authentication());
+	}
 
-    public Authentication getAuthenticator() {
-        return authenticator;
-    }
+	public Authentication getAuthenticator() {
+		return authenticator;
+	}
 
-    public boolean equals(Authentication authenticator) {
-        if (this.authenticator.getAuthorization() == Authorization.DEFAULT && 
-                authenticator.getAuthorization() == Authorization.DEFAULT) {
-            return true;
-        }
-        else if (this.authenticator.equals(authenticator)) {
-            return true;
-        }
-        return false;
-    }
+	public boolean equals(Authentication authenticator) {
+		if (this.authenticator.getAuthorization() == Authorization.DEFAULT && 
+				authenticator.getAuthorization() == Authorization.DEFAULT) {
+			return true;
+		}
+		else if (this.authenticator.equals(authenticator)) {
+			return true;
+		}
+		return false;
+	}
 }

@@ -30,22 +30,22 @@ import org.slf4j.LoggerFactory;
 public class SqlInput extends RedisInput {
 	private static final Logger logger = LoggerFactory.getLogger(SqlInput.class);
 
-    /**
-     * The Feeds' current callback object, which is notified of query events
-     */
-    private final SqlCallbacks callbacks;
+	/**
+	 * The Feeds' current callback object, which is notified of query events
+	 */
+	private final SqlCallbacks callbacks;
 
-    public static SqlInput connect(SqlCallbacks callbacks, RedisClient redis, Integer id)
-    		throws EmoncmsException {
-        
-        if (callbacks == null) {
-            throw new EmoncmsUnavailableException("MySQL connection to emoncms database invalid");
-        }
-        if (id != null && id < 1) {
-            throw new EmoncmsException("Invalid input id: "+id);
-        }
-        return new SqlInput(callbacks, redis, id);
-    }
+	public static SqlInput connect(SqlCallbacks callbacks, RedisClient redis, Integer id)
+			throws EmoncmsException {
+		
+		if (callbacks == null) {
+			throw new EmoncmsUnavailableException("MySQL connection to emoncms database invalid");
+		}
+		if (id != null && id < 1) {
+			throw new EmoncmsException("Invalid input id: "+id);
+		}
+		return new SqlInput(callbacks, redis, id);
+	}
 
 	protected SqlInput(SqlCallbacks callbacks, RedisClient redis, Integer id) throws EmoncmsException {
 		super(redis, id);
@@ -55,6 +55,6 @@ public class SqlInput extends RedisInput {
 	@Override
 	public EmoncmsType getType() {
 		return EmoncmsType.REDIS;
-    }
+	}
 
 }

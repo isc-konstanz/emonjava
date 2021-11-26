@@ -65,7 +65,7 @@ public class HttpCallable implements Callable<HttpResponse> {
 		case POST:
 			return post(request);
 		default:
-		  	throw new EmoncmsException("No HTTP request method " + method.toString() + "implemented");
+			  throw new EmoncmsException("No HTTP request method " + method.toString() + "implemented");
 		}
 	}
 
@@ -102,12 +102,12 @@ public class HttpCallable implements Callable<HttpResponse> {
 					stream = null;
 				}
 				if (connection != null) {
-				  	connection.disconnect();
-				  	connection = null;
-			   	}
-		  	} catch (Exception e) {
+					  connection.disconnect();
+					  connection = null;
+				   }
+			  } catch (Exception e) {
 				throw new HttpException("Unknown exception while closing connection: " + e.getMessage());
-		  	}
+			  }
 		}
 	}
 
@@ -159,12 +159,12 @@ public class HttpCallable implements Callable<HttpResponse> {
 					stream = null;
 				}
 				if (connection != null) {
-				  	connection.disconnect();
-				  	connection = null;
-			   	}
-		  	} catch (Exception e) {
+					  connection.disconnect();
+					  connection = null;
+				   }
+			  } catch (Exception e) {
 				throw new HttpException("Unknown exception while closing connection: " + e.getMessage());
-		  	}
+			  }
 		}
 	}
 

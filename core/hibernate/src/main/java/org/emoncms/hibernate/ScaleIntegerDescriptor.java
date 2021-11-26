@@ -33,10 +33,10 @@ public class ScaleIntegerDescriptor extends AbstractTypeDescriptor<Long> {
 	private static final String FACTOR = "Factor";
 
 	public static final JavaTypeDescriptor<Long> INSTANCE = 
-    	      new ScaleIntegerDescriptor();
+			  new ScaleIntegerDescriptor();
 	
 	private double factor;
-    	 
+		 
 	@SuppressWarnings("unchecked")
 	protected ScaleIntegerDescriptor() {
 		super(Long.class, ImmutableMutabilityPlan.INSTANCE);

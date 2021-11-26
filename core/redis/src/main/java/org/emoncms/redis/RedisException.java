@@ -28,16 +28,16 @@ public class RedisException extends EmoncmsException {
 		super();
 	}
 
-    public RedisException(String s) {
-        super(s);
-    }
+	public RedisException(String s) {
+		super(s);
+	}
 
-    public RedisException(Throwable cause) {
-        super(cause);
-    }
+	public RedisException(Throwable cause) {
+		super(cause);
+	}
 
-    public RedisException(String s, Throwable cause) {
-        super(s, cause);
-    }
+	public RedisException(String s, Throwable cause) {
+		super(s, cause);
+	}
 
 }

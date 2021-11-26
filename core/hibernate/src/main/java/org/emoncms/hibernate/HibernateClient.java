@@ -116,29 +116,29 @@ public class HibernateClient implements Emoncms, HibernateCallbacks {
 	}
 
 	private void initialize() throws EmoncmsUnavailableException {
-        config = new Configuration().configure(properties);
-        config = config.setProperty("hibernate.connection.driver_class", driver);
-        config = config.setProperty("hibernate.connection.url", address);
-        if (user !=  null && password != null) {
-        	config = config.setProperty("hibernate.connection.username", user);
-        	config = config.setProperty("hibernate.connection.password", password);
-        }
-        config = config.setProperty("hibernate.dialect", dialect);
+		config = new Configuration().configure(properties);
+		config = config.setProperty("hibernate.connection.driver_class", driver);
+		config = config.setProperty("hibernate.connection.url", address);
+		if (user !=  null && password != null) {
+			config = config.setProperty("hibernate.connection.username", user);
+			config = config.setProperty("hibernate.connection.password", password);
+		}
+		config = config.setProperty("hibernate.dialect", dialect);
 		
-        if (feeds != null) {
-    		for (HibernateFeed feed : feeds.values()) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Entity of feed " + feed.getEntityName());
-                }
-    	        if (feed.containsUserType(SCALE_INTEGER_TYPE)) {
-        			config.registerTypeContributor((typeContributions, serviceRegistry) -> {
-        					typeContributions.contributeType(ScaleIntegerType.INSTANCE, SCALE_INTEGER_TYPE);
-        			});
-        			break;
-    	        }
-        		config.addInputStream(feed.getMapping());
-    		}
-        }
+		if (feeds != null) {
+			for (HibernateFeed feed : feeds.values()) {
+				if (logger.isTraceEnabled()) {
+					logger.trace("Entity of feed " + feed.getEntityName());
+				}
+				if (feed.containsUserType(SCALE_INTEGER_TYPE)) {
+					config.registerTypeContributor((typeContributions, serviceRegistry) -> {
+							typeContributions.contributeType(ScaleIntegerType.INSTANCE, SCALE_INTEGER_TYPE);
+					});
+					break;
+				}
+				config.addInputStream(feed.getMapping());
+			}
+		}
 		factory = config.buildSessionFactory();
 	}
 

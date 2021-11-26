@@ -27,37 +27,37 @@ import org.openmuc.framework.datalogger.emoncms.EngineChannel;
 public class SqlChannel extends EngineChannel {
 
 	@Option(id = {"input", "inputid"}, mandatory = false)
-    private int input = -1;
+	private int input = -1;
 
 	@Option(id = {"feed", "feedid"}, mandatory = false)
-    private int feed = -1;
+	private int feed = -1;
 
 	@Configure
-    public void configure(SqlEngine engine) throws ArgumentSyntaxException {
-        if (engine.client.hasCache()) {
-        	if (input < 0) {
-                throw new ArgumentSyntaxException("Input ID needs to be configured for redis caching");
-        	}
-        	if (feed < 0) {
-                throw new ArgumentSyntaxException("Feed ID needs to be configured for redis caching");
-        	}
-        }
-    }
+	public void configure(SqlEngine engine) throws ArgumentSyntaxException {
+		if (engine.client.hasCache()) {
+			if (input < 0) {
+				throw new ArgumentSyntaxException("Input ID needs to be configured for redis caching");
+			}
+			if (feed < 0) {
+				throw new ArgumentSyntaxException("Feed ID needs to be configured for redis caching");
+			}
+		}
+	}
 
-    public boolean hasInput() {
-        return input > 0;
-    }
+	public boolean hasInput() {
+		return input > 0;
+	}
 
-    public int getInput() {
-        return input;
-    }
+	public int getInput() {
+		return input;
+	}
 
-    public boolean hasFeed() {
-        return feed > 0;
-    }
+	public boolean hasFeed() {
+		return feed > 0;
+	}
 
-    public int getFeed() {
-        return feed;
-    }
+	public int getFeed() {
+		return feed;
+	}
 
 }

@@ -53,13 +53,13 @@ public class HttpBuilder {
 		this.domain = domain;
 	}
 
-    public static HttpBuilder create() {
-        return new HttpBuilder();
-    }
+	public static HttpBuilder create() {
+		return new HttpBuilder();
+	}
 
-    public static HttpBuilder create(String address) {
-        return new HttpBuilder(address);
-    }
+	public static HttpBuilder create(String address) {
+		return new HttpBuilder(address);
+	}
 
 	public HttpBuilder setCredentials(String type, String key) {
 		if (type != null && key != null) {

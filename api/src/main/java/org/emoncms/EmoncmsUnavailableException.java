@@ -27,15 +27,15 @@ public class EmoncmsUnavailableException extends EmoncmsException {
 		super();
 	}
 
-    public EmoncmsUnavailableException(String s) {
-        super(s);
-    }
+	public EmoncmsUnavailableException(String s) {
+		super(s);
+	}
 
-    public EmoncmsUnavailableException(Throwable cause) {
-        super(cause);
-    }
+	public EmoncmsUnavailableException(Throwable cause) {
+		super(cause);
+	}
 
-    public EmoncmsUnavailableException(String s, Throwable cause) {
-        super(s, cause);
-    }
+	public EmoncmsUnavailableException(String s, Throwable cause) {
+		super(s, cause);
+	}
 }

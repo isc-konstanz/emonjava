@@ -52,7 +52,7 @@ public class DataList extends LinkedList<Data> {
 	}
 
 	public void sort() {
-    	Comparator<Data> comparator = new SortTime();
+		Comparator<Data> comparator = new SortTime();
 		sort(comparator);
 	}
 
@@ -73,5 +73,5 @@ public class DataList extends LinkedList<Data> {
 			}
 			return 0;
 		}
-    }
+	}
 }

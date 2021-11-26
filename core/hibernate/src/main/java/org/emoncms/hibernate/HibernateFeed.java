@@ -179,7 +179,7 @@ public class HibernateFeed implements Feed {
 		if (containsUserType(HibernateClient.SCALE_INTEGER_TYPE)) {
 			userType = ScaleIntegerType.INSTANCE;
 			query.setParameter("start", start, userType)
-			     .setParameter("end", end, userType);
+				 .setParameter("end", end, userType);
 		}
 		else {
 			query.setParameter("start", start)
@@ -318,7 +318,7 @@ public class HibernateFeed implements Feed {
 				map.put(VALUE_COLUMN, ((Double)value).toString());
 				break;
 		}
-    	session.saveOrUpdate(name, map);
+		session.saveOrUpdate(name, map);
 		
 		transaction.commit();
 		session.close();		

@@ -47,13 +47,13 @@ public class HibernateBuilder {
 		this.address = address;
 	}
 
-    public static HibernateBuilder create() {
-        return new HibernateBuilder();
-    }
+	public static HibernateBuilder create() {
+		return new HibernateBuilder();
+	}
 
-    public static HibernateBuilder create(String address) {
-        return new HibernateBuilder(address);
-    }
+	public static HibernateBuilder create(String address) {
+		return new HibernateBuilder(address);
+	}
 
 	public HibernateBuilder setDriverClass(String connectionDriverClass) {
 		this.driverClass = connectionDriverClass;

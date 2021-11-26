@@ -30,11 +30,11 @@ public class Options extends HashMap<String, String> {
 	 * Sets the logging interval of the corresponding feed engine in milliseconds.
 	 * 
 	 * @param interval
-	 * 	the logging interval of the corresponding feed engine in milliseconds
+	 *	 the logging interval of the corresponding feed engine in milliseconds
 	 * 
 	 * @return 
-	 * 	the previous value associated with key, or null if there was no mapping for key. 
-	 * 	(A null return can also indicate that the map previously associated null with key.)
+	 *	 the previous value associated with key, or null if there was no mapping for key. 
+	 *	 (A null return can also indicate that the map previously associated null with key.)
 	 */
 	public String setInterval(int interval) {
 		return put("interval", String.valueOf(interval));

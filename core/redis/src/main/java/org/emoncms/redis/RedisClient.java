@@ -39,69 +39,69 @@ import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;
 
 public class RedisClient implements Emoncms, RedisCallbacks {
-    private static final Logger logger = LoggerFactory.getLogger(RedisClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(RedisClient.class);
 
-    protected final String host;
-    protected final int port;
+	protected final String host;
+	protected final int port;
 
-    protected final String password;
-    protected final String prefix;
+	protected final String password;
+	protected final String prefix;
 
-    protected Jedis jedis;
+	protected Jedis jedis;
 
-    protected RedisClient(String host, int port, String password, String prefix) {
-    	this.host = host;
-    	this.port = port;
-    	this.password = password;
-    	this.prefix = prefix;
-    }
+	protected RedisClient(String host, int port, String password, String prefix) {
+		this.host = host;
+		this.port = port;
+		this.password = password;
+		this.prefix = prefix;
+	}
 
 	public String getPrefix() {
 		return prefix;
 	}
 
-    @Override
-    public EmoncmsType getType() {
-        return EmoncmsType.REDIS;
-    }
+	@Override
+	public EmoncmsType getType() {
+		return EmoncmsType.REDIS;
+	}
 
-    @Override
-    public boolean isClosed() {
-    	if (jedis == null) {
-        	return true;
-    	}
-        return !jedis.isConnected();
-    }
+	@Override
+	public boolean isClosed() {
+		if (jedis == null) {
+			return true;
+		}
+		return !jedis.isConnected();
+	}
 
-    @Override
-    public void close() throws IOException {
-    	jedis.close();
-    }
+	@Override
+	public void close() throws IOException {
+		jedis.close();
+	}
 
-    @Override
-    public void open() throws EmoncmsUnavailableException {
-        logger.info("Initializing emoncms Redis connection \"{}:{}\"", host, port);
+	@Override
+	public void open() throws EmoncmsUnavailableException {
+		logger.info("Initializing emoncms Redis connection \"{}:{}\"", host, port);
 
-    	jedis = new Jedis(host, port);
-    	if (password != null) {
-    		jedis.auth(password);
-    	}
-    }
+		jedis = new Jedis(host, port);
+		if (password != null) {
+			jedis.auth(password);
+		}
+	}
 
-    @Override
-    public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
-        throw new UnsupportedOperationException("Unsupported for type "+getType());
-    }
+	@Override
+	public void post(String node, String name, Timevalue timevalue) throws EmoncmsException {
+		throw new UnsupportedOperationException("Unsupported for type "+getType());
+	}
 
-    @Override
-    public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
-        throw new UnsupportedOperationException("Unsupported for type "+getType());
-    }
+	@Override
+	public void post(String node, Long time, List<Namevalue> namevalues) throws EmoncmsException {
+		throw new UnsupportedOperationException("Unsupported for type "+getType());
+	}
 
-    @Override
-    public void post(DataList data) throws EmoncmsException {
-        throw new UnsupportedOperationException("Unsupported for type "+getType());
-    }
+	@Override
+	public void post(DataList data) throws EmoncmsException {
+		throw new UnsupportedOperationException("Unsupported for type "+getType());
+	}
 
 	@Override
 	public Transaction getTransaction() {
@@ -109,14 +109,14 @@ public class RedisClient implements Emoncms, RedisCallbacks {
 	}
 
 	@Override
-    public boolean exists(String key, String field) throws RedisException {
+	public boolean exists(String key, String field) throws RedisException {
 		try {
-	    	return jedis.hexists(prefix+key, field);
+			return jedis.hexists(prefix+key, field);
 			
 		} catch(JedisException e) {
 			throw new RedisException(e);
 		}
-    }
+	}
 
 	@Override
 	public String get(String key, String field) throws RedisException {
@@ -132,11 +132,11 @@ public class RedisClient implements Emoncms, RedisCallbacks {
 	public Map<String, String> get(String key, String... fields) throws RedisException {
 		try {
 			Map<String, String> result = new HashMap<String, String>();
-	    	List<String> values = jedis.hmget(prefix+key, fields);
-	    	for (int i=0; i<fields.length; i++) {
-	    		result.put(fields[i], values.get(i));
-	    	}
-	    	return result;
+			List<String> values = jedis.hmget(prefix+key, fields);
+			for (int i=0; i<fields.length; i++) {
+				result.put(fields[i], values.get(i));
+			}
+			return result;
 			
 		} catch(JedisException e) {
 			throw new RedisException(e);
@@ -155,10 +155,10 @@ public class RedisClient implements Emoncms, RedisCallbacks {
 
 	@Override
 	public void set(Transaction transaction, String key, Map<String, String> values) throws RedisException {
-        if (transaction == null) {
-            throw new RedisUnavailableException();
-        }
-    	transaction.hmset(prefix+key, values);
+		if (transaction == null) {
+			throw new RedisUnavailableException();
+		}
+		transaction.hmset(prefix+key, values);
 	}
 
 }

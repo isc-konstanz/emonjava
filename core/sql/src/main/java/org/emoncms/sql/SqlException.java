@@ -28,16 +28,16 @@ public class SqlException extends EmoncmsException {
 		super();
 	}
 
-    public SqlException(String s) {
-        super(s);
-    }
+	public SqlException(String s) {
+		super(s);
+	}
 
-    public SqlException(Throwable cause) {
-        super(cause);
-    }
+	public SqlException(Throwable cause) {
+		super(cause);
+	}
 
-    public SqlException(String s, Throwable cause) {
-        super(s, cause);
-    }
+	public SqlException(String s, Throwable cause) {
+		super(s, cause);
+	}
 
 }

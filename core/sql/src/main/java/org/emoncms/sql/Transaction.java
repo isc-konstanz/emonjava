@@ -26,40 +26,40 @@ import java.sql.Statement;
 
 public class Transaction implements AutoCloseable {
 
-    private final Connection connection;
+	private final Connection connection;
 
-    public Transaction(Connection connection) throws SqlException {
-        this.connection = connection;
-        try {
-            connection.setAutoCommit(false);
-            
-        } catch (SQLException e) {
-            throw new SqlException(e);
-        }
-    }
-
-    public boolean execute(String query) throws SqlException {
-        try (Statement statement = connection.createStatement()) {
-            return statement.execute(query);
-            
-        } catch (SQLException e) {
-            throw new SqlException(e);
+	public Transaction(Connection connection) throws SqlException {
+		this.connection = connection;
+		try {
+			connection.setAutoCommit(false);
+			
+		} catch (SQLException e) {
+			throw new SqlException(e);
 		}
-    }
+	}
 
-    public ResultSet query(String query) throws SqlException {
-        try (Statement statement = connection.createStatement()) {
-            return statement.executeQuery(query);
-            
-        } catch (SQLException e) {
-            throw new SqlException(e);
+	public boolean execute(String query) throws SqlException {
+		try (Statement statement = connection.createStatement()) {
+			return statement.execute(query);
+			
+		} catch (SQLException e) {
+			throw new SqlException(e);
 		}
-    }
+	}
+
+	public ResultSet query(String query) throws SqlException {
+		try (Statement statement = connection.createStatement()) {
+			return statement.executeQuery(query);
+			
+		} catch (SQLException e) {
+			throw new SqlException(e);
+		}
+	}
 
 	@Override
 	public void close() throws Exception {
-        connection.commit();
-        connection.close();
+		connection.commit();
+		connection.close();
 	}
 
 }
