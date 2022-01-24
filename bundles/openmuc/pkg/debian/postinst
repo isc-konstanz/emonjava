@@ -7,11 +7,6 @@ set -e
 PASSWD_FILE=/home/pi/.setup/passwd.conf
 CONFIG_FILE=/opt/openmuc/conf/emoncms.conf
 
-# Stop service if still running
-if systemctl is-active --quiet openmuc; then
-    systemctl stop openmuc
-fi
-
 # Fetching HTTP configuration from debconf
 http_header_line=$((`grep -m1 -n "^\[HTTP\]$" $CONFIG_FILE | sed "s/:.*//g"` - 1))
 
@@ -53,51 +48,57 @@ mysql_password_value=$RET
 mysql_password_key="password"
 mysql_password_line=$((`grep -A11 -P "^\[SQL\]$" $CONFIG_FILE | grep -m1 -n "$mysql_password_key.*=" | sed "s/:.*//g"` + $mysql_header_line))
 
-# Print some confirmation output to screen
-echo "Configuring OpenMUC EmonCMS Logger:"
-if [ -n "$http_auth_value" ] && [ "$http_auth_value" != "API_KEY" ]; then
-    echo " - HTTP connection configuration:  Authenticating with admin:$http_auth_value to $http_address_value"
-else
-    echo " - HTTP connection configuration:  Authenticating as admin to $http_address_value"
-fi
-echo " - MySQL connection configuration: $mysql_user_value connecting to $mysql_database_value on $mysql_host_value:$mysql_port_value"
+case "$1" in
+    install | configure)
+        # Print some confirmation output to screen
+        echo "Configuring OpenMUC EmonCMS Logger:"
+        if [ -n "$http_auth_value" ] && [ "$http_auth_value" != "API_KEY" ]; then
+            echo " - HTTP connection configuration:  Authenticating with admin:$http_auth_value to $http_address_value"
+        else
+            echo " - HTTP connection configuration:  Authenticating as admin to $http_address_value"
+        fi
+        echo " - MySQL connection configuration: $mysql_user_value connecting to $mysql_database_value on $mysql_host_value:$mysql_port_value"
 
-# Update emoncms.conf with the configured values:
-sed -i "$http_address_line s|.*$http_address_key.*=.*|$http_address_key = $http_address_value|"             $CONFIG_FILE
-if [ -n "$http_auth_value" ]; then
-    sed -i "$http_auth_line s/.*$http_auth_key.*=.*/$http_auth_key = $http_auth_value/"                     $CONFIG_FILE
-fi
+        # Update emoncms.conf with the configured values:
+        sed -i "$http_address_line s|.*$http_address_key.*=.*|$http_address_key = $http_address_value|"             $CONFIG_FILE
+        if [ -n "$http_auth_value" ]; then
+            sed -i "$http_auth_line s/.*$http_auth_key.*=.*/$http_auth_key = $http_auth_value/"                     $CONFIG_FILE
+        fi
 
-sed -i "$mysql_host_line s/.*$mysql_host_key.*=.*/$mysql_host_key = $mysql_host_value/"                     $CONFIG_FILE
-sed -i "$mysql_port_line s/.*$mysql_port_key.*=.*/$mysql_port_key = $mysql_port_value/"                     $CONFIG_FILE
+        sed -i "$mysql_host_line s/.*$mysql_host_key.*=.*/$mysql_host_key = $mysql_host_value/"                     $CONFIG_FILE
+        sed -i "$mysql_port_line s/.*$mysql_port_key.*=.*/$mysql_port_key = $mysql_port_value/"                     $CONFIG_FILE
 
-sed -i "$mysql_database_line s/.*$mysql_database_key.*=.*/$mysql_database_key = $mysql_database_value/"     $CONFIG_FILE
+        sed -i "$mysql_database_line s/.*$mysql_database_key.*=.*/$mysql_database_key = $mysql_database_value/"     $CONFIG_FILE
 
-sed -i "$mysql_user_line s/.*$mysql_user_key.*=.*/$mysql_user_key = $mysql_user_value/"                     $CONFIG_FILE
-sed -i "$mysql_password_line s/.*$mysql_password_key.*=.*/$mysql_password_key = $mysql_password_value/"     $CONFIG_FILE
+        sed -i "$mysql_user_line s/.*$mysql_user_key.*=.*/$mysql_user_key = $mysql_user_value/"                     $CONFIG_FILE
+        sed -i "$mysql_password_line s/.*$mysql_password_key.*=.*/$mysql_password_key = $mysql_password_value/"     $CONFIG_FILE
 
-if test -f $PASSWD_FILE && grep -Fxq "[MySQL]" $PASSWD_FILE; then
-    if grep -A3 -P '^\[MySQL\]' $PASSWD_FILE | grep -m1 -q "$mysql_user_value"; then
-        sed -i "s/$mysql_user_value:.*/$mysql_user_value:$mysql_password_value/" $PASSWD_FILE
-    else
-        sed -i "/\[MySQL\]/!b;n;a$mysql_user_value:$mysql_password_value" $PASSWD_FILE
-    fi
-    mysql_root_password=`grep -A3 -P "^\[MySQL\]$" $PASSWD_FILE | grep -m1 "root" | sed "s/root://g" | sed -r "s/\s+//g"`
-fi
+        echo "To update OpenMUC EmonCMS Logger configurations, run 'dpkg-reconfigure --priority=low openmuc-datalogger-emoncms'"
+        ;;&
+    install)
+        if test -f $PASSWD_FILE && grep -Fxq "[MySQL]" $PASSWD_FILE; then
+            if grep -A3 -P '^\[MySQL\]' $PASSWD_FILE | grep -m1 -q "$mysql_user_value"; then
+                sed -i "s/$mysql_user_value:.*/$mysql_user_value:$mysql_password_value/" $PASSWD_FILE
+            else
+                sed -i "/\[MySQL\]/!b;n;a$mysql_user_value:$mysql_password_value" $PASSWD_FILE
+            fi
+            mysql_root_password=`grep -A3 -P "^\[MySQL\]$" $PASSWD_FILE | grep -m1 "root" | sed "s/root://g" | sed -r "s/\s+//g"`
+        fi
 
-mysql="mysql -uroot"
-if [ ! -z $mysql_root_password ]; then
-    mysql="$mysql -p$mysql_root_password"
-fi
-if ! $mysql -e "USE mysql; SELECT user FROM user;" | grep -Fq "$mysql_user_value"; then
-    $mysql -e "CREATE USER '$mysql_user_value'@'localhost' IDENTIFIED BY '$mysql_password_value';"
-fi
-if ! $mysql -e "USE $mysql_database_value" 2>/dev/null; then
-    $mysql -e "CREATE DATABASE $mysql_database_value DEFAULT CHARACTER SET utf8;"
-fi
-$mysql -e "GRANT ALL ON $mysql_database_value.* TO '$mysql_user_value'@'localhost';FLUSH PRIVILEGES;"
-
-echo "To update OpenMUC EmonCMS Logger configurations, run 'dpkg-reconfigure --priority=low openmuc-datalogger-emoncms'"
+        mysql="mysql -uroot"
+        if [ ! -z $mysql_root_password ]; then
+            mysql="$mysql -p$mysql_root_password"
+        fi
+        if ! $mysql -e "USE mysql; SELECT user FROM user;" | grep -Fq "$mysql_user_value"; then
+            $mysql -e "CREATE USER '$mysql_user_value'@'localhost' IDENTIFIED BY '$mysql_password_value';"
+        fi
+        if ! $mysql -e "USE $mysql_database_value" 2>/dev/null; then
+            $mysql -e "CREATE DATABASE $mysql_database_value DEFAULT CHARACTER SET utf8;"
+        fi
+        $mysql -e "GRANT ALL ON $mysql_database_value.* TO '$mysql_user_value'@'localhost';FLUSH PRIVILEGES;"
+    *)
+        ;;
+esac
 
 # Set permissions of the configuration and bundle jars
 chown muc:muc /opt/openmuc/bundle/<package>-<version>.jar \
