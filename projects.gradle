@@ -19,7 +19,7 @@
  */
 project.ext {
 
-    projectVersion = '1.5.1'
+    projectVersion = '1.5.2'
 
     projectGroup = 'org.emoncms'
 

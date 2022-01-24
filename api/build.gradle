@@ -24,10 +24,6 @@ project.ext {
     projectDescription = 'The core API of the emoncms web application'
 }
 
-dependencies {
-    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-}
-
 jar {
     bnd('Bundle-Name':        projectFullName,
         'Bundle-Description': projectDescription,

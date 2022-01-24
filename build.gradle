@@ -21,13 +21,13 @@ import java.nio.file.Paths
 
 buildscript {
     repositories {
-        maven {
-            url 'https://plugins.gradle.org/m2/'
-        }
+        mavenCentral()
     }
-    dependencies {
-        classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
-    }
+}
+
+plugins {
+    id 'java-library'
+    id 'biz.aQute.bnd.builder' version '5.1.2'
 }
 
 apply from: 'projects.gradle'
@@ -37,7 +37,6 @@ def javaProjects() {
 }
 
 configure(javaProjects()) {
-    apply plugin: 'maven-publish'
     apply plugin: 'java-library'
     apply plugin: 'biz.aQute.bnd.builder'
     apply plugin: 'eclipse'
@@ -48,19 +47,20 @@ configure(javaProjects()) {
 
     repositories {
         mavenCentral()
-        mavenLocal()
     }
 
     dependencies {
-        testImplementation group: 'junit', name: 'junit', version: '4.12'
+        testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.33'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.10'
     }
 
     jar {
-        manifest {
-            archiveVersion = project.version.replace('-','.');
-            attributes('Bundle-Vendor': projectVendor,
-                       'Bundle-DocURL': projectRepository)
-        }
+        bnd('Bundle-SymbolicName': project.group+'.'+project.name,
+            'Bundle-Name':         project.name,
+            'Bundle-Vendor':       projectVendor,
+            'Bundle-DocURL':       projectRepository)
     }
 
     if (!project.properties.containsKey('javaVersion')) {
@@ -109,6 +109,13 @@ configure(javaProjects()) {
         exclude '**/internal/**'
         exclude '**/java-gen/**'
         exclude '**/app/**'
+    }
+}
+
+configure(rootProject) {
+    jar {
+        // FIXME: Find better solution to avoid the root project beeing built
+        destinationDirectory = new File("$rootDir/build/tmp/libs")
     }
 }
 
