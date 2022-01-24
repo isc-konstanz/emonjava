@@ -74,7 +74,11 @@ case "$1" in
         sed -i "$mysql_password_line s/.*$mysql_password_key.*=.*/$mysql_password_key = $mysql_password_value/"     $CONFIG_FILE
 
         echo "To update OpenMUC EmonCMS Logger configurations, run 'dpkg-reconfigure --priority=low openmuc-datalogger-emoncms'"
-        ;;&
+        ;;
+    *)
+        ;;
+esac
+case "$1" in
     install)
         if test -f $PASSWD_FILE && grep -Fxq "[MySQL]" $PASSWD_FILE; then
             if grep -A3 -P '^\[MySQL\]' $PASSWD_FILE | grep -m1 -q "$mysql_user_value"; then
@@ -96,6 +100,7 @@ case "$1" in
             $mysql -e "CREATE DATABASE $mysql_database_value DEFAULT CHARACTER SET utf8;"
         fi
         $mysql -e "GRANT ALL ON $mysql_database_value.* TO '$mysql_user_value'@'localhost';FLUSH PRIVILEGES;"
+        ;;
     *)
         ;;
 esac
