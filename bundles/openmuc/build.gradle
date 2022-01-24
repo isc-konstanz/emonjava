@@ -52,11 +52,13 @@ jar {
                             '!org.eclipse.paho.*,' +
                             '!redis.clients.*,' +
                             '!com.mchange.*,' +
+                            '!org.codehaus.*,' +
                             '!org.ini4j.*,' +
                             '!org.jboss.*,' +
                             '!org.apache.log*,' +
                             '!com.typesafe.*,' +
                             '!net.sf.cglib*,' +
+                            '!javax.mail.*,' +
                             '!javax.swing.*,' +
                             'com.mysql.cj.jdbc,' +
                             '*;version=0',
