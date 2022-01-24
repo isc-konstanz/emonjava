@@ -192,8 +192,25 @@ public class EngineLogger extends DataLoggerActivator implements DataLoggerServi
 	@SuppressWarnings("unchecked")
 	private <C extends EngineChannel> List<Record> read(Engine<?> engine, C channel, long startTime, long endTime) 
 			throws IOException {
-		
 		return ((Engine<C>) engine).read(channel, startTime, endTime);
+	}
+
+	@Read
+	public Record readLatest(EngineChannel channel) throws IOException {
+		Engine<?> engine = engines.get(channel.getEngine());
+		if (engine == null && engines.size() > 0) {
+			engine = engines.values().iterator().next();
+		}
+		if (engine == null) {
+			throw new IOException("Engine unavailable: " + channel.getEngine());
+		}
+		return readLatest(engine, channel);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <C extends EngineChannel> Record readLatest(Engine<?> engine, C channel) 
+			throws IOException {
+		return ((Engine<C>) engine).readLatest(channel);
 	}
 
 	@Override

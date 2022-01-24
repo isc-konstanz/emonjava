@@ -171,4 +171,9 @@ public class HttpEngine implements Engine<HttpChannel> {
 		return records;
 	}
 
+	@Override
+	public Record readLatest(HttpChannel channel) throws IOException {
+		throw new UnsupportedOperationException("Retrieving latest HTTP record not yet supported");
+	}
+
 }

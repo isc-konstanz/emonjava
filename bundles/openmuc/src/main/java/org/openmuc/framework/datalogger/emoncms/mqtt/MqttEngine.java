@@ -115,4 +115,9 @@ public class MqttEngine implements Engine<MqttChannel> {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public Record readLatest(MqttChannel channel) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+
 }

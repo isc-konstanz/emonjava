@@ -40,7 +40,8 @@ public class SqlFeed extends RedisFeed {
 			+ "data %s, "
 			+ "PRIMARY KEY (time)"
 			+ ") ENGINE=MYISAM";
-	private static String QUERY_SELECT = "SELECT * FROM %s WHERE time >= %s AND time <= %s";
+	private static String QUERY_SELECT_WHERE = "SELECT * FROM %s ORDER BY time DESC LIMIT 1";
+	private static String QUERY_SELECT_LIMIT = "SELECT * FROM %s WHERE time >= %s AND time <= %s";
 	private static String QUERY_INSERT = "INSERT INTO %s (time,data) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE data=VALUES(data)";
 //  private static String QUERY_UPDATE = "UPDATE feeds SET time = %s, value = %s WHERE id = %i";
 
@@ -120,8 +121,28 @@ public class SqlFeed extends RedisFeed {
 	}
 
 	@Override
+	public Timevalue getLatestTimevalue() throws EmoncmsException {
+		String query = String.format(QUERY_SELECT_LIMIT, table);
+		logger.debug("Query {}", query);
+
+		try (Connection connection = callbacks.getConnection()) {
+			try (Statement statement = connection.createStatement()) {
+				try (ResultSet result = statement.executeQuery(query)) {
+					result.next();
+					long time = result.getLong(COLUMN_TIME)*1000;
+					double value = result.getDouble(COLUMN_DATA);
+					
+					return new Timevalue(time, value);
+				}
+			}
+		} catch (SQLException e) {
+			throw new SqlException(e);
+		}
+	}
+
+	@Override
 	public LinkedList<Timevalue> getData(long start, long end, int interval) throws EmoncmsException {
-		String query = String.format(QUERY_SELECT, table, start, end);
+		String query = String.format(QUERY_SELECT_WHERE, table, start, end);
 		logger.debug("Query {}", query);
 		
 		LinkedList<Timevalue> timevalues = new LinkedList<Timevalue>();
@@ -130,7 +151,7 @@ public class SqlFeed extends RedisFeed {
 				try (ResultSet result = statement.executeQuery(query)) {
 					while (result.next()) {
 						long time = result.getLong(COLUMN_TIME)*1000;
-						double value = result.getInt(COLUMN_DATA);
+						double value = result.getDouble(COLUMN_DATA);
 						
 						timevalues.add(new Timevalue(time, value));
 					}

@@ -225,6 +225,14 @@ public class SqlEngine implements Engine<SqlChannel> {
 		return records;
 	}
 
+	@Override
+    public Record readLatest(SqlChannel channel) throws IOException {
+    	Timevalue timevalue = getFeed(channel).getLatestTimevalue();
+		Value value = new DoubleValue(timevalue.getValue());
+		Record record = new Record(value, timevalue.getTime());
+        return record;
+    }
+
 	private SqlFeed getFeed(SqlChannel channel) throws EmoncmsException {
 		SqlFeed feed = feeds.get(channel.getId());
 		if (feed == null) {

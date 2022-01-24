@@ -49,4 +49,6 @@ public interface Engine<C extends EngineChannel> {
 
 	public List<Record> read(C channel, long startTime, long endTime) throws IOException;
 
+	public Record readLatest(C channel) throws IOException;
+
 }
