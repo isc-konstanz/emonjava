@@ -53,11 +53,7 @@ if [ -e $CONFIG_FILE ]; then
 fi
 
 db_input medium emoncms/address || true
-if [ -z "$emoncms_auth_value" ] || [ "$emoncms_auth_value" = "API_KEY" ]; then
-    db_input critical emoncms/authentication || true
-else
-    db_input medium emoncms/authentication || true
-fi
+db_input medium emoncms/authentication || true
 
 db_input low openmuc/mysql_host || true
 db_input low openmuc/mysql_port || true

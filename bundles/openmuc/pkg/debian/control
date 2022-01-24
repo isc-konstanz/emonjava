@@ -11,4 +11,4 @@ Vcs-Git: <repository>.git
 Package: <package>
 Architecture: all
 Depends: ${misc:Depends}, openmuc-datalogger, openmuc-lib-gson, redis-server, mariadb-server, mariadb-client
-Description: MySQL driver for the OpenMUC framework.
+Description: Emoncms datalogger for the OpenMUC framework.
