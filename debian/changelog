@@ -1,3 +1,11 @@
+<package> (<version>) stable; urgency=medium
+
+  * Remove apikey config criticality
+  * Implement reading latest record for SQL engine
+  * Use OpenMUC v0.20.2
+
+ -- <maintainer>  Fri, 24 Jan 2022 12:00:10 +0100
+
 <package> (1.5.1) stable; urgency=medium
 
   * Fix DPKG configs and templates
@@ -6,7 +14,7 @@
   * Use OpenMUC v0.20.1
 
  -- Adrian Minde <adrian.minde@isc-konstanz.de>  Fri, 26 Nov 2021 14:00:10 +0100
- 
+
  <package> (1.5.0) stable; urgency=medium
 
   * Initial release
