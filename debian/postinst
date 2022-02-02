@@ -74,12 +74,7 @@ case "$1" in
         sed -i "$mysql_password_line s/.*$mysql_password_key.*=.*/$mysql_password_key = $mysql_password_value/"     $CONFIG_FILE
 
         echo "To update OpenMUC EmonCMS Logger configurations, run 'dpkg-reconfigure --priority=low openmuc-datalogger-emoncms'"
-        ;;
-    *)
-        ;;
-esac
-case "$1" in
-    install)
+
         if test -f $PASSWD_FILE && grep -Fxq "[MySQL]" $PASSWD_FILE; then
             if grep -A3 -P '^\[MySQL\]' $PASSWD_FILE | grep -m1 -q "$mysql_user_value"; then
                 sed -i "s/$mysql_user_value:.*/$mysql_user_value:$mysql_password_value/" $PASSWD_FILE
