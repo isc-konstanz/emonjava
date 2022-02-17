@@ -10,31 +10,31 @@ Default:
 Description: Emoncms API Key:
  Enter the API Key of the emoncms user
 
-Template: openmuc/mysql_host
+Template: emoncms/mysql_host
 Type: string
 Default: 127.0.0.1
-Description: MySQL host name:
+Description: MySQL server name:
  Enter the host name of the MySQL database
 
-Template: openmuc/mysql_port
+Template: emoncms/mysql_port
 Type: string
 Default: 3306
 Description: MySQL port:
  Enter the port of the MySQL database
 
-Template: openmuc/mysql_database
+Template: emoncms/mysql_timeseries
 Type: string
 Default: emondata
-Description: MySQL database name:
- Enter the name of the MySQL database
+Description: MySQL timeseries database name:
+ Enter the name of the timeseries database
 
-Template: openmuc/mysql_user
+Template: emoncms/mysql_user
 Type: string
 Default: emoncms
 Description: MySQL user name:
  Enter the name for the user of the MySQL database
 
-Template: openmuc/mysql_password
+Template: emoncms/mysql_password
 Type: password
 Default: 
 Description: MySQL user password:
