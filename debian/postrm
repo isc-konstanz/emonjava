@@ -7,10 +7,10 @@ set -e
 PASSWD_FILE=/home/pi/.setup/passwd.conf
 
 # Fetching configuration from debconf
-db_get openmuc/mysql_database
+db_get emoncms/mysql_timeseries
 mysql_database_value=$RET
 
-db_get openmuc/mysql_user
+db_get emoncms/mysql_user
 mysql_user_value=$RET
 
 case "$1" in
