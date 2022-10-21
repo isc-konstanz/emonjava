@@ -1,10 +1,19 @@
 <package> (<version>) stable; urgency=medium
 
+  * Fix dpkg MySQL template IDs
+  * Fix dpkg postinst and postrm scripts
+  * Comment default dpkg config credentials
+  * Use OpenMUC v0.20.3
+
+ -- <maintainer>  Fri, 21 Oct 2022 13:00:00 +0200
+
+<package> (1.5.2) stable; urgency=medium
+
   * Remove apikey config criticality
   * Implement reading latest record for SQL engine
   * Use OpenMUC v0.20.2
 
- -- <maintainer>  Fri, 24 Jan 2022 12:00:10 +0100
+ -- Adrian Minde <adrian.minde@isc-konstanz.de>  Fri, 24 Jan 2022 12:00:00 +0100
 
 <package> (1.5.1) stable; urgency=medium
 
@@ -13,7 +22,7 @@
   * Use tab indents consequently
   * Use OpenMUC v0.20.1
 
- -- Adrian Minde <adrian.minde@isc-konstanz.de>  Fri, 26 Nov 2021 14:00:10 +0100
+ -- Adrian Minde <adrian.minde@isc-konstanz.de>  Fri, 26 Nov 2021 14:00:00 +0100
 
  <package> (1.5.0) stable; urgency=medium
 
